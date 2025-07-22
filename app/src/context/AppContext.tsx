@@ -8,6 +8,7 @@ interface AppContextType {
   userRole: UserRole | null;
   setHasSeenGreeting: (value: boolean) => void;
   setUserRole: (role: UserRole) => void;
+  resetApp: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -36,14 +37,20 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const loadAppState = async () => {
     try {
-      const [greetingSeen, savedRole] = await Promise.all([
-        AsyncStorage.getItem('hasSeenGreeting'),
-        AsyncStorage.getItem('userRole'),
-      ]);
+      // Load user role from AsyncStorage (persists across app sessions)
+      const savedRole = await AsyncStorage.getItem('userRole');
+      
+      // Check if greeting has been seen in this app installation
+      // This will be reset when app is reinstalled
+      const greetingSeen = await AsyncStorage.getItem('greetingSeenThisInstall');
+      
       setHasSeenGreeting(greetingSeen === 'true');
       setUserRole(savedRole as UserRole || null);
     } catch (error) {
       console.error('Error loading app state:', error);
+      // On error, treat as new user
+      setHasSeenGreeting(false);
+      setUserRole(null);
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +58,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const handleSetHasSeenGreeting = async (value: boolean) => {
     try {
-      await AsyncStorage.setItem('hasSeenGreeting', value.toString());
+      // Save to a key that persists only during this app installation
+      await AsyncStorage.setItem('greetingSeenThisInstall', value.toString());
       setHasSeenGreeting(value);
     } catch (error) {
       console.error('Error saving greeting state:', error);
@@ -60,10 +68,22 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const handleSetUserRole = async (role: UserRole) => {
     try {
+      // Save user role to persist across app sessions
       await AsyncStorage.setItem('userRole', role);
       setUserRole(role);
     } catch (error) {
       console.error('Error saving user role:', error);
+    }
+  };
+
+  const resetApp = async () => {
+    try {
+      // Clear only the greeting flag, keep user role
+      await AsyncStorage.removeItem('greetingSeenThisInstall');
+      setHasSeenGreeting(false);
+      // Keep userRole as it might be useful to remember
+    } catch (error) {
+      console.error('Error resetting app:', error);
     }
   };
 
@@ -72,6 +92,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     userRole,
     setHasSeenGreeting: handleSetHasSeenGreeting,
     setUserRole: handleSetUserRole,
+    resetApp,
     isLoading,
   };
 

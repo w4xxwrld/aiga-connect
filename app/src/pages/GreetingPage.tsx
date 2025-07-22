@@ -55,7 +55,8 @@ const GreetingPage: React.FC<GreetingPageProps> = ({ navigation }) => {
       // Save the role and mark greeting as seen
       setUserRole(selectedRole);
       setHasSeenGreeting(true);
-      navigation.navigate('Home');
+      // Replace greeting screen with home screen to prevent going back
+      navigation.replace('Home');
     }
   };
 
