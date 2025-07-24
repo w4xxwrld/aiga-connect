@@ -1,11 +1,6 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 from typing import Optional
-from enum import Enum
-
-class UserRole(str, Enum):
-    parent = "parent"
-    athlete = "athlete"
-    coach = "coach"
+from app.users.models import UserRole 
 
 class UserBase(BaseModel):
     iin: str
@@ -20,10 +15,8 @@ class UserBase(BaseModel):
             raise ValueError("IIN must be exactly 12 digits")
         return v
 
-
 class UserCreate(UserBase):
     password: str
-
 
 class UserOut(UserBase):
     id: int
@@ -33,3 +26,12 @@ class UserOut(UserBase):
 class UserLogin(BaseModel):
     iin: str
     password: str
+
+# JWT token schemas
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    iin: Optional[str] = None
+    role: Optional[str] = None

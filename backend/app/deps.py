@@ -2,14 +2,14 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import async_session_maker
+from app.database import AsyncSessionLocal  # Fix: use AsyncSessionLocal
 from app.core.security import decode_access_token
 from app.users import crud
 from app.users.schemas import UserRole
 
 # Database dependency
 async def get_db():
-    async with async_session_maker() as session:
+    async with AsyncSessionLocal() as session:  
         yield session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")

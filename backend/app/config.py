@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     DATABASE_URL: str
     ALEMBIC_DATABASE_URL: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     class Config:
         env_file = BASE_DIR / ".env"
