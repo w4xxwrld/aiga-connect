@@ -1,11 +1,17 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 from typing import Optional
+from enum import Enum
 
+class UserRole(str, Enum):
+    parent = "parent"
+    athlete = "athlete"
+    coach = "coach"
 
 class UserBase(BaseModel):
     iin: str
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    role: UserRole = UserRole.parent
 
     @field_validator("iin")
     @classmethod
