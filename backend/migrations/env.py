@@ -5,7 +5,10 @@ from alembic import context
 
 from app.config import settings
 from app.database import Base
-from app.users.models import User  # Импортируй все модели!
+# Импортируем все модели
+from app.users.models import User, ParentAthleteRelationship
+from app.classes.models import Class
+from app.bookings.models import Booking
 
 # Настройка логов Alembic
 fileConfig(context.config.config_file_name)
