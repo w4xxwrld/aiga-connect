@@ -1,0 +1,309 @@
+---
+description: app that connects grapplers, their parents and coaches for AIGA
+globs:
+alwaysApply: true
+---
+
+🚀 Sprint 1: Core Structure + Authentication
+
+Goal: Basic app setup with login, roles, and navigation
+
+📌 Features:
+	•	Welcome screen – ✅
+	•	Registration / Login – ✅
+	•	User roles (Parent, Athlete, Coach)
+	•	Child profile linking
+	•	Section navigation
+	•	Firebase (or Supabase) integration – ✅
+
+⸻
+
+📆 Sprint 2: Training Schedule
+
+Goal: Manage training sessions and bookings
+
+📌 Features:
+	•	“Schedule” screen
+	•	Book a training session
+	•	View training details
+	•	Book a private session
+	•	Coach can create a training session
+
+⸻
+
+🥋 Sprint 3: Progress & Motivation
+
+Goal: Track student growth and engagement
+
+📌 Features:
+	•	Student status (grades, belt levels)
+	•	Tournament history
+	•	Basic challenge system (added manually)
+	•	List of achievements
+
+⸻
+
+💬 Sprint 4: Community
+
+Goal: Enable communication and interaction
+
+📌 Features:
+	•	General chat (1 global room)
+	•	Notifications about events and tournaments
+	•	Parent feedback
+	•	Basic forum / discussions
+
+⸻
+
+🛒 Sprint 5: Merch & Finalizing MVP
+
+Goal: Complete MVP with online store features
+
+📌 Features:
+	•	Equipment catalog
+	•	Product page
+	•	Order link
+	•	Push notifications integrated and tested
+
+
+
+--------
+
+
+
+Here’s a complete technical breakdown for the AIGA Connect MVP, including:
+	•	Required pages
+	•	Suggested API endpoints
+	•	Database schema
+	•	Tech stack & tooling
+	•	Folder structure and architecture
+
+⸻
+
+🌐 Pages (Screens)
+
+1. Welcome / Landing Page
+	•	Info about the academy + login/register buttons
+
+2. Authentication
+	•	Login & Registration
+	•	Role selection (Parent / Athlete / Coach)
+	•	Child linking (if parent)
+
+3. Dashboard (varies by role)
+	•	Overview of schedule, progress, announcements
+
+4. Schedule
+	•	Upcoming trainings
+	•	Filter by date/trainer/type
+	•	Buttons: Book / Details
+
+5. Training Detail
+	•	Training info
+	•	Book or cancel session
+
+6. Create Training (Coach only)
+	•	Form to create new session
+
+7. Progress & Motivation
+	•	Grading history
+	•	Belts earned
+	•	Tournament participation
+	•	Achievements / Challenges
+
+8. Community
+	•	Global Chat (public)
+	•	Forum (threads + replies)
+	•	Feedback form (from parents)
+
+9. Merch Store
+	•	Product list
+	•	Product detail
+	•	External link to order
+
+10. Admin / Profile Settings
+	•	Edit user info
+	•	Link/unlink child
+	•	Notifications
+
+⸻
+
+🔗 API Endpoints (REST or RPC style)
+
+Auth & Users
+
+POST   /api/auth/register
+POST   /api/auth/login
+GET    /api/users/me
+PATCH  /api/users/:id       // update profile
+POST   /api/users/link-child
+
+Trainings
+
+GET    /api/trainings
+GET    /api/trainings/:id
+POST   /api/trainings       // coach only
+POST   /api/trainings/:id/book
+DELETE /api/trainings/:id/book
+
+Progress
+
+GET    /api/progress/:userId
+POST   /api/progress        // coach adds rank/tournament
+
+Community
+
+GET    /api/chat/messages
+POST   /api/chat/messages
+
+GET    /api/forum
+POST   /api/forum
+POST   /api/forum/:id/reply
+
+Store
+
+GET    /api/products
+GET    /api/products/:id
+
+Notifications
+
+GET    /api/notifications
+POST   /api/notifications   // admin/coach only
+
+
+⸻
+
+🧱 Database Schema (PostgreSQL/Supabase)
+
+Users
+
+id (uuid)
+email
+password_hash
+role (enum: parent, athlete, coach)
+full_name
+linked_child_id (nullable)
+created_at
+
+Children (if stored separately)
+
+id (uuid)
+parent_id (fk → users)
+name
+age
+belt
+rank
+
+Trainings
+
+id (uuid)
+title
+description
+coach_id (fk → users)
+date_time
+location
+type (group/private)
+capacity
+created_at
+
+Bookings
+
+id (uuid)
+user_id (fk)
+training_id (fk)
+status (enum: booked, canceled)
+created_at
+
+Progress / Achievements
+
+id (uuid)
+user_id (fk)
+type (grade | belt | tournament | challenge)
+title
+description
+date
+
+Chat Messages
+
+id (uuid)
+sender_id (fk)
+message
+created_at
+
+Forum
+
+id (uuid)
+author_id (fk)
+title
+content
+created_at
+
+Forum Replies
+
+id (uuid)
+forum_id (fk)
+author_id (fk)
+content
+created_at
+
+Products
+
+id (uuid)
+name
+description
+image_url
+price
+order_link
+
+Notifications
+
+id (uuid)
+title
+message
+target_role (enum)
+created_at
+
+
+⸻
+
+🛠 Recommended Tech Stack
+
+Frontend
+	•	React / Next.js / Expo (if mobile)
+	•	ShadCN + Tailwind CSS
+	•	Zustand / TanStack Query for state and API
+	•	Clerk / Supabase Auth / Firebase Auth
+
+Backend
+	•	Supabase (PostgreSQL + API + Auth) — fast to ship
+	•	OR:
+	•	Node.js with Fastify
+	•	Prisma ORM + PostgreSQL
+
+Infra & Tools
+	•	Vercel (frontend hosting)
+	•	Railway / Render (backend or DB)
+	•	Figma for design
+	•	Notion or Trello for sprint tracking
+
+⸻
+
+📁 Suggested Folder Structure (for Next.js)
+
+/app
+  /auth
+  /dashboard
+  /schedule
+  /training
+  /progress
+  /community
+  /store
+  /profile
+/components
+/lib
+/styles
+/utils
+/constants
+/types
+
+

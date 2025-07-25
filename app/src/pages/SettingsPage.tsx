@@ -1,300 +1,482 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import {
   Card,
   Title,
   Paragraph,
-  Button,
+  Switch,
   List,
   Divider,
-  Switch,
+  Button,
   TextInput,
-  RadioButton,
-  Text,
+  Dialog,
+  Portal,
   Chip,
 } from 'react-native-paper';
-import Slider from '@react-native-community/slider';
 import { useAppContext } from '../context/AppContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import childrenService from '../services/children';
+import notificationService from '../services/notifications';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-interface SettingsPageProps {
-  navigation: any;
-}
+const SettingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
+  const { userRole, linkedChildren, loadChildren } = useAppContext();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  const [childProfileDialogVisible, setChildProfileDialogVisible] = useState(false);
+  const [childIin, setChildIin] = useState('');
+  const [linkingChild, setLinkingChild] = useState(false);
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
-  const [isNotificationsEnabled, setIsNotificationsEnabled] = React.useState(true);
-  const [isDarkModeEnabled, setIsDarkModeEnabled] = React.useState(false);
-  const [isAutoSaveEnabled, setIsAutoSaveEnabled] = React.useState(true);
-  const [email, setEmail] = React.useState('ivan.dizayner@example.com');
-  const [displayName, setDisplayName] = React.useState('Иван Дизайнер');
-  const [bio, setBio] = React.useState('UI/UX Дизайнер, увлеченный созданием красивых и функциональных интерфейсов.');
-  const [selectedLanguage, setSelectedLanguage] = React.useState('russian');
-  const [fontSize, setFontSize] = React.useState(16);
-  const { setHasSeenGreeting, setUserRole } = useAppContext();
+  // Debug information
+  console.log('SettingsPage - userRole:', userRole);
+  console.log('SettingsPage - linkedChildren:', linkedChildren);
+  console.log('SettingsPage - linkedChildren.length:', linkedChildren.length);
 
-  const resetApp = async () => {
+  const handleLinkChildProfile = async () => {
+    if (childIin.length !== 12 || !/^\d+$/.test(childIin)) {
+      Alert.alert('Ошибка', 'ИИН должен содержать ровно 12 цифр');
+      return;
+    }
+
+    setLinkingChild(true);
     try {
-      await AsyncStorage.clear();
-      setHasSeenGreeting(false);
-      setUserRole('parent'); // Set a default role
-      console.log('App reset successfully');
-      // Navigate back to greeting page
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Greeting' }],
-      });
-    } catch (error) {
-      console.error('Error resetting app:', error);
+      await childrenService.linkChild(childIin);
+      
+      Alert.alert(
+        'Успешно',
+        `Профиль ребенка с ИИН ${childIin} успешно привязан к вашему аккаунту`,
+        [
+          {
+            text: 'OK',
+            onPress: async () => {
+              setChildProfileDialogVisible(false);
+              setChildIin('');
+              // Reload children list
+              await loadChildren();
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Ошибка', error.message || 'Ошибка при привязке профиля ребенка');
+    } finally {
+      setLinkingChild(false);
+    }
+  };
+
+  const handleUnlinkChild = async (childId: number, childName: string) => {
+    Alert.alert(
+      'Отвязать ребенка',
+      `Вы уверены, что хотите отвязать ${childName} от вашего аккаунта?`,
+      [
+        {
+          text: 'Отмена',
+          style: 'cancel',
+        },
+        {
+          text: 'Отвязать',
+          style: 'destructive',
+          onPress: async () => {
+    try {
+              await childrenService.unlinkChild(childId);
+              Alert.alert('Успешно', 'Ребенок отвязан от вашего аккаунта');
+              await loadChildren();
+            } catch (error: any) {
+              Alert.alert('Ошибка', error.message || 'Ошибка при отвязке ребенка');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getRoleSpecificSettings = () => {
+    switch (userRole) {
+      case 'parent':
+        return [
+          {
+            title: 'Привязать профиль ребенка',
+            description: 'Добавить профиль ребенка для отслеживания прогресса',
+            icon: 'account-child',
+            action: () => setChildProfileDialogVisible(true),
+          },
+          {
+            title: 'Уведомления о тренировках',
+            description: 'Получать уведомления о расписании ребенка',
+            icon: 'calendar',
+            action: () => Alert.alert('Информация', 'Функция в разработке'),
+          },
+          {
+            title: 'Отчеты о прогрессе',
+            description: 'Еженедельные отчеты о достижениях',
+            icon: 'chart-line',
+            action: () => Alert.alert('Информация', 'Функция в разработке'),
+          },
+        ];
+      case 'athlete':
+        return [
+          {
+            title: 'Цели тренировок',
+            description: 'Установить личные цели и задачи',
+            icon: 'target',
+            action: () => Alert.alert('Информация', 'Функция в разработке'),
+          },
+          {
+            title: 'Напоминания о тренировках',
+            description: 'Уведомления о предстоящих тренировках',
+            icon: 'bell-ring',
+            action: () => Alert.alert('Информация', 'Функция в разработке'),
+          },
+          {
+            title: 'Дневник тренировок',
+            description: 'Вести личный дневник тренировок',
+            icon: 'notebook',
+            action: () => Alert.alert('Информация', 'Функция в разработке'),
+          },
+        ];
+      case 'coach':
+        return [
+          {
+            title: 'Управление группами',
+            description: 'Настройки групп и расписания',
+            icon: 'account-group',
+            action: () => Alert.alert('Информация', 'Функция в разработке'),
+          },
+          {
+            title: 'Уведомления родителям',
+            description: 'Автоматические уведомления о прогрессе',
+            icon: 'message-text',
+            action: () => Alert.alert('Информация', 'Функция в разработке'),
+          },
+          {
+            title: 'Отчеты по группам',
+            description: 'Статистика и аналитика групп',
+            icon: 'chart-bar',
+            action: () => Alert.alert('Информация', 'Функция в разработке'),
+          },
+        ];
+      default:
+        return [];
     }
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Profile Settings */}
+    <ScrollView style={styles.container}>
+      <View style={styles.content}>
+        {/* Debug Information (Development Only) */}
+        {__DEV__ && (
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Настройки профиля</Title>
-            <TextInput
-              label="Отображаемое имя"
-              value={displayName}
-              onChangeText={setDisplayName}
-              mode="outlined"
-              style={styles.input}
-            />
-            <TextInput
-              label="Email"
-              value={email}
-              onChangeText={setEmail}
-              mode="outlined"
-              style={styles.input}
-              keyboardType="email-address"
-            />
-            <TextInput
-              label="О себе"
-              value={bio}
-              onChangeText={setBio}
-              mode="outlined"
-              style={styles.input}
-              multiline
-              numberOfLines={3}
-            />
+              <Title style={styles.cardTitle}>Debug Info</Title>
+              <Text style={styles.debugText}>User Role: {userRole}</Text>
+              <Text style={styles.debugText}>Children Count: {linkedChildren.length}</Text>
+              <Text style={styles.debugText}>Children Data: {JSON.stringify(linkedChildren, null, 2)}</Text>
           </Card.Content>
-          <Card.Actions>
-            <Button onPress={() => console.log('Save profile')}>
-              Сохранить изменения
-            </Button>
-          </Card.Actions>
         </Card>
+        )}
 
         {/* App Settings */}
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Настройки приложения</Title>
+            <Title style={styles.cardTitle}>Настройки приложения</Title>
+            <List.Item
+              title="Уведомления"
+              description="Настройки и управление уведомлениями"
+              left={(props) => <List.Icon {...props} icon="bell" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation?.navigate('Notifications')}
+              titleStyle={styles.listTitle}
+              descriptionStyle={styles.listDescription}
+            />
+            <Divider style={styles.divider} />
             <List.Item
               title="Push-уведомления"
-              description="Получать уведомления о новых проектах и обновлениях"
-              left={(props: any) => <List.Icon {...props} icon="bell" />}
+              description="Получать уведомления на устройство"
+              left={(props) => <List.Icon {...props} icon="cellphone" />}
               right={() => (
                 <Switch
-                  value={isNotificationsEnabled}
-                  onValueChange={setIsNotificationsEnabled}
+                  value={notificationsEnabled}
+                  onValueChange={setNotificationsEnabled}
+                  trackColor={{ false: '#2C3E50', true: '#E74C3C' }}
+                  thumbColor={notificationsEnabled ? '#fff' : '#B0BEC5'}
                 />
               )}
+              titleStyle={styles.listTitle}
+              descriptionStyle={styles.listDescription}
             />
-            <Divider />
+            <Divider style={styles.divider} />
             <List.Item
               title="Темная тема"
-              description="Использовать темную тему во всем приложении"
-              left={(props: any) => <List.Icon {...props} icon="theme-light-dark" />}
+              description="Использовать темную тему"
+              left={(props) => <List.Icon {...props} icon="theme-light-dark" />}
               right={() => (
                 <Switch
-                  value={isDarkModeEnabled}
-                  onValueChange={setIsDarkModeEnabled}
+                  value={darkModeEnabled}
+                  onValueChange={setDarkModeEnabled}
+                  trackColor={{ false: '#2C3E50', true: '#E74C3C' }}
+                  thumbColor={darkModeEnabled ? '#fff' : '#B0BEC5'}
                 />
               )}
+              titleStyle={styles.listTitle}
+              descriptionStyle={styles.listDescription}
             />
-            <Divider />
+            <Divider style={styles.divider} />
             <List.Item
-              title="Автосохранение"
-              description="Автоматически сохранять вашу работу"
-              left={(props: any) => <List.Icon {...props} icon="content-save" />}
-              right={() => (
-                <Switch
-                  value={isAutoSaveEnabled}
-                  onValueChange={setIsAutoSaveEnabled}
-                />
+              title="Язык"
+              description="Русский"
+              left={(props) => <List.Icon {...props} icon="translate" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => Alert.alert('Информация', 'Функция в разработке')}
+              titleStyle={styles.listTitle}
+              descriptionStyle={styles.listDescription}
+            />
+          </Card.Content>
+        </Card>
+
+        {/* Linked Children Section (Parent Only) */}
+        {userRole === 'parent' && (
+        <Card style={styles.card}>
+          <Card.Content>
+              <Title style={styles.cardTitle}>Привязанные дети</Title>
+              {linkedChildren.length > 0 ? (
+                linkedChildren.map((relationship, index) => (
+                  <View key={relationship.id}>
+                    <List.Item
+                      title={relationship.child.full_name || `Ребенок ${relationship.child.iin}`}
+                      description={`ИИН: ${relationship.child.iin}`}
+                      left={(props) => <List.Icon {...props} icon="account-child" />}
+                      right={() => (
+                        <Button
+                          mode="text"
+                          onPress={() => handleUnlinkChild(relationship.child.id, relationship.child.full_name || 'ребенка')}
+                          textColor="#E74C3C"
+                          compact
+                        >
+                          Отвязать
+                        </Button>
+                      )}
+                      titleStyle={styles.listTitle}
+                      descriptionStyle={styles.listDescription}
+                    />
+                    {index < linkedChildren.length - 1 && <Divider style={styles.divider} />}
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyState}>
+                  <MaterialCommunityIcons name="account-child-outline" size={48} color="#B0BEC5" />
+                  <Text style={styles.emptyStateText}>Нет привязанных детей</Text>
+                  <Text style={styles.emptyStateSubtext}>
+                    Нажмите "Привязать профиль ребенка" чтобы добавить ребенка
+                  </Text>
+                </View>
               )}
-            />
+          </Card.Content>
+        </Card>
+        )}
+
+        {/* Role Specific Settings */}
+        <Card style={styles.card}>
+          <Card.Content>
+            <Title style={styles.cardTitle}>
+              {userRole === 'parent' ? 'Настройки родителя' :
+               userRole === 'athlete' ? 'Настройки спортсмена' :
+               userRole === 'coach' ? 'Настройки тренера' : 'Настройки'}
+            </Title>
+            {getRoleSpecificSettings().map((setting, index) => (
+              <React.Fragment key={index}>
+                <List.Item
+                  title={setting.title}
+                  description={setting.description}
+                  left={(props) => <List.Icon {...props} icon={setting.icon as any} />}
+                  right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                  onPress={setting.action}
+                  titleStyle={styles.listTitle}
+                  descriptionStyle={styles.listDescription}
+                />
+                {index < getRoleSpecificSettings().length - 1 && <Divider style={styles.divider} />}
+              </React.Fragment>
+            ))}
           </Card.Content>
         </Card>
 
-        {/* Language Settings */}
+        {/* Privacy & Security */}
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Язык</Title>
-            <RadioButton.Group onValueChange={value => setSelectedLanguage(value)} value={selectedLanguage}>
-              <RadioButton.Item label="Русский" value="russian" />
-              <RadioButton.Item label="English" value="english" />
-              <RadioButton.Item label="Қазақша" value="kazakh" />
-              <RadioButton.Item label="Español" value="spanish" />
-            </RadioButton.Group>
-          </Card.Content>
-        </Card>
-
-        {/* Font Size */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title>Размер шрифта</Title>
-            <Text>Текущий размер: {fontSize}px</Text>
-            <Slider
-              value={fontSize}
-              onValueChange={setFontSize}
-              minimumValue={12}
-              maximumValue={24}
-              step={1}
-              style={styles.slider}
-            />
-            <View style={styles.fontPreview}>
-              <Text style={{ fontSize: fontSize }}>
-                Так будет выглядеть ваш текст с выбранным размером шрифта.
-              </Text>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Privacy Settings */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title>Конфиденциальность</Title>
+            <Title style={styles.cardTitle}>Конфиденциальность и безопасность</Title>
             <List.Item
-              title="Видимость профиля"
-              description="Кто может видеть ваш профиль"
-              left={(props: any) => <List.Icon {...props} icon="account-eye" />}
-              right={(props: any) => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => console.log('Profile visibility')}
+              title="Конфиденциальность"
+              description="Управление настройками приватности"
+              left={(props) => <List.Icon {...props} icon="shield" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => Alert.alert('Информация', 'Функция в разработке')}
+              titleStyle={styles.listTitle}
+              descriptionStyle={styles.listDescription}
             />
-            <Divider />
+            <Divider style={styles.divider} />
             <List.Item
-              title="Использование данных"
-              description="Управление использованием ваших данных"
-              left={(props: any) => <List.Icon {...props} icon="database" />}
-              right={(props: any) => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => console.log('Data usage')}
+              title="Двухфакторная аутентификация"
+              description="Дополнительная защита аккаунта"
+              left={(props) => <List.Icon {...props} icon="lock" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => Alert.alert('Информация', 'Функция в разработке')}
+              titleStyle={styles.listTitle}
+              descriptionStyle={styles.listDescription}
             />
-            <Divider />
+            <Divider style={styles.divider} />
+            <List.Item
+              title="История активности"
+              description="Просмотр истории входа в аккаунт"
+              left={(props) => <List.Icon {...props} icon="history" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => Alert.alert('Информация', 'Функция в разработке')}
+              titleStyle={styles.listTitle}
+              descriptionStyle={styles.listDescription}
+            />
+          </Card.Content>
+        </Card>
+
+        {/* Data & Storage */}
+        <Card style={styles.card}>
+          <Card.Content>
+            <Title style={styles.cardTitle}>Данные и хранилище</Title>
             <List.Item
               title="Экспорт данных"
-              description="Скачать ваши данные"
-              left={(props: any) => <List.Icon {...props} icon="download" />}
-              right={(props: any) => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => console.log('Export data')}
+              description="Скачать все ваши данные"
+              left={(props) => <List.Icon {...props} icon="download" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => Alert.alert('Информация', 'Функция в разработке')}
+              titleStyle={styles.listTitle}
+              descriptionStyle={styles.listDescription}
+            />
+            <Divider style={styles.divider} />
+            <List.Item
+              title="Очистить кэш"
+              description="Освободить место на устройстве"
+              left={(props) => <List.Icon {...props} icon="delete" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => Alert.alert('Информация', 'Кэш очищен')}
+              titleStyle={styles.listTitle}
+              descriptionStyle={styles.listDescription}
             />
           </Card.Content>
         </Card>
 
-        {/* Account Actions */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title>Аккаунт</Title>
-            <Button 
+        {/* Child Profile Dialog */}
+        <Portal>
+          <Dialog
+            visible={childProfileDialogVisible}
+            onDismiss={() => setChildProfileDialogVisible(false)}
+            style={styles.dialog}
+          >
+            <Dialog.Title style={styles.dialogTitle}>Привязать профиль ребенка</Dialog.Title>
+            <Dialog.Content>
+              <Paragraph style={styles.dialogText}>
+                Введите ИИН ребенка для привязки профиля к вашему аккаунту
+              </Paragraph>
+              <TextInput
+                label="ИИН ребенка (12 цифр)"
+                value={childIin}
+                onChangeText={setChildIin}
               mode="outlined" 
-              icon="lock" 
-              style={styles.actionButton}
-              onPress={() => console.log('Change password')}
-            >
-              Изменить пароль
-            </Button>
-            <Button 
-              mode="outlined" 
-              icon="account-multiple" 
-              style={styles.actionButton}
-              onPress={() => console.log('Manage devices')}
-            >
-              Управление устройствами
-            </Button>
-            <Button 
-              mode="outlined" 
-              icon="delete" 
-              style={styles.actionButton}
-              onPress={() => console.log('Delete account')}
-              textColor="red"
-            >
-              Удалить аккаунт
-            </Button>
-          </Card.Content>
-        </Card>
-
-        {/* Debug/Reset Section */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title>Отладка</Title>
-            <Button 
-              mode="outlined" 
-              icon="refresh" 
-              style={styles.actionButton}
-              onPress={resetApp}
-              textColor="orange"
-            >
-              Сбросить приложение (показать приветствие)
-            </Button>
-          </Card.Content>
-        </Card>
-
-        {/* About */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title>О приложении</Title>
-            <Paragraph>AIGA Connect v1.0.0</Paragraph>
-            <Paragraph>Общайтесь с коллегами и делитесь своим творчеством.</Paragraph>
-            <View style={styles.aboutLinks}>
-              <Button mode="text" onPress={() => console.log('Terms of Service')}>
-                Условия использования
+                keyboardType="numeric"
+                maxLength={12}
+                style={styles.dialogInput}
+                theme={{ 
+                  colors: { 
+                    primary: '#E74C3C',
+                    onSurfaceVariant: '#fff',
+                    placeholder: '#fff',
+                    onSurface: '#fff'
+                  } 
+                }}
+              />
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setChildProfileDialogVisible(false)} textColor="#B0BEC5">
+                Отмена
               </Button>
-              <Button mode="text" onPress={() => console.log('Privacy Policy')}>
-                Политика конфиденциальности
+              <Button 
+                onPress={handleLinkChildProfile} 
+                textColor="#E74C3C"
+                loading={linkingChild}
+                disabled={linkingChild}
+              >
+                Привязать
               </Button>
-              <Button mode="text" onPress={() => console.log('Help & Support')}>
-                Помощь и поддержка
-              </Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
             </View>
-          </Card.Content>
-        </Card>
       </ScrollView>
-    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0D1B2A',
   },
-  scrollView: {
-    flex: 1,
+  content: {
     padding: 16,
   },
   card: {
     marginBottom: 16,
-    elevation: 4,
+    backgroundColor: '#1B263B',
   },
-  input: {
-    marginBottom: 12,
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#fff',
   },
-  slider: {
-    marginVertical: 16,
+  listTitle: {
+    color: '#fff',
   },
-  fontPreview: {
-    padding: 16,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
+  listDescription: {
+    color: '#B0BEC5',
+  },
+  divider: {
+    backgroundColor: '#2C3E50',
+  },
+  dialog: {
+    backgroundColor: '#1B263B',
+  },
+  dialogTitle: {
+    color: '#fff',
+  },
+  dialogText: {
+    marginBottom: 16,
+    color: '#B0BEC5',
+  },
+  dialogInput: {
     marginTop: 8,
+    backgroundColor: '#2C3E50',
   },
-  actionButton: {
-    marginBottom: 8,
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 20,
   },
-  aboutLinks: {
-    marginTop: 16,
+  emptyStateText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
+  emptyStateSubtext: {
+    color: '#B0BEC5',
+    fontSize: 14,
+    marginTop: 5,
+    textAlign: 'center',
+  },
+  debugText: {
+    color: '#B0BEC5',
+    fontSize: 14,
+    marginBottom: 5,
   },
 });
 

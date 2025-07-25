@@ -1,15 +1,25 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import authService, { User } from '../services/auth';
+import childrenService, { ParentChildRelationship } from '../services/children';
 
 type UserRole = 'parent' | 'athlete' | 'coach';
 
 interface AppContextType {
   hasSeenGreeting: boolean;
   userRole: UserRole | null;
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  linkedChildren: ParentChildRelationship[];
   setHasSeenGreeting: (value: boolean) => void;
   setUserRole: (role: UserRole) => void;
+  setUser: (user: User | null) => void;
+  setIsAuthenticated: (value: boolean) => void;
+  setLinkedChildren: (children: ParentChildRelationship[]) => void;
+  loadChildren: () => Promise<void>;
   resetApp: () => Promise<void>;
-  isLoading: boolean;
+  logout: (navigation?: any) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -29,7 +39,10 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [hasSeenGreeting, setHasSeenGreeting] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [linkedChildren, setLinkedChildren] = useState<ParentChildRelationship[]>([]);
 
   useEffect(() => {
     loadAppState();
@@ -37,20 +50,39 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const loadAppState = async () => {
     try {
-      // Load user role from AsyncStorage (persists across app sessions)
-      const savedRole = await AsyncStorage.getItem('userRole');
+      // Check authentication status
+      const authenticated = await authService.isAuthenticated();
+      setIsAuthenticated(authenticated);
+
+      if (authenticated) {
+        // Load user data
+        const userData = await authService.getUserData();
+        if (userData) {
+          setUser(userData);
+          setUserRole(userData.role);
+          
+          // Load children if user is a parent
+          if (userData.role === 'parent') {
+            await loadChildren();
+          }
+        }
+      } else {
+        // Load user role from AsyncStorage (for non-authenticated users)
+        const savedRole = await AsyncStorage.getItem('userRole');
+        setUserRole(savedRole as UserRole || null);
+      }
       
       // Check if greeting has been seen in this app installation
-      // This will be reset when app is reinstalled
       const greetingSeen = await AsyncStorage.getItem('greetingSeenThisInstall');
-      
       setHasSeenGreeting(greetingSeen === 'true');
-      setUserRole(savedRole as UserRole || null);
     } catch (error) {
       console.error('Error loading app state:', error);
       // On error, treat as new user
       setHasSeenGreeting(false);
       setUserRole(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      setLinkedChildren([]);
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +90,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const handleSetHasSeenGreeting = async (value: boolean) => {
     try {
-      // Save to a key that persists only during this app installation
       await AsyncStorage.setItem('greetingSeenThisInstall', value.toString());
       setHasSeenGreeting(value);
     } catch (error) {
@@ -68,7 +99,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const handleSetUserRole = async (role: UserRole) => {
     try {
-      // Save user role to persist across app sessions
       await AsyncStorage.setItem('userRole', role);
       setUserRole(role);
     } catch (error) {
@@ -76,12 +106,75 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
+  const handleSetUser = async (userData: User | null) => {
+    console.log('handleSetUser called with:', userData);
+    if (userData) {
+      await authService.storeUserData(userData);
+      setUser(userData);
+      setUserRole(userData.role);
+      setIsAuthenticated(true);
+      console.log('User set, isAuthenticated should be true now');
+      
+      // Load children if user is a parent
+      if (userData.role === 'parent') {
+        await loadChildren();
+      }
+    } else {
+      setUser(null);
+      setUserRole(null);
+      setIsAuthenticated(false);
+      setLinkedChildren([]);
+      console.log('User cleared, isAuthenticated should be false now');
+    }
+  };
+
+  const handleSetLinkedChildren = (childrenData: ParentChildRelationship[]) => {
+    setLinkedChildren(childrenData);
+  };
+
+  const loadChildren = async () => {
+    try {
+      if (user?.role === 'parent') {
+        const childrenData = await childrenService.getChildren();
+        setLinkedChildren(childrenData);
+        await AsyncStorage.setItem('children', JSON.stringify(childrenData));
+      }
+    } catch (error) {
+      console.error('Error loading children:', error);
+      // Try to load from storage as fallback
+      try {
+        const savedChildren = await AsyncStorage.getItem('children');
+        if (savedChildren) {
+          setLinkedChildren(JSON.parse(savedChildren));
+        }
+      } catch (storageError) {
+        console.error('Error loading children from storage:', storageError);
+      }
+    }
+  };
+
+  const handleLogout = async (navigation?: any) => {
+    try {
+      await authService.logout();
+      setUser(null);
+      setUserRole(null);
+      setIsAuthenticated(false);
+      setLinkedChildren([]);
+      
+      // Navigate to auth screen if navigation is provided
+      if (navigation) {
+        console.log('Logging out, navigating to Auth screen');
+        navigation.replace('Auth');
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
   const resetApp = async () => {
     try {
-      // Clear only the greeting flag, keep user role
       await AsyncStorage.removeItem('greetingSeenThisInstall');
       setHasSeenGreeting(false);
-      // Keep userRole as it might be useful to remember
     } catch (error) {
       console.error('Error resetting app:', error);
     }
@@ -90,10 +183,18 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const value: AppContextType = {
     hasSeenGreeting,
     userRole,
+    user,
+    isAuthenticated,
+    isLoading,
+    linkedChildren,
     setHasSeenGreeting: handleSetHasSeenGreeting,
     setUserRole: handleSetUserRole,
+    setUser: handleSetUser,
+    setIsAuthenticated,
+    setLinkedChildren: handleSetLinkedChildren,
+    loadChildren,
     resetApp,
-    isLoading,
+    logout: handleLogout,
   };
 
   return (
