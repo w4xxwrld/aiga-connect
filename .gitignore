@@ -36,11 +36,13 @@ backend/.env
 *.tsbuildinfo
 next-env.d.ts
 
-# Python cache
+# Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -64,9 +66,8 @@ backend/__pycache__/
 backend/app/__pycache__/
 backend/app/*/__pycache__/
 backend/app/*/*/__pycache__/
-
-# Poetry
-poetry.lock
+backend/app/core/__pycache__/
+backend/app/users/__pycache__/
 
 # Virtual environments
 .env
@@ -85,16 +86,12 @@ venv.bak/
 *~
 
 # OS cache
-.DS_Store
-.DS_Store?
-._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
 Thumbs.db
 
 # Node cache
-node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
