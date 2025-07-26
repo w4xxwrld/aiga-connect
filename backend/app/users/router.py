@@ -188,7 +188,8 @@ async def get_my_athletes(
     current_user: User = Depends(get_current_user)
 ):
     """Получить список моих детей-спортсменов (для родителей)"""
-    if current_user.role != UserRole.parent:
+    user_roles = [ur.role for ur in current_user.user_roles]
+    if UserRole.parent not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only parents can access this endpoint"
@@ -203,7 +204,8 @@ async def get_my_parents(
     current_user: User = Depends(get_current_user)
 ):
     """Получить список моих родителей (для спортсменов)"""
-    if current_user.role != UserRole.athlete:
+    user_roles = [ur.role for ur in current_user.user_roles]
+    if UserRole.athlete not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only athletes can access this endpoint"

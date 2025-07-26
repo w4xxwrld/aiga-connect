@@ -24,7 +24,8 @@ async def create_class(
     current_user: User = Depends(get_current_user)
 ):
     """Создать новое занятие (только для тренеров)"""
-    if current_user.role != UserRole.coach:
+    user_roles = [ur.role for ur in current_user.user_roles]
+    if UserRole.coach not in user_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only coaches can create classes"
@@ -62,7 +63,8 @@ async def update_class(
             detail="Class not found"
         )
     
-    if current_user.role != UserRole.coach or class_obj.coach_id != current_user.id:
+    user_roles = [ur.role for ur in current_user.user_roles]
+    if UserRole.coach not in user_roles or class_obj.coach_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the class coach can update this class"

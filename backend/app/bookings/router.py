@@ -63,9 +63,10 @@ async def get_my_bookings(
     current_user: User = Depends(get_current_user)
 ):
     """Получить мои бронирования"""
-    if current_user.role == UserRole.parent:
+    user_roles = [ur.role for ur in current_user.user_roles]
+    if UserRole.parent in user_roles:
         bookings = await crud.get_bookings_by_parent(db, current_user.id)
-    elif current_user.role == UserRole.athlete:
+    elif UserRole.athlete in user_roles:
         bookings = await crud.get_bookings_by_athlete(db, current_user.id)
     else:  # coach
         bookings = await crud.get_bookings_by_coach(db, current_user.id)
@@ -88,8 +89,9 @@ async def cancel_booking(
         )
     
     # Проверить права на отмену
-    if (current_user.role == UserRole.parent and booking.booked_by_parent_id != current_user.id) or \
-       (current_user.role == UserRole.athlete and booking.athlete_id != current_user.id):
+    user_roles = [ur.role for ur in current_user.user_roles]
+    if (UserRole.parent in user_roles and booking.booked_by_parent_id != current_user.id) or \
+       (UserRole.athlete in user_roles and booking.athlete_id != current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only cancel your own bookings"
@@ -113,8 +115,9 @@ async def get_booking(
         )
     
     # Проверить права доступа
-    if (current_user.role == UserRole.parent and booking.booked_by_parent_id != current_user.id) or \
-       (current_user.role == UserRole.athlete and booking.athlete_id != current_user.id):
+    user_roles = [ur.role for ur in current_user.user_roles]
+    if (UserRole.parent in user_roles and booking.booked_by_parent_id != current_user.id) or \
+       (UserRole.athlete in user_roles and booking.athlete_id != current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"

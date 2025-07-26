@@ -28,7 +28,14 @@ def upgrade() -> None:
     op.execute("UPDATE users SET birth_date = '1990-01-01' WHERE birth_date IS NULL")
     
     # Создаем enum если его нет
-    op.execute("CREATE TYPE userrole AS ENUM ('parent', 'athlete', 'coach')")
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'userrole') THEN
+                CREATE TYPE userrole AS ENUM ('parent', 'athlete', 'coach');
+            END IF;
+        END $$;
+    """)
     
     # Используем SQL команду для добавления колонки, если её нет
     op.execute("""
