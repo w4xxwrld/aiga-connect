@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
+from pydantic import BaseModel, EmailStr, ConfigDict, field_validator, computed_field
 from typing import Optional, List
 from datetime import date, datetime
 from app.users.models import UserRole, RelationshipType
@@ -46,7 +46,6 @@ class UserCreate(UserBase):
         if hasattr(info, 'data') and info.data:
             birth_date = info.data.get('birth_date')
             if birth_date:
-                from datetime import date
                 today = date.today()
                 age = today.year - birth_date.year
                 if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
@@ -63,7 +62,6 @@ class UserCreate(UserBase):
         if hasattr(info, 'data') and info.data and v:
             birth_date = info.data.get('birth_date')
             if birth_date:
-                from datetime import date
                 today = date.today()
                 age = today.year - birth_date.year
                 if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
@@ -102,7 +100,6 @@ class UserCreate(UserBase):
             
             if is_athlete and birth_date:
                 # Вычисляем возраст
-                from datetime import date
                 today = date.today()
                 age = today.year - birth_date.year
                 if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
@@ -115,30 +112,15 @@ class UserCreate(UserBase):
 
 class UserOut(UserBase):
     id: int
-    roles: List[UserRole] = []  # Все роли пользователя
+    roles: Optional[List[UserRole]] = []  # Делаем опциональным
     created_at: datetime
 
-    @classmethod
-    def model_validate(cls, obj, **kwargs):
-        # Если obj это SQLAlchemy объект, извлекаем роли
-        if hasattr(obj, 'user_roles'):
-            roles = [ur.role for ur in obj.user_roles]
-            # Создаем dict с данными
-            data = {
-                'id': obj.id,
-                'iin': obj.iin,
-                'full_name': obj.full_name,
-                'email': obj.email,
-                'phone': obj.phone,
-                'birth_date': obj.birth_date,
-                'emergency_contact': obj.emergency_contact,
-                'primary_role': obj.primary_role,
-                'is_head_coach': obj.is_head_coach,
-                'created_at': obj.created_at,
-                'roles': roles
-            }
-            return super().model_validate(data, **kwargs)
-        return super().model_validate(obj, **kwargs)
+    model_config = ConfigDict(from_attributes=True)
+
+class UserSimple(UserBase):
+    """Упрощенная схема пользователя без ролей для избежания lazy loading"""
+    id: int
+    created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

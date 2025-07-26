@@ -33,7 +33,7 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    user = await crud.get_user_by_iin(db, iin)
+    user = await crud.get_user_by_iin_for_login(db, iin)
     if user is None:
         raise credentials_exception
     return user

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
+from datetime import date
 from app.deps import get_db, get_current_user
 from app.users.models import User, UserRole
 from app.bookings import schemas, crud
@@ -14,6 +15,42 @@ async def create_booking(
     current_user: User = Depends(get_current_user)
 ):
     """Создать бронирование (родители для детей или взрослые спортсмены для себя)"""
+    
+    # Получить информацию о занятии для проверки возрастных ограничений
+    from app.classes import crud as class_crud
+    class_obj = await class_crud.get_class(db, booking_data.class_id)
+    if not class_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Class not found"
+        )
+    
+    # Получить информацию о спортсмене для проверки возраста
+    from app.users import crud as user_crud
+    athlete = await user_crud.get_user(db, booking_data.athlete_id)
+    if not athlete:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Athlete not found"
+        )
+    
+    # Проверить возраст спортсмена относительно возрастных ограничений занятия
+    today = date.today()
+    athlete_age = today.year - athlete.birth_date.year
+    if today.month < athlete.birth_date.month or (today.month == athlete.birth_date.month and today.day < athlete.birth_date.day):
+        athlete_age -= 1
+    
+    if class_obj.age_group_min and athlete_age < class_obj.age_group_min:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Athlete is too young for this class (min age: {class_obj.age_group_min})"
+        )
+    
+    if class_obj.age_group_max and athlete_age > class_obj.age_group_max:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Athlete is too old for this class (max age: {class_obj.age_group_max})"
+        )
     
     # Проверить роли пользователя
     user_roles = [ur.role for ur in current_user.user_roles]
@@ -34,7 +71,6 @@ async def create_booking(
             )
         
         # Проверить возраст спортсмена
-        from datetime import date
         today = date.today()
         athlete_age = today.year - current_user.birth_date.year
         if today.month < current_user.birth_date.month or (today.month == current_user.birth_date.month and today.day < current_user.birth_date.day):

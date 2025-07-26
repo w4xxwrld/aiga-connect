@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
+from datetime import date
 
 from app.users import models, schemas
 from app.core.security import get_password_hash, verify_password
@@ -80,7 +81,6 @@ async def check_minor_athlete_has_parent(db: AsyncSession, athlete_id: int) -> b
         return True  # Не спортсмен, проверка не нужна
     
     # Вычисляем возраст
-    from datetime import date
     today = date.today()
     age = today.year - athlete.birth_date.year
     if today.month < athlete.birth_date.month or (today.month == athlete.birth_date.month and today.day < athlete.birth_date.day):
@@ -123,7 +123,17 @@ async def create_parent_athlete_relationship(
     db.add(db_relationship)
     await db.commit()
     await db.refresh(db_relationship)
-    return db_relationship
+    
+    # Загрузить связанные объекты
+    result = await db.execute(
+        select(models.ParentAthleteRelationship)
+        .where(models.ParentAthleteRelationship.id == db_relationship.id)
+        .options(
+            selectinload(models.ParentAthleteRelationship.parent),
+            selectinload(models.ParentAthleteRelationship.athlete)
+        )
+    )
+    return result.scalar_one()
 
 
 async def get_parent_athlete_relationship(
@@ -150,7 +160,6 @@ async def add_role_to_user(db: AsyncSession, user_id: int, role: schemas.UserRol
         raise ValueError("User not found")
     
     # Вычислить возраст пользователя
-    from datetime import date
     today = date.today()
     user_age = today.year - user.birth_date.year
     if today.month < user.birth_date.month or (today.month == user.birth_date.month and today.day < user.birth_date.day):
@@ -259,6 +268,7 @@ async def get_athletes_by_parent(db: AsyncSession, parent_id: int) -> List[model
         select(models.User)
         .join(models.ParentAthleteRelationship, models.User.id == models.ParentAthleteRelationship.athlete_id)
         .where(models.ParentAthleteRelationship.parent_id == parent_id)
+        .options(selectinload(models.User.user_roles))
     )
     return result.scalars().all()
 
@@ -269,5 +279,6 @@ async def get_parents_by_athlete(db: AsyncSession, athlete_id: int) -> List[mode
         select(models.User)
         .join(models.ParentAthleteRelationship, models.User.id == models.ParentAthleteRelationship.parent_id)
         .where(models.ParentAthleteRelationship.athlete_id == athlete_id)
+        .options(selectinload(models.User.user_roles))
     )
     return result.scalars().all()

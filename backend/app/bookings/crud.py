@@ -5,6 +5,7 @@ from typing import List, Optional
 from datetime import datetime
 from app.bookings.models import Booking
 from app.bookings.schemas import BookingCreate, BookingUpdate
+from app.classes.models import Class
 
 async def create_booking(db: AsyncSession, booking_data: BookingCreate, booked_by_parent_id: Optional[int]) -> Booking:
     """Создать новое бронирование"""
@@ -60,8 +61,8 @@ async def get_bookings_by_coach(db: AsyncSession, coach_id: int) -> List[Booking
     """Получить бронирования для занятий тренера"""
     result = await db.execute(
         select(Booking)
-        .join(Booking.class_obj)
-        .where(Booking.class_obj.has(coach_id=coach_id))
+        .join(Class, Booking.class_id == Class.id)
+        .where(Class.coach_id == coach_id)
         .options(
             selectinload(Booking.athlete),
             selectinload(Booking.booked_by_parent),
