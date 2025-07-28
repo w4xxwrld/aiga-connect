@@ -1,11 +1,12 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { getBackendUrl, BACKEND_CONFIG } from '../config/backend';
+import { getBackendUrl } from '../config/backend';
+import { API_TIMEOUTS } from '../utils/constants';
 
 // Create axios instance
 const api = axios.create({
   baseURL: getBackendUrl(),
-  timeout: BACKEND_CONFIG.TIMEOUT,
+  timeout: API_TIMEOUTS.REQUEST,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -29,19 +30,48 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle auth errors
+// Response interceptor to handle auth errors and token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid, clear it
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
       try {
-        await SecureStore.deleteItemAsync('authToken');
-        await SecureStore.deleteItemAsync('userData');
-      } catch (clearError) {
-        console.error('Error clearing auth data:', clearError);
+        // Try to refresh the token directly without importing authService
+        const refresh_token = await SecureStore.getItemAsync('refreshToken');
+        if (!refresh_token) {
+          throw new Error('No refresh token available');
+        }
+
+        const refreshResponse = await axios.post(`${getBackendUrl()}/users/refresh`, { 
+          refresh_token 
+        });
+        
+        const { access_token, refresh_token: new_refresh_token } = refreshResponse.data;
+        
+        // Store new tokens
+        await Promise.all([
+          SecureStore.setItemAsync('authToken', access_token),
+          SecureStore.setItemAsync('refreshToken', new_refresh_token),
+        ]);
+        
+        // Retry the original request with new token
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails, clear tokens
+        console.error('Token refresh failed:', refreshError);
+        await Promise.all([
+          SecureStore.deleteItemAsync('authToken'),
+          SecureStore.deleteItemAsync('refreshToken'),
+          SecureStore.deleteItemAsync('userData'),
+        ]);
       }
     }
+
     return Promise.reject(error);
   }
 );

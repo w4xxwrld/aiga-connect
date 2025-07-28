@@ -1,63 +1,54 @@
-// Backend configuration
-export const BACKEND_CONFIG = {
-  // Base URL for the backend API
-  BASE_URL: 'http://localhost:8000',
+// Backend API configuration
+export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+
+// API endpoints
+export const API_ENDPOINTS = {
+  // Auth
+  LOGIN: '/users/login',
+  REGISTER: '/users/',
+  REFRESH_TOKEN: '/users/refresh',
   
-  // API endpoints
-  ENDPOINTS: {
-    // Authentication
-    LOGIN: '/users/login',
-    REGISTER: '/users/',
-    
-    // User management
-    USERS: '/users/',
-    USER_PROFILE: '/users/profile',
-    
-    // Sessions (training sessions)
-    SESSIONS: '/sessions/',
-    SESSION_BOOKINGS: '/sessions/bookings',
-    
-    // Progress tracking
-    PROGRESS: '/progress/',
-    ACHIEVEMENTS: '/progress/achievements/',
-    TOURNAMENTS: '/progress/tournaments/',
-    TOURNAMENT_REGISTRATIONS: '/progress/tournaments/registrations',
-    
-    // Community
-    CHAT_MESSAGES: '/community/chat/messages/',
-    FORUM_POSTS: '/community/forum/posts/',
-    FORUM_REPLIES: '/community/forum/replies/',
-    NOTIFICATIONS: '/community/notifications/',
-    COMMUNITY_STATS: '/community/stats',
-    
-    // Merchandise
-    PRODUCTS: '/merchandise/products/',
-    ORDERS: '/merchandise/orders/',
-    PRODUCT_CATEGORIES: '/merchandise/categories',
-    STORE_STATS: '/merchandise/stats',
-    USER_STORE_STATS: '/merchandise/user-stats',
-    SEARCH_PRODUCTS: '/merchandise/search',
-  },
+  // Users
+  USERS: '/users/',
+  USER_PROFILE: '/users/me',
+  MY_ATHLETES: '/users/my-athletes',
+  MY_PARENTS: '/users/my-parents',
+  ADD_ROLE: '/users/add-role',
+  CREATE_HEAD_COACH: '/users/create-head-coach',
+  MAKE_HEAD_COACH: '/users/make-head-coach',
+  HEAD_COACH: '/users/head-coach',
+  PARENT_ATHLETE_RELATIONSHIP: '/users/relationships',
   
-  // Request timeout in milliseconds
-  TIMEOUT: 10000,
+  // Classes
+  CLASSES: '/classes/',
+  CLASS_DETAIL: '/classes/{id}',
+  CREATE_CLASS: '/classes/',
+  UPDATE_CLASS: '/classes/{id}',
   
-  // Retry configuration
-  RETRY: {
-    MAX_ATTEMPTS: 3,
-    DELAY: 1000,
-  },
+  // Bookings
+  BOOKINGS: '/bookings/',
+  MY_BOOKINGS: '/bookings/my-bookings',
+  BOOKING_DETAIL: '/bookings/{id}',
+  CREATE_BOOKING: '/bookings/',
+  CANCEL_BOOKING: '/bookings/{id}/cancel',
 };
 
-// Environment-specific configurations
-export const getBackendUrl = () => {
-  // In development, use localhost
-  if (__DEV__) {
-    return BACKEND_CONFIG.BASE_URL;
+// Helper function to get full URL for an endpoint
+export const getBackendUrl = (): string => {
+  return BACKEND_URL;
+};
+
+// Helper function to get full URL for an endpoint with path parameters
+export const getEndpointUrl = (endpoint: string, params?: Record<string, string | number>): string => {
+  let url = `${BACKEND_URL}${endpoint}`;
+  
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      url = url.replace(`{${key}}`, String(value));
+    });
   }
   
-  // In production, use your actual backend URL
-  return 'https://your-backend-url.com';
+  return url;
 };
 
 // API response types

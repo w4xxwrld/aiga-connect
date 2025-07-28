@@ -10,6 +10,7 @@ import {
   Image,
   Dimensions,
   Animated,
+  StatusBar,
 } from 'react-native';
 import {
   TextInput,
@@ -17,9 +18,11 @@ import {
   Title,
   Paragraph,
   SegmentedButtons,
+  HelperText,
 } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 import authService, { LoginData, RegisterData } from '../services/auth';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type AuthMode = 'login' | 'register';
 
@@ -37,6 +40,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   // Animation values
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const logoScaleAnim = useRef(new Animated.Value(1)).current;
   
   // Form fields
   const [iin, setIin] = useState('');
@@ -44,6 +48,24 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'parent' | 'athlete' | 'coach'>('parent');
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    // Initial animation
+    Animated.parallel([
+      Animated.timing(logoScaleAnim, {
+        toValue: 1.1,
+        duration: 2000,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      Animated.timing(logoScaleAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, []);
 
   const animateModeChange = (newMode: AuthMode) => {
     // Fade out current content
@@ -99,26 +121,39 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     try {
       const loginData: LoginData = { iin, password };
       const response = await authService.login(loginData);
+      console.log('Login response:', response);
       
-      console.log('Login successful, response:', response);
-      
-      // Get current user data from backend
+      // Get current user data
       const userData = await authService.getCurrentUser();
+      console.log('Current user data:', userData);
       
-      if (!userData) {
+      if (userData) {
+        // Set user data which will trigger navigation
+        setUser(userData);
+        console.log('Login successful, user data set:', userData);
+        
+        // Manual navigation to MainTabs
+        console.log('Navigating to MainTabs screen...');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' as never }],
+        });
+      } else {
         throw new Error('Failed to get user data after login');
       }
-      
-      console.log('Setting user data:', userData);
-      setUser(userData);
-      
-      // Navigate to main app
-      console.log('Navigating to MainTabs');
-      navigation.replace('MainTabs');
-      
     } catch (error: any) {
-      console.error('Login error:', error);
-      Alert.alert('Ошибка входа', error.message || 'Неверный ИИН или пароль');
+      console.error('Login error details:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      let errorMessage = 'Не удалось войти в систему';
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Ошибка входа', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -140,39 +175,103 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailRegex.test(email)) {
+      Alert.alert('Ошибка', 'Пожалуйста, введите корректный email адрес');
+      return;
+    }
+
+    // Require email for registration
+    if (!email) {
+      Alert.alert('Ошибка', 'Email обязателен для регистрации');
+      return;
+    }
+
     setLoading(true);
     try {
+      // Calculate a reasonable birth date (18 years ago for adults)
+      const today = new Date();
+      const birthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+      
       const registerData: RegisterData = {
         iin,
         full_name: fullName,
-        email: email || undefined,
+        email: email,
         password,
-        role,
+        primary_role: role,
+        birth_date: birthDate.toISOString().split('T')[0],
+        phone: undefined,
+        emergency_contact: undefined,
+        additional_roles: [],
+        is_head_coach: false,
       };
       
-      console.log('Registering user with data:', registerData);
-      const userData = await authService.register(registerData);
-      console.log('Registration successful, user data:', userData);
+      console.log('Sending registration data:', registerData);
       
-      // Store the user data from registration response
-      await authService.storeUserData(userData);
+      const userData = await authService.register(registerData);
+      console.log('Registration successful:', userData);
       
       // After successful registration, automatically log in the user
-      const loginData: LoginData = { iin, password };
-      console.log('Auto-login after registration');
-      await authService.login(loginData);
-      
-      // Set user data and trigger navigation
-      console.log('Setting user data after registration:', userData);
-      setUser(userData);
-      
-      // Navigate to main app
-      console.log('Navigating to MainTabs after registration');
-      navigation.replace('MainTabs');
+      try {
+        const loginData: LoginData = { iin, password };
+        const authResponse = await authService.login(loginData);
+        console.log('Auto-login after registration successful:', authResponse);
+        
+        // Get current user data
+        const currentUserData = await authService.getCurrentUser();
+        if (currentUserData) {
+          // Set user data which will trigger navigation
+          setUser(currentUserData);
+          console.log('User authenticated after registration:', currentUserData);
+          
+          // Manual navigation to MainTabs
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' as never }],
+          });
+        } else {
+          throw new Error('Failed to get user data after auto-login');
+        }
+      } catch (loginError: any) {
+        console.error('Auto-login after registration failed:', loginError);
+        // If auto-login fails, still show success but ask user to login manually
+        Alert.alert(
+          'Регистрация завершена', 
+          'Регистрация прошла успешно! Пожалуйста, войдите в систему.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Switch to login mode
+                setMode('login');
+                setIin('');
+                setPassword('');
+                setFullName('');
+                setEmail('');
+                setRole('parent');
+              }
+            }
+          ]
+        );
+      }
       
     } catch (error: any) {
-      console.error('Registration error:', error);
-      Alert.alert('Ошибка регистрации', error.message || 'Ошибка при создании аккаунта');
+      console.error('Registration error details:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      let errorMessage = 'Не удалось зарегистрироваться';
+      
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Ошибка регистрации', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -186,18 +285,33 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     }
   };
 
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'parent': return 'account-child';
+      case 'athlete': return 'account-group';
+      case 'coach': return 'account-tie';
+      default: return 'account';
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
+      
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Image 
-            source={require('../../assets/image.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Animated.View style={{ transform: [{ scale: logoScaleAnim }] }}>
+            <Image 
+              source={require('../../assets/image.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </Animated.View>
+          <Text style={styles.headerTitle}>AIGA Connect</Text>
+          <Text style={styles.headerSubtitle}>Войдите в свою учетную запись</Text>
         </View>
 
         <View style={styles.formContainer}>
@@ -205,8 +319,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             value={mode}
             onValueChange={handleModeChange}
             buttons={[
-              { value: 'login', label: 'Вход' },
-              { value: 'register', label: 'Регистрация' },
+              { value: 'login', label: 'Вход', icon: 'login' },
+              { value: 'register', label: 'Регистрация', icon: 'account-plus' },
             ]}
             style={styles.segmentedButtons}
             theme={{
@@ -235,14 +349,16 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               keyboardType="numeric"
               maxLength={12}
               style={styles.input}
-              theme={{ 
-                colors: { 
-                  primary: '#E74C3C',
+              outlineColor="#fff"
+              activeOutlineColor="#E74C3C"
+              textColor="#fff"
+              placeholderTextColor="#fff"
+              theme={{
+                colors: {
                   onSurfaceVariant: '#fff',
-                  placeholder: '#fff',
-                  onSurface: '#fff'
-                } 
+                }
               }}
+              left={<TextInput.Icon icon="card-account-details" />}
             />
 
             {mode === 'register' && (
@@ -253,14 +369,16 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                   onChangeText={setFullName}
                   mode="outlined"
                   style={styles.input}
-                  theme={{ 
-                    colors: { 
-                      primary: '#E74C3C',
+                  outlineColor="#fff"
+                  activeOutlineColor="#E74C3C"
+                  textColor="#fff"
+                  placeholderTextColor="#fff"
+                  theme={{
+                    colors: {
                       onSurfaceVariant: '#fff',
-                      placeholder: '#fff',
-                      onSurface: '#fff'
-                    } 
+                    }
                   }}
+                  left={<TextInput.Icon icon="account" />}
                 />
 
                 <TextInput
@@ -271,25 +389,27 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   style={styles.input}
-                  theme={{ 
-                    colors: { 
-                      primary: '#E74C3C',
+                  outlineColor="#fff"
+                  activeOutlineColor="#E74C3C"
+                  textColor="#fff"
+                  placeholderTextColor="#fff"
+                  theme={{
+                    colors: {
                       onSurfaceVariant: '#fff',
-                      placeholder: '#fff',
-                      onSurface: '#fff'
-                    } 
+                    }
                   }}
+                  left={<TextInput.Icon icon="email" />}
                 />
 
                 <View style={styles.roleContainer}>
-                  <Text style={styles.roleLabel}>Роль:</Text>
+                  <Text style={styles.roleLabel}>Выберите роль:</Text>
                   <SegmentedButtons
                     value={role}
                     onValueChange={(value) => setRole(value as any)}
                     buttons={[
-                      { value: 'parent', label: 'Родитель' },
-                      { value: 'athlete', label: 'Спортсмен' },
-                      { value: 'coach', label: 'Тренер' },
+                      { value: 'parent', label: 'Родитель', icon: 'account-child' },
+                      { value: 'athlete', label: 'Спортсмен', icon: 'account-group' },
+                      { value: 'coach', label: 'Тренер', icon: 'account-tie' },
                     ]}
                     style={styles.roleButtons}
                     theme={{
@@ -309,16 +429,19 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               value={password}
               onChangeText={setPassword}
               mode="outlined"
-              secureTextEntry
+              secureTextEntry={!showPassword}
               style={styles.input}
-              theme={{ 
-                colors: { 
-                  primary: '#E74C3C',
+              outlineColor="#fff"
+              activeOutlineColor="#E74C3C"
+              textColor="#fff"
+              placeholderTextColor="#fff"
+              theme={{
+                colors: {
                   onSurfaceVariant: '#fff',
-                  placeholder: '#fff',
-                  onSurface: '#fff'
-                } 
+                }
               }}
+              left={<TextInput.Icon icon="lock" />}
+              right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
             />
 
             <Button
@@ -328,6 +451,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               disabled={loading}
               style={styles.button}
               buttonColor="#E74C3C"
+              icon={mode === 'login' ? 'login' : 'account-plus'}
             >
               {mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
             </Button>
@@ -362,8 +486,20 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logo: {
-    width: width * 0.9,
-    height: height * 0.225,
+    width: width * 0.4,
+    height: height * 0.15,
+    marginBottom: 15,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#B0BEC5',
+    textAlign: 'center',
   },
   formContainer: {
     marginBottom: 20,
@@ -392,6 +528,7 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
     paddingVertical: 8,
+    borderRadius: 8,
   },
   footer: {
     alignItems: 'center',

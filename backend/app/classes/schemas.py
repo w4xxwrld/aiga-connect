@@ -49,10 +49,31 @@ class ClassUpdate(BaseModel):
     is_trial_available: Optional[bool] = None
     status: Optional[ClassStatus] = None
 
+class CoachOut(BaseModel):
+    id: int
+    full_name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 class ClassOut(ClassBase):
     id: int
     status: ClassStatus
     created_at: datetime
     updated_at: datetime
+    coach: Optional[CoachOut] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ClassParticipantOut(BaseModel):
+    id: int
+    full_name: str
+    birth_date: datetime
+    booking_type: str
+    booking_status: str
+    class_date: datetime
+    is_paid: bool
+    payment_amount: Optional[int] = None
+    notes: Optional[str] = None
+    booked_by_parent: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

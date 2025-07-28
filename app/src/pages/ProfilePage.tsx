@@ -1,263 +1,351 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  StatusBar,
   Alert,
 } from 'react-native';
 import {
   Card,
   Title,
-  Paragraph,
   Button,
+  ActivityIndicator,
   Avatar,
-  List,
   Divider,
-  Chip,
 } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
+import childrenService, { Child } from '../services/children';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-interface ProfilePageProps {
-  navigation: any;
-}
+const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
+  const { user, userRole, logout } = useAppContext();
+  const [loading, setLoading] = useState(false);
+  const [linkedChildren, setLinkedChildren] = useState<Child[]>([]);
+  const [loadingChildren, setLoadingChildren] = useState(false);
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ navigation }) => {
-  const { user, userRole, logout, linkedChildren } = useAppContext();
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
-      'Выход',
-      'Вы уверены, что хотите выйти из аккаунта?',
+      'Выйти из аккаунта',
+      'Вы уверены, что хотите выйти?',
       [
-        {
-          text: 'Отмена',
-          style: 'cancel',
-        },
+        { text: 'Отмена', style: 'cancel' },
         {
           text: 'Выйти',
           style: 'destructive',
-          onPress: () => logout(navigation),
-        },
+          onPress: async () => {
+            setLoading(true);
+            try {
+              await logout();
+            } catch (error) {
+              Alert.alert('Ошибка', 'Не удалось выйти из аккаунта');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
       ]
     );
   };
 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
-      case 'parent':
-        return 'Родитель';
-      case 'athlete':
-        return 'Спортсмен';
-      case 'coach':
-        return 'Тренер';
-      default:
-        return 'Пользователь';
+      case 'parent': return 'Родитель';
+      case 'athlete': return 'Спортсмен';
+      case 'coach': return 'Тренер';
+      default: return role;
     }
   };
 
-  const getRoleSpecificStats = () => {
-    switch (userRole) {
-      case 'parent':
-        return [
-          { label: 'Дети в академии', value: '2', icon: 'account-child' },
-          { label: 'Тренировок в месяц', value: '24', icon: 'calendar' },
-          { label: 'Достижений', value: '8', icon: 'trophy' },
-        ];
-      case 'athlete':
-        return [
-          { label: 'Тренировок в месяц', value: '12', icon: 'calendar' },
-          { label: 'Текущий пояс', value: 'Синий', icon: 'trophy' },
-          { label: 'Соревнований', value: '5', icon: 'medal' },
-        ];
-      case 'coach':
-        return [
-          { label: 'Учеников', value: '15', icon: 'account-group' },
-          { label: 'Групп', value: '3', icon: 'account-multiple' },
-          { label: 'Тренировок в неделю', value: '12', icon: 'calendar' },
-        ];
-      default:
-        return [];
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'parent': return 'account-child';
+      case 'athlete': return 'account-group';
+      case 'coach': return 'account-tie';
+      default: return 'account';
     }
   };
+
+  const calculateAge = (birthDate: string) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const loadLinkedChildren = async () => {
+    if (userRole !== 'parent') return;
+    
+    try {
+      setLoadingChildren(true);
+      const children = await childrenService.getMyChildren();
+      setLinkedChildren(children);
+    } catch (error: any) {
+      console.error('Error loading linked children:', error);
+    } finally {
+      setLoadingChildren(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLinkedChildren();
+  }, [userRole]);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#E74C3C" />
+        <Text style={styles.loadingText}>Выход из аккаунта...</Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Profile Header */}
-        <Card style={styles.profileCard}>
-          <Card.Content>
-            <View style={styles.profileHeader}>
-              <Avatar.Text 
-                size={80} 
-                label={user?.full_name?.charAt(0) || 'U'} 
-                style={styles.avatar}
-              />
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>
-                  {user?.full_name || 'Пользователь'}
-                </Text>
-                <Text style={styles.profileEmail}>
-                  {user?.email || 'Email не указан'}
-                </Text>
-                <Chip 
-                  mode="outlined" 
-                  style={styles.roleChip}
-                  textStyle={styles.roleChipText}
-                >
-                  {getRoleDisplayName(userRole || '')}
-                </Chip>
+        <Card style={styles.profileHeaderCard}>
+          <Card.Content style={styles.profileHeaderContent}>
+            <Avatar.Text 
+              size={80} 
+              label={user?.full_name?.charAt(0) || 'U'} 
+              style={styles.avatar}
+              color="#fff"
+            />
+            <View style={styles.profileInfo}>
+              <Title style={styles.userName}>{user?.full_name || 'Пользователь'}</Title>
+              <View style={styles.roleContainer}>
+                <MaterialCommunityIcons 
+                  name={getRoleIcon(userRole || '')} 
+                  size={20} 
+                  color="#E74C3C" 
+                />
+                <Text style={styles.roleText}>{getRoleDisplayName(userRole || '')}</Text>
               </View>
             </View>
           </Card.Content>
         </Card>
 
-        {/* Linked Children Section (Parent Only) */}
-        {userRole === 'parent' && linkedChildren.length > 0 && (
-          <Card style={styles.card}>
+        {/* Personal Information */}
+        <Card style={styles.sectionCard}>
+          <Card.Content>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons name="account-details" size={24} color="#E74C3C" />
+              <Title style={styles.sectionTitle}>Личная информация</Title>
+            </View>
+            
+            <Divider style={styles.divider} />
+            
+            <View style={styles.infoContainer}>
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="email" size={20} color="#E74C3C" />
+                <Text style={styles.infoLabel}>Email:</Text>
+                <Text style={styles.infoValue}>{user?.email || 'Не указан'}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="phone" size={20} color="#E74C3C" />
+                <Text style={styles.infoLabel}>Телефон:</Text>
+                <Text style={styles.infoValue}>{user?.phone || 'Не указан'}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="calendar" size={20} color="#E74C3C" />
+                <Text style={styles.infoLabel}>Дата рождения:</Text>
+                <Text style={styles.infoValue}>
+                  {user?.birth_date ? formatDate(user.birth_date) : 'Не указана'}
+                </Text>
+              </View>
+
+              {user?.birth_date && (
+                <View style={styles.infoRow}>
+                  <MaterialCommunityIcons name="cake" size={20} color="#E74C3C" />
+                  <Text style={styles.infoLabel}>Возраст:</Text>
+                  <Text style={styles.infoValue}>{calculateAge(user.birth_date)} лет</Text>
+                </View>
+              )}
+
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="card-account-details" size={20} color="#E74C3C" />
+                <Text style={styles.infoLabel}>ИИН:</Text>
+                <Text style={styles.infoValue}>{user?.iin || 'Не указан'}</Text>
+              </View>
+
+              {user?.emergency_contact && (
+                <View style={styles.infoRow}>
+                  <MaterialCommunityIcons name="phone-alert" size={20} color="#E74C3C" />
+                  <Text style={styles.infoLabel}>Экстренный контакт:</Text>
+                  <Text style={styles.infoValue}>{user.emergency_contact}</Text>
+                </View>
+              )}
+            </View>
+          </Card.Content>
+        </Card>
+
+        {/* Account Information */}
+        <Card style={styles.sectionCard}>
+          <Card.Content>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons name="account-cog" size={24} color="#E74C3C" />
+              <Title style={styles.sectionTitle}>Информация об аккаунте</Title>
+            </View>
+            
+            <Divider style={styles.divider} />
+            
+            <View style={styles.infoContainer}>
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="account" size={20} color="#E74C3C" />
+                <Text style={styles.infoLabel}>ID пользователя:</Text>
+                <Text style={styles.infoValue}>{user?.id || 'Не указан'}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="calendar-clock" size={20} color="#E74C3C" />
+                <Text style={styles.infoLabel}>Дата регистрации:</Text>
+                <Text style={styles.infoValue}>
+                  {user?.created_at ? formatDate(user.created_at) : 'Не указана'}
+                </Text>
+              </View>
+
+              {user?.is_head_coach && (
+                <View style={styles.infoRow}>
+                  <MaterialCommunityIcons name="crown" size={20} color="#E74C3C" />
+                  <Text style={styles.infoLabel}>Статус:</Text>
+                  <Text style={styles.infoValue}>Главный тренер</Text>
+                </View>
+              )}
+            </View>
+          </Card.Content>
+        </Card>
+
+        {/* Linked Children Section (for parents) */}
+        {userRole === 'parent' && (
+          <Card style={styles.sectionCard}>
             <Card.Content>
-              <Title style={styles.cardTitle}>Мои дети</Title>
-              {linkedChildren.map((relationship, index) => (
-                <View key={relationship.id} style={styles.childItem}>
-                  <View style={styles.childInfo}>
-                    <Avatar.Text 
-                      size={50} 
-                      label={(relationship.child.full_name || 'C').charAt(0)} 
-                      style={styles.childAvatar}
-                    />
-                    <View style={styles.childDetails}>
-                      <Text style={styles.childName}>
-                        {relationship.child.full_name || `Ребенок ${relationship.child.iin}`}
-                      </Text>
-                      <Text style={styles.childIin}>ИИН: {relationship.child.iin}</Text>
-                      <Text style={styles.childRole}>Спортсмен</Text>
-                    </View>
-                  </View>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons name="account-child" size={24} color="#E74C3C" />
+                <Title style={styles.sectionTitle}>Мои дети</Title>
+              </View>
+              
+              <Divider style={styles.divider} />
+              
+              {loadingChildren ? (
+                <ActivityIndicator size="small" color="#E74C3C" />
+              ) : linkedChildren.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>У вас пока нет связанных детей</Text>
                   <Button
                     mode="outlined"
-                    onPress={() => Alert.alert('Информация', 'Просмотр профиля ребенка')}
-                    style={styles.viewChildButton}
+                    onPress={() => navigation?.navigate('LinkChild')}
+                    style={styles.emptyStateButton}
                     textColor="#E74C3C"
+                    icon="plus"
                   >
-                    Профиль
+                    Связать ребенка
                   </Button>
                 </View>
-              ))}
+              ) : (
+                <View style={styles.childrenContainer}>
+                  {linkedChildren.map((child) => (
+                    <View key={child.id} style={styles.childItem}>
+                      <Avatar.Text 
+                        size={40} 
+                        label={child.full_name.charAt(0)} 
+                        style={styles.childAvatar}
+                        color="#fff"
+                      />
+                      <View style={styles.childInfo}>
+                        <Text style={styles.childName}>{child.full_name}</Text>
+                        <Text style={styles.childAge}>{calculateAge(child.birth_date)} лет</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </Card.Content>
           </Card>
         )}
 
-        {/* Statistics */}
-        <Card style={styles.card}>
+        {/* Actions */}
+        <Card style={styles.sectionCard}>
           <Card.Content>
-            <Title style={styles.cardTitle}>Статистика</Title>
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <View style={styles.statIcon}>
-                  <MaterialCommunityIcons name="calendar-check" size={24} color="#E74C3C" />
-                </View>
-                <View style={styles.statContent}>
-                  <Text style={styles.statValue}>12</Text>
-                  <Text style={styles.statLabel}>Тренировок</Text>
-                </View>
-              </View>
-              <View style={styles.statItem}>
-                <View style={styles.statIcon}>
-                  <MaterialCommunityIcons name="trophy" size={24} color="#E74C3C" />
-                </View>
-                <View style={styles.statContent}>
-                  <Text style={styles.statValue}>3</Text>
-                  <Text style={styles.statLabel}>Достижения</Text>
-                </View>
-              </View>
-              <View style={styles.statItem}>
-                <View style={styles.statIcon}>
-                  <MaterialCommunityIcons name="account-group" size={24} color="#E74C3C" />
-                </View>
-                <View style={styles.statContent}>
-                  <Text style={styles.statValue}>{userRole === 'parent' ? linkedChildren.length : '5'}</Text>
-                  <Text style={styles.statLabel}>{userRole === 'parent' ? 'Дети' : 'Группы'}</Text>
-                </View>
-              </View>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons name="cog" size={24} color="#E74C3C" />
+              <Title style={styles.sectionTitle}>Действия</Title>
+            </View>
+            
+            <Divider style={styles.divider} />
+            
+            <View style={styles.actionsContainer}>
+              <Button
+                mode="outlined"
+                onPress={() => navigation?.navigate('EditProfile')}
+                style={styles.actionButton}
+                textColor="#E74C3C"
+                icon="pencil"
+              >
+                Редактировать профиль
+              </Button>
+
+              {userRole === 'parent' && (
+                <Button
+                  mode="outlined"
+                  onPress={() => navigation?.navigate('LinkChild')}
+                  style={styles.actionButton}
+                  textColor="#E74C3C"
+                  icon="account-child"
+                >
+                  Связать ребенка
+                </Button>
+              )}
+
+              <Button
+                mode="outlined"
+                onPress={() => {
+                  // TODO: Implement change password functionality
+                  Alert.alert('Информация', 'Функция смены пароля будет добавлена позже');
+                }}
+                style={styles.actionButton}
+                textColor="#E74C3C"
+                icon="lock"
+              >
+                Сменить пароль
+              </Button>
+
+              <Button
+                mode="contained"
+                onPress={handleLogout}
+                style={[styles.actionButton, styles.logoutButton]}
+                buttonColor="#F44336"
+                icon="logout"
+              >
+                Выйти из аккаунта
+              </Button>
             </View>
           </Card.Content>
         </Card>
-
-        {/* Profile Actions */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title style={styles.cardTitle}>Настройки профиля</Title>
-            <List.Item
-              title="Редактировать профиль"
-              description="Изменить личную информацию"
-              left={(props) => <List.Icon {...props} icon="account-edit" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => Alert.alert('Информация', 'Функция в разработке')}
-              titleStyle={styles.listTitle}
-              descriptionStyle={styles.listDescription}
-            />
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Изменить пароль"
-              description="Обновить пароль аккаунта"
-              left={(props) => <List.Icon {...props} icon="lock" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => Alert.alert('Информация', 'Функция в разработке')}
-              titleStyle={styles.listTitle}
-              descriptionStyle={styles.listDescription}
-            />
-            <Divider style={styles.divider} />
-            <List.Item
-              title="Уведомления"
-              description="Настройки уведомлений"
-              left={(props) => <List.Icon {...props} icon="bell" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => Alert.alert('Информация', 'Функция в разработке')}
-              titleStyle={styles.listTitle}
-              descriptionStyle={styles.listDescription}
-            />
-          </Card.Content>
-        </Card>
-
-        {/* Account Actions */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title style={styles.cardTitle}>Аккаунт</Title>
-            <List.Item
-              title="Помощь и поддержка"
-              description="Связаться с поддержкой"
-              left={(props) => <List.Icon {...props} icon="help-circle" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => Alert.alert('Информация', 'Функция в разработке')}
-              titleStyle={styles.listTitle}
-              descriptionStyle={styles.listDescription}
-            />
-            <Divider style={styles.divider} />
-            <List.Item
-              title="О приложении"
-              description="Версия и информация"
-              left={(props) => <List.Icon {...props} icon="information" />}
-              right={(props) => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => Alert.alert('О приложении', 'AIGA Connect v1.0.0\nTap. Train. Triumph.')}
-              titleStyle={styles.listTitle}
-              descriptionStyle={styles.listDescription}
-            />
-          </Card.Content>
-        </Card>
-
-        {/* Logout Button */}
-        <Button
-          mode="outlined"
-          onPress={handleLogout}
-          style={styles.logoutButton}
-          textColor="#E74C3C"
-          buttonColor="#1B263B"
-        >
-          Выйти из аккаунта
-        </Button>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -266,135 +354,144 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0D1B2A',
   },
-  content: {
-    padding: 16,
-  },
-  profileCard: {
-    marginBottom: 16,
-    backgroundColor: '#1B263B',
-  },
-  profileHeader: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#0D1B2A',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#fff',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  profileHeaderCard: {
+    backgroundColor: '#1B263B',
+    marginBottom: 16,
+    borderRadius: 12,
+  },
+  profileHeaderContent: {
+    alignItems: 'center',
+    paddingVertical: 24,
   },
   avatar: {
     backgroundColor: '#E74C3C',
-    marginRight: 16,
+    marginBottom: 16,
   },
   profileInfo: {
-    flex: 1,
+    alignItems: 'center',
   },
-  profileName: {
+  userName: {
+    color: '#fff',
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#fff',
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: '#B0BEC5',
     marginBottom: 8,
   },
-  roleChip: {
-    alignSelf: 'flex-start',
-    borderColor: '#E74C3C',
-  },
-  roleChipText: {
-    fontSize: 12,
-    color: '#E74C3C',
-  },
-  card: {
-    marginBottom: 16,
-    backgroundColor: '#1B263B',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#fff',
-  },
-  statsContainer: {
+  roleContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statItem: {
-    flex: 1,
     alignItems: 'center',
-    padding: 12,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     backgroundColor: '#2C3E50',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
-  statContent: {
-    alignItems: 'center',
+  roleText: {
+    color: '#E74C3C',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 6,
   },
-  statValue: {
+  sectionCard: {
+    backgroundColor: '#1B263B',
+    marginBottom: 16,
+    borderRadius: 12,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#B0BEC5',
-    textAlign: 'center',
-  },
-  listTitle: {
-    color: '#fff',
-  },
-  listDescription: {
-    color: '#B0BEC5',
+    marginLeft: 12,
   },
   divider: {
     backgroundColor: '#2C3E50',
+    marginBottom: 16,
+  },
+  infoContainer: {
+    gap: 12,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoLabel: {
+    color: '#B0BEC5',
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 12,
+    minWidth: 140,
+  },
+  infoValue: {
+    color: '#fff',
+    fontSize: 16,
+    flex: 1,
+  },
+  actionsContainer: {
+    gap: 12,
+  },
+  actionButton: {
+    marginTop: 4,
   },
   logoutButton: {
     marginTop: 8,
-    borderColor: '#E74C3C',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  emptyStateText: {
+    color: '#B0BEC5',
+    fontSize: 16,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyStateButton: {
+    marginTop: 8,
+  },
+  childrenContainer: {
+    gap: 12,
   },
   childItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2C3E50',
-  },
-  childInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingVertical: 8,
   },
   childAvatar: {
-    backgroundColor: '#2C3E50',
-    marginRight: 10,
+    backgroundColor: '#E74C3C',
+    marginRight: 12,
   },
-  childDetails: {
+  childInfo: {
     flex: 1,
   },
   childName: {
-    fontSize: 16,
-    fontWeight: 'bold',
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
-  childIin: {
-    fontSize: 12,
+  childAge: {
     color: '#B0BEC5',
-    marginTop: 2,
-  },
-  childRole: {
-    fontSize: 12,
-    color: '#B0BEC5',
-    marginTop: 2,
-  },
-  viewChildButton: {
-    marginTop: 10,
-    borderColor: '#E74C3C',
+    fontSize: 14,
   },
 });
 

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.users.router import router as users_router
 from app.classes.router import router as classes_router  
 from app.bookings.router import router as bookings_router
+from app import models  # Import models to ensure they are registered
 
 app = FastAPI(
     title="AIGA Connect API",

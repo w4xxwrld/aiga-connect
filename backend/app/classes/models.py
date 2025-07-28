@@ -42,5 +42,5 @@ class Class(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    coach = relationship("User", foreign_keys=[coach_id])
+    coach = relationship("User", foreign_keys=[coach_id], back_populates="coached_classes")
     bookings = relationship("Booking", back_populates="class_obj")

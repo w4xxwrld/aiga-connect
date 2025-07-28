@@ -33,6 +33,7 @@ class User(Base):
     user_roles = relationship("UserRoleAssignment", back_populates="user", cascade="all, delete-orphan")
     parent_relationships = relationship("ParentAthleteRelationship", foreign_keys="ParentAthleteRelationship.parent_id", back_populates="parent")
     athlete_relationships = relationship("ParentAthleteRelationship", foreign_keys="ParentAthleteRelationship.athlete_id", back_populates="athlete")
+    coached_classes = relationship("Class", foreign_keys="Class.coach_id", back_populates="coach")
     
     def has_role(self, role: UserRole) -> bool:
         """Проверить, есть ли у пользователя указанная роль"""

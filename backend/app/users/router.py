@@ -167,6 +167,7 @@ async def get_current_user_info(
     current_user: User = Depends(get_current_user)
 ):
     """Получить информацию о текущем пользователе"""
+    print(f"DEBUG: User {current_user.id} ({current_user.full_name}) - is_head_coach: {current_user.is_head_coach}")
     return current_user
 
 @router.get("/my-athletes", response_model=List[schemas.UserSimple])
@@ -319,3 +320,26 @@ async def get_head_coach_info(db: AsyncSession = Depends(get_db)):
             detail="Head coach not found"
         )
     return head_coach
+
+@router.get("/by-iin/{iin}", response_model=schemas.UserSimple)
+async def get_user_by_iin(
+    iin: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Получить пользователя по ИИН (только для родителей)"""
+    if current_user.primary_role != UserRole.parent:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only parents can search for users by IIN"
+        )
+    
+    user = await crud.get_user_by_iin(db, iin)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found with this IIN"
+        )
+    
+    # Return only basic user info for security
+    return user

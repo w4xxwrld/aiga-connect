@@ -7,13 +7,14 @@ alwaysApply: true
 🚀 Sprint 1: Core Structure + Authentication
 
 Goal: Basic app setup with login, roles, and navigation
-
+DONT TOUCH THE BACKEND FOLDER
+YOU CAN ONLY READ BACKEND FILES
 📌 Features:
 	•	Welcome screen – ✅
 	•	Registration / Login – ✅
-	•	User roles (Parent, Athlete, Coach)
-	•	Child profile linking
-	•	Section navigation
+	•	User roles (Parent, Athlete, Coach) – ✅
+	•	Child profile linking - ✅
+	•	Section navigation – ✅
 	•	Firebase (or Supabase) integration – ✅
 
 ⸻
@@ -23,9 +24,9 @@ Goal: Basic app setup with login, roles, and navigation
 Goal: Manage training sessions and bookings
 
 📌 Features:
-	•	“Schedule” screen
-	•	Book a training session
-	•	View training details
+	•	“Schedule” screen - ✅
+	•	Book a training session - ✅
+	•	View training details - ✅
 	•	Book a private session
 	•	Coach can create a training session
 
@@ -279,12 +280,6 @@ Backend
 	•	OR:
 	•	Node.js with Fastify
 	•	Prisma ORM + PostgreSQL
-
-Infra & Tools
-	•	Vercel (frontend hosting)
-	•	Railway / Render (backend or DB)
-	•	Figma for design
-	•	Notion or Trello for sprint tracking
 
 ⸻
 

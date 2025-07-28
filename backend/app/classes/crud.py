@@ -31,11 +31,22 @@ async def create_class(db: AsyncSession, class_data: ClassCreate) -> Class:
     db.add(db_class)
     await db.commit()
     await db.refresh(db_class)
-    return db_class
+    
+    # Load the created class with coach information
+    result = await db.execute(
+        select(Class)
+        .where(Class.id == db_class.id)
+        .options(selectinload(Class.coach))
+    )
+    return result.scalar_one()
 
 async def update_class(db: AsyncSession, class_id: int, class_update: ClassUpdate) -> Optional[Class]:
     """Обновить занятие"""
-    result = await db.execute(select(Class).where(Class.id == class_id))
+    result = await db.execute(
+        select(Class)
+        .where(Class.id == class_id)
+        .options(selectinload(Class.coach))
+    )
     db_class = result.scalar_one_or_none()
     
     if not db_class:
@@ -49,11 +60,14 @@ async def update_class(db: AsyncSession, class_id: int, class_update: ClassUpdat
     await db.refresh(db_class)
     return db_class
 
-async def get_classes_by_coach(db: AsyncSession, coach_id: int) -> List[Class]:
+async def get_classes_by_coach(db: AsyncSession, coach_id: int, skip: int = 0, limit: int = 100) -> List[Class]:
     """Получить занятия по тренеру"""
     result = await db.execute(
         select(Class)
         .where(Class.coach_id == coach_id)
+        .where(Class.status == "active")
+        .offset(skip)
+        .limit(limit)
         .options(selectinload(Class.coach))
     )
     return result.scalars().all()
@@ -67,3 +81,29 @@ async def get_classes_by_difficulty(db: AsyncSession, difficulty: str) -> List[C
         .options(selectinload(Class.coach))
     )
     return result.scalars().all()
+
+async def get_class_participants(db: AsyncSession, class_id: int):
+    """Получить список участников занятия"""
+    from app.bookings.models import Booking
+    from app.users.models import User
+    
+    result = await db.execute(
+        select(
+            Booking.id,
+            User.full_name,
+            User.birth_date,
+            Booking.booking_type,
+            Booking.status.label('booking_status'),
+            Booking.class_date,
+            Booking.is_paid,
+            Booking.payment_amount,
+            Booking.notes,
+            User.full_name.label('booked_by_parent')
+        )
+        .join(User, Booking.athlete_id == User.id)
+        .where(Booking.class_id == class_id)
+        .where(Booking.status.in_(['pending', 'confirmed']))
+        .order_by(Booking.class_date.desc())
+    )
+    
+    return result.all()

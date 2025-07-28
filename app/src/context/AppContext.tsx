@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authService, { User } from '../services/auth';
-import childrenService, { ParentChildRelationship } from '../services/children';
+import childrenService, { Child } from '../services/children';
 
 type UserRole = 'parent' | 'athlete' | 'coach';
 
@@ -11,15 +11,15 @@ interface AppContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  linkedChildren: ParentChildRelationship[];
+  linkedChildren: Child[];
   setHasSeenGreeting: (value: boolean) => void;
   setUserRole: (role: UserRole) => void;
   setUser: (user: User | null) => void;
   setIsAuthenticated: (value: boolean) => void;
-  setLinkedChildren: (children: ParentChildRelationship[]) => void;
+  setLinkedChildren: (children: Child[]) => void;
   loadChildren: () => Promise<void>;
   resetApp: () => Promise<void>;
-  logout: (navigation?: any) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,7 +42,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [linkedChildren, setLinkedChildren] = useState<ParentChildRelationship[]>([]);
+  const [linkedChildren, setLinkedChildren] = useState<Child[]>([]);
 
   useEffect(() => {
     loadAppState();
@@ -59,10 +59,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         const userData = await authService.getUserData();
         if (userData) {
           setUser(userData);
-          setUserRole(userData.role);
+          setUserRole(userData.primary_role);
           
           // Load children if user is a parent
-          if (userData.role === 'parent') {
+          if (userData.primary_role === 'parent') {
             await loadChildren();
           }
         }
@@ -111,12 +111,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     if (userData) {
       await authService.storeUserData(userData);
       setUser(userData);
-      setUserRole(userData.role);
+      setUserRole(userData.primary_role);
       setIsAuthenticated(true);
       console.log('User set, isAuthenticated should be true now');
       
       // Load children if user is a parent
-      if (userData.role === 'parent') {
+      if (userData.primary_role === 'parent') {
         await loadChildren();
       }
     } else {
@@ -128,14 +128,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
-  const handleSetLinkedChildren = (childrenData: ParentChildRelationship[]) => {
+  const handleSetLinkedChildren = (childrenData: Child[]) => {
     setLinkedChildren(childrenData);
   };
 
   const loadChildren = async () => {
     try {
-      if (user?.role === 'parent') {
-        const childrenData = await childrenService.getChildren();
+      if (user?.primary_role === 'parent') {
+        const childrenData = await childrenService.getMyChildren();
         setLinkedChildren(childrenData);
         await AsyncStorage.setItem('children', JSON.stringify(childrenData));
       }
@@ -153,7 +153,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
-  const handleLogout = async (navigation?: any) => {
+  const handleLogout = async () => {
     try {
       await authService.logout();
       setUser(null);
@@ -161,11 +161,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setIsAuthenticated(false);
       setLinkedChildren([]);
       
-      // Navigate to auth screen if navigation is provided
-      if (navigation) {
-        console.log('Logging out, navigating to Auth screen');
-        navigation.replace('Auth');
-      }
+      // Don't manually navigate - let NavigationHandler handle it automatically
+      console.log('Logging out, authentication state cleared');
     } catch (error) {
       console.error('Error during logout:', error);
     }

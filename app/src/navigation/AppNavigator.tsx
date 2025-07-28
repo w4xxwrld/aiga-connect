@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -9,262 +9,157 @@ type RootStackParamList = {
   Greeting: undefined;
   Auth: undefined;
   MainTabs: undefined;
+  ClassDetail: { classId: number };
+  BookingDetail: { bookingId: number };
+  BookClass: { classId: number };
+  CreateClass: undefined;
+  EditClass: { classId: number };
+  ClassParticipants: { classId: number };
+  EditProfile: undefined;
+  LinkChild: undefined;
+  RequestIndividualTraining: undefined;
+  IndividualTrainingRequests: undefined;
 };
 
-type HomeStackParamList = {
-  HomeMain: undefined;
-  MerchandiseStore: undefined;
-  MerchandiseDetail: { itemId: string };
+type MainTabParamList = {
+  Home: undefined;
+  Classes: undefined;
+  Bookings: undefined;
+  Profile: undefined;
 };
 
-type ScheduleStackParamList = {
-  ScheduleMain: undefined;
-  TrainingDetail: { trainingId: string };
-  CreateTraining: undefined;
-};
 import { useAppContext } from '../context/AppContext';
 import GreetingPage from '../pages/GreetingPage';
 import AuthScreen from '../pages/AuthScreen';
 import HomePage from '../pages/HomePage';
-import SchedulePage from '../pages/SchedulePage';
-import ProgressPage from '../pages/ProgressPage';
-import CommunityPage from '../pages/CommunityPage';
+import ClassesPage from '../pages/ClassesPage';
+import BookingsPage from '../pages/BookingsPage';
 import ProfilePage from '../pages/ProfilePage';
-import SettingsPage from '../pages/SettingsPage';
-import TrainingDetailPage from '../pages/TrainingDetailPage';
-import CreateTrainingPage from '../pages/CreateTrainingPage';
-import MerchandisePage from '../pages/MerchandisePage';
-import MerchandiseDetailPage from '../pages/MerchandiseDetailPage';
-import NotificationsPage from '../pages/NotificationsPage';
+import EditProfilePage from '../pages/EditProfilePage';
+import LinkChildPage from '../pages/LinkChildPage';
+import ClassDetailPage from '../pages/ClassDetailPage';
+import BookClassPage from '../pages/BookClassPage';
+import CreateClassPage from '../pages/CreateClassPage';
+import EditClassPage from '../pages/EditClassPage';
+import ClassParticipantsPage from '../pages/ClassParticipantsPage';
+import BookingDetailPage from '../pages/BookingDetailPage';
+import RequestIndividualTrainingPage from '../pages/RequestIndividualTrainingPage';
+import IndividualTrainingRequestsPage from '../pages/IndividualTrainingRequestsPage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Stack = createStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Stack Navigator for Home and related pages
-const HomeStackNavigator = () => {
-  const HomeStack = createStackNavigator();
+// Fixed Header component
+const FixedHeader: React.FC = () => (
+  <View style={styles.fixedHeader}>
+    <Text style={styles.headerTitle}>AIGA Connect</Text>
+  </View>
+);
+
+// Main Layout with fixed header and tab navigation
+const MainLayout: React.FC = () => {
   return (
-    <HomeStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: '#1B263B' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
-      }}
-    >
-      <HomeStack.Screen 
-        name="HomeMain" 
-        component={HomePage} 
-        options={{ title: 'AIGA Connect' }}
-      />
-      <HomeStack.Screen 
-        name="MerchandiseStore" 
-        component={MerchandisePage} 
-        options={{ title: 'Магазин' }}
-      />
-      <HomeStack.Screen 
-        name="MerchandiseDetail" 
-        component={MerchandiseDetailPage} 
-        options={{ title: 'Товар' }}
-      />
-    </HomeStack.Navigator>
+    <View style={styles.mainLayout}>
+      <FixedHeader />
+      <View style={styles.tabContainer}>
+        <MainTabs />
+      </View>
+    </View>
   );
 };
 
-// Stack Navigator for Schedule and related pages
-const ScheduleStackNavigator = () => {
-  const ScheduleStack = createStackNavigator();
-  return (
-    <ScheduleStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: '#1B263B' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
-      }}
-    >
-      <ScheduleStack.Screen 
-        name="ScheduleMain" 
-        component={SchedulePage} 
-        options={{ title: 'Расписание' }}
-      />
-      <ScheduleStack.Screen 
-        name="TrainingDetail" 
-        component={TrainingDetailPage} 
-        options={{ title: 'Детали тренировки' }}
-      />
-      <ScheduleStack.Screen 
-        name="CreateTraining" 
-        component={CreateTrainingPage} 
-        options={{ title: 'Создать тренировку' }}
-      />
-    </ScheduleStack.Navigator>
-  );
-};
-
-// Stack Navigator for Progress
-const ProgressStackNavigator = () => {
-  const ProgressStack = createStackNavigator();
-  return (
-    <ProgressStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: '#1B263B' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
-      }}
-    >
-      <ProgressStack.Screen 
-        name="ProgressMain" 
-        component={ProgressPage} 
-        options={{ title: 'Прогресс' }}
-      />
-    </ProgressStack.Navigator>
-  );
-};
-
-// Stack Navigator for Community
-const CommunityStackNavigator = () => {
-  const CommunityStack = createStackNavigator();
-  return (
-    <CommunityStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: '#1B263B' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
-      }}
-    >
-      <CommunityStack.Screen 
-        name="CommunityMain" 
-        component={CommunityPage} 
-        options={{ title: 'Общение' }}
-      />
-    </CommunityStack.Navigator>
-  );
-};
-
-// Stack Navigator for Profile
-const ProfileStackNavigator = () => {
-  const ProfileStack = createStackNavigator();
-  return (
-    <ProfileStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: '#1B263B' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
-      }}
-    >
-      <ProfileStack.Screen 
-        name="ProfileMain" 
-        component={ProfilePage} 
-        options={{ title: 'Профиль' }}
-      />
-    </ProfileStack.Navigator>
-  );
-};
-
-// Stack Navigator for Settings
-const SettingsStackNavigator = () => {
-  const SettingsStack = createStackNavigator();
-  return (
-    <SettingsStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: '#1B263B' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
-      }}
-    >
-      <SettingsStack.Screen 
-        name="SettingsMain" 
-        component={SettingsPage} 
-        options={{ title: 'Настройки' }}
-      />
-      <SettingsStack.Screen 
-        name="Notifications" 
-        component={NotificationsPage} 
-        options={{ title: 'Уведомления' }}
-      />
-    </SettingsStack.Navigator>
-  );
-};
-
-// Main Tab Navigator
+// Tab Navigator
 const MainTabs: React.FC = () => {
   const { userRole } = useAppContext();
+  
+  // Don't show Bookings tab for coaches
+  const shouldShowBookings = userRole !== 'coach';
 
   const getTabIcon = (routeName: string, focused: boolean) => {
-    const iconColor = focused ? '#E74C3C' : '#fff';
-    
+    const iconColor = focused ? '#E74C3C' : '#B0BEC5';
+    const iconSize = 24;
+
     switch (routeName) {
-      case 'HomeTab':
-        return <MaterialCommunityIcons name="home" size={24} color={iconColor} />;
-      case 'ScheduleTab':
-        return <MaterialCommunityIcons name="calendar" size={24} color={iconColor} />;
-      case 'ProgressTab':
-        return <MaterialCommunityIcons name="chart-line" size={24} color={iconColor} />;
-      case 'CommunityTab':
-        return <MaterialCommunityIcons name="account-group" size={24} color={iconColor} />;
-      case 'ProfileTab':
-        return <MaterialCommunityIcons name="account" size={24} color={iconColor} />;
-      case 'SettingsTab':
-        return <MaterialCommunityIcons name="cog" size={24} color={iconColor} />;
+      case 'Home':
+        return <MaterialCommunityIcons name="home" size={iconSize} color={iconColor} />;
+      case 'Classes':
+        return <MaterialCommunityIcons name="calendar" size={iconSize} color={iconColor} />;
+      case 'Bookings':
+        return <MaterialCommunityIcons name="bookmark" size={iconSize} color={iconColor} />;
+      case 'Profile':
+        return <MaterialCommunityIcons name="account" size={iconSize} color={iconColor} />;
       default:
-        return <MaterialCommunityIcons name="home" size={24} color={iconColor} />;
+        return <MaterialCommunityIcons name="home" size={iconSize} color={iconColor} />;
     }
   };
 
   const getTabLabel = (routeName: string) => {
     switch (routeName) {
-      case 'HomeTab':
+      case 'Home':
         return 'Главная';
-      case 'ScheduleTab':
-        return 'Расписание';
-      case 'ProgressTab':
-        return 'Прогресс';
-      case 'CommunityTab':
-        return 'Общение';
-      case 'ProfileTab':
+      case 'Classes':
+        return 'Занятия';
+      case 'Bookings':
+        return 'Записи';
+      case 'Profile':
         return 'Профиль';
-      case 'SettingsTab':
-        return 'Настройки';
       default:
         return 'Главная';
     }
   };
 
-  // Show Progress tab only for athletes and parents
-  const showProgressTab = userRole === 'athlete' || userRole === 'parent';
-
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => getTabIcon(route.name, focused),
+      screenOptions={({ route }: { route: any }) => ({
+        tabBarIcon: ({ focused }: { focused: boolean }) => getTabIcon(route.name, focused),
         tabBarLabel: getTabLabel(route.name),
         tabBarActiveTintColor: '#E74C3C',
-        tabBarInactiveTintColor: '#fff',
+        tabBarInactiveTintColor: '#B0BEC5',
         tabBarStyle: {
           backgroundColor: '#1B263B',
           borderTopWidth: 1,
           borderTopColor: '#2C3E50',
-          paddingBottom: 5,
+          paddingBottom: 10,
           paddingTop: 5,
-          height: 60,
+          height: 70,
         },
-        headerShown: false, // Hide tab headers since stack navigators handle them
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
+        headerShown: false, // Hide default headers
       })}
     >
-      <Tab.Screen name="HomeTab" component={HomeStackNavigator} />
-      <Tab.Screen name="ScheduleTab" component={ScheduleStackNavigator} />
-      {showProgressTab && (
-        <Tab.Screen name="ProgressTab" component={ProgressStackNavigator} />
-      )}
-      <Tab.Screen name="CommunityTab" component={CommunityStackNavigator} />
-      <Tab.Screen name="ProfileTab" component={ProfileStackNavigator} />
-      <Tab.Screen name="SettingsTab" component={SettingsStackNavigator} />
+      <Tab.Screen name="Home" component={HomePage} />
+      <Tab.Screen name="Classes" component={ClassesPage} />
+      {shouldShowBookings && <Tab.Screen name="Bookings" component={BookingsPage} />}
+      <Tab.Screen name="Profile" component={ProfilePage} />
     </Tab.Navigator>
   );
 };
 
 const AppNavigator: React.FC = () => {
   const { hasSeenGreeting, isAuthenticated, isLoading } = useAppContext();
+  const navigationRef = useRef<any>(null);
+  const lastAuthState = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    // Only handle logout navigation (when isAuthenticated changes from true to false)
+    if (lastAuthState.current === true && isAuthenticated === false) {
+      console.log('User logged out, navigating to Auth screen');
+      // Use setTimeout to ensure navigation is ready
+      setTimeout(() => {
+        if (navigationRef.current) {
+          navigationRef.current.reset({
+            index: 0,
+            routes: [{ name: 'Auth' }],
+          });
+        }
+      }, 100);
+    }
+    lastAuthState.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
@@ -282,7 +177,7 @@ const AppNavigator: React.FC = () => {
   };
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator 
         initialRouteName={getInitialRouteName()}
         screenOptions={{ 
@@ -291,7 +186,18 @@ const AppNavigator: React.FC = () => {
       >
         <Stack.Screen name="Greeting" component={GreetingPage} />
         <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="MainTabs" component={MainLayout} />
+        <Stack.Screen name="ClassDetail" component={ClassDetailPage} />
+        <Stack.Screen name="EditProfile" component={EditProfilePage} />
+        <Stack.Screen name="LinkChild" component={LinkChildPage} />
+        {/* Placeholder screens for future implementation */}
+        <Stack.Screen name="BookingDetail" component={BookingDetailPage} />
+        <Stack.Screen name="RequestIndividualTraining" component={RequestIndividualTrainingPage} />
+        <Stack.Screen name="IndividualTrainingRequests" component={IndividualTrainingRequestsPage} />
+        <Stack.Screen name="BookClass" component={BookClassPage} />
+        <Stack.Screen name="CreateClass" component={CreateClassPage} />
+        <Stack.Screen name="EditClass" component={EditClassPage} />
+        <Stack.Screen name="ClassParticipants" component={ClassParticipantsPage} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -308,6 +214,28 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#fff',
+  },
+  mainLayout: {
+    flex: 1,
+    backgroundColor: '#0D1B2A',
+  },
+  fixedHeader: {
+    backgroundColor: '#0D1B2A',
+    paddingTop: 56, // Safe area for status bar
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2C3E50',
+    zIndex: 1000,
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  tabContainer: {
+    flex: 1,
   },
 });
 

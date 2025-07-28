@@ -202,12 +202,21 @@ async def add_role_to_user(db: AsyncSession, user_id: int, role: schemas.UserRol
 
 async def get_user_by_iin_for_login(db: AsyncSession, iin: str) -> Optional[models.User]:
     """Получить пользователя по IIN для входа (с загрузкой ролей)"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     result = await db.execute(
         select(models.User)
         .where(models.User.iin == iin)
         .options(selectinload(models.User.user_roles))
     )
-    return result.scalars().first()
+    user = result.scalars().first()
+    
+    if user:
+        logger.info(f"User {user.id} ({user.full_name}) loaded with roles: {[ur.role for ur in user.user_roles]}")
+        logger.info(f"User primary_role: {user.primary_role}")
+    
+    return user
 
 
 async def user_has_role(db: AsyncSession, user_id: int, role: schemas.UserRole) -> bool:
