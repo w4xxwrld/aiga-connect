@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from datetime import date
 
