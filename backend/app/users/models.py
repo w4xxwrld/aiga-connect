@@ -4,6 +4,9 @@ from app.database import Base
 from enum import Enum
 from datetime import datetime
 
+# Import Class model to fix relationship
+from app.classes.models import Class
+
 class UserRole(str, Enum):
     parent = "parent"
     athlete = "athlete"

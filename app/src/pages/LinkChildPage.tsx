@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  StatusBar,
   Alert,
 } from 'react-native';
 import {
@@ -19,6 +18,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 import childrenService, { Child } from '../services/children';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Layout from '../components/Layout';
 
 interface LinkChildPageProps {
   navigation: any;
@@ -142,49 +142,25 @@ const LinkChildPage: React.FC<LinkChildPageProps> = ({ navigation }) => {
 
   if (userRole !== 'parent') {
     return (
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
-        
-        <View style={styles.header}>
-          <Button
-            mode="text"
-            onPress={() => navigation.goBack()}
-            textColor="#E74C3C"
-            icon="arrow-left"
-            style={styles.headerButton}
-          >
-            Назад
-          </Button>
-          <Title style={styles.headerTitle}>Связать ребенка</Title>
-          <View style={{ width: 60 }} />
-        </View>
-
+      <Layout 
+        title="Связать ребенка"
+        showBack={true}
+        onBackPress={() => navigation.goBack()}
+      >
         <View style={styles.errorContainer}>
           <MaterialCommunityIcons name="account-lock" size={64} color="#E74C3C" />
           <Text style={styles.errorText}>Эта функция доступна только родителям</Text>
         </View>
-      </View>
+      </Layout>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Button
-          mode="text"
-          onPress={() => navigation.goBack()}
-          textColor="#E74C3C"
-          icon="arrow-left"
-          style={styles.headerButton}
-        >
-          Назад
-        </Button>
-        <Title style={styles.headerTitle}>Связать ребенка</Title>
-        <View style={{ width: 60 }} />
-      </View>
+    <Layout 
+      title="Связать ребенка"
+      showBack={true}
+      onBackPress={() => navigation.goBack()}
+    >
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Link Child Section */}
@@ -299,36 +275,12 @@ const LinkChildPage: React.FC<LinkChildPageProps> = ({ navigation }) => {
           </Card.Content>
         </Card>
       </ScrollView>
-    </View>
+    </Layout>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0D1B2A',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: 56,
-    backgroundColor: '#0D1B2A',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2C3E50',
-    zIndex: 1000,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerButton: {
-    minWidth: 60,
-  },
+
   scrollView: {
     flex: 1,
   },

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
   RefreshControl,
-  StatusBar,
 } from 'react-native';
 import {
   Card,
@@ -17,14 +17,18 @@ import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
 import bookingsService, { Booking } from '../services/bookings';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Sidebar from '../components/Sidebar';
+import Layout from '../components/Layout';
+import api from '../services/api';
 
 const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
-  const { user, userRole } = useAppContext();
+  const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
   
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [recentClasses, setRecentClasses] = useState<Class[]>([]);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
+  const [upcomingTournaments, setUpcomingTournaments] = useState([]);
   const [stats, setStats] = useState({
     totalClasses: 0,
     totalBookings: 0,
@@ -39,19 +43,21 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     try {
       setLoading(true);
       
-      // Load classes and bookings in parallel
-      const [classesData, bookingsData] = await Promise.all([
+      // Load classes, bookings, and tournaments in parallel
+      const [classesData, bookingsData, tournamentsData] = await Promise.all([
         classesService.getClasses().catch(() => []),
-        bookingsService.getMyBookings().catch(() => [])
+        bookingsService.getMyBookings().catch(() => []),
+        api.get('/progress/tournaments/upcoming').catch(() => ({ data: [] }))
       ]);
 
       setRecentClasses(classesData.slice(0, 3));
       setRecentBookings(bookingsData.slice(0, 3));
+      setUpcomingTournaments(tournamentsData.data?.slice(0, 3) || []);
       
       setStats({
         totalClasses: classesData.length,
         totalBookings: bookingsData.length,
-        pendingBookings: bookingsData.filter(b => b.status === 'pending').length,
+        pendingBookings: bookingsData.filter((b: Booking) => b.status === 'pending').length,
       });
     } catch (error) {
       console.error('Error loading home data:', error);
@@ -65,6 +71,10 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     await loadHomeData();
     setRefreshing(false);
   };
+
+  const handleSidebarClose = useCallback(() => {
+    setIsSidebarOpen(false);
+  }, [setIsSidebarOpen]);
 
   const renderWelcomeSection = () => (
     <Card style={styles.welcomeCard}>
@@ -115,58 +125,39 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     </View>
   );
 
-  const renderQuickActions = () => (
+  const renderIncomingTournaments = () => (
     <Card style={styles.sectionCard}>
       <Card.Content>
         <View style={styles.sectionHeader}>
-          <Title style={styles.sectionTitle}>Быстрые действия</Title>
+          <Title style={styles.sectionTitle}>Ближайшие турниры</Title>
+          <TouchableOpacity onPress={() => navigation?.navigate('Tournaments')}>
+            <Text style={styles.viewAllText}>Все турниры</Text>
+          </TouchableOpacity>
         </View>
         
-        <View style={styles.actionsGrid}>
-          <Button
-            mode="contained"
-            onPress={() => navigation?.navigate('Classes')}
-            style={styles.actionButton}
-            buttonColor="#E74C3C"
-            icon="calendar"
-          >
-            Занятия
-          </Button>
-          
-          {(userRole === 'parent' || userRole === 'athlete') && (
-            <Button
-              mode="contained"
-              onPress={() => navigation?.navigate('Bookings')}
-              style={styles.actionButton}
-              buttonColor="#2C3E50"
-              icon="bookmark"
+        {upcomingTournaments.length > 0 ? (
+          upcomingTournaments.map((tournament: any, index: number) => (
+            <TouchableOpacity
+              key={tournament.id || index}
+              style={styles.tournamentItem}
+              onPress={() => navigation?.navigate('Tournaments')}
             >
-              Мои записи
-            </Button>
-          )}
-          
-          {userRole === 'coach' && (
-            <Button
-              mode="contained"
-              onPress={() => navigation?.navigate('CreateClass')}
-              style={styles.actionButton}
-              buttonColor="#2C3E50"
-              icon="plus"
-            >
-              Создать занятие
-            </Button>
-          )}
-          
-          <Button
-            mode="contained"
-            onPress={() => navigation?.navigate('Profile')}
-            style={styles.actionButton}
-            buttonColor="#34495E"
-            icon="account"
-          >
-            Профиль
-          </Button>
-        </View>
+              <View style={styles.tournamentInfo}>
+                <Text style={styles.tournamentName}>{tournament.name}</Text>
+                <Text style={styles.tournamentDate}>
+                  {new Date(tournament.date).toLocaleDateString('ru-RU')}
+                </Text>
+                <Text style={styles.tournamentLocation}>{tournament.location}</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="medal" size={48} color="#666" />
+            <Text style={styles.emptyStateText}>Нет предстоящих турниров</Text>
+          </View>
+        )}
       </Card.Content>
     </Card>
   );
@@ -211,6 +202,54 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
       </Card.Content>
     </Card>
   );
+
+  const renderQuickActions = () => {
+    if (userRole !== 'parent' && userRole !== 'athlete') return null;
+
+    return (
+      <Card style={styles.sectionCard}>
+        <Card.Content>
+          <View style={styles.sectionHeader}>
+            <Title style={styles.sectionTitle}>Быстрые действия</Title>
+          </View>
+          
+          <View style={styles.actionsGrid}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation?.navigate('Progress')}
+            >
+              <MaterialCommunityIcons name="target" size={24} color="#E74C3C" />
+              <Text style={styles.actionText}>Мотивация</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation?.navigate('CoachRating')}
+            >
+              <MaterialCommunityIcons name="star" size={24} color="#E74C3C" />
+              <Text style={styles.actionText}>Рейтинг тренеров</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation?.navigate('Progress')}
+            >
+              <MaterialCommunityIcons name="trophy" size={24} color="#E74C3C" />
+              <Text style={styles.actionText}>Прогресс</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation?.navigate('Store')}
+            >
+              <MaterialCommunityIcons name="shopping" size={24} color="#E74C3C" />
+              <Text style={styles.actionText}>Магазин</Text>
+            </TouchableOpacity>
+          </View>
+        </Card.Content>
+      </Card>
+    );
+  };
 
   const renderRecentBookings = () => {
     if (userRole !== 'parent' && userRole !== 'athlete') return null;
@@ -271,8 +310,10 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
+    <Layout
+      title="AIGA Connect"
+      onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
+    >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -283,17 +324,23 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
         {renderWelcomeSection()}
         {renderQuickStats()}
         {renderQuickActions()}
+        {renderIncomingTournaments()}
         {renderRecentClasses()}
         {renderRecentBookings()}
       </ScrollView>
-    </View>
+
+      {/* Sidebar */}
+      <Sidebar
+        isVisible={isSidebarOpen}
+        onClose={handleSidebarClose}
+      />
+    </Layout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D1B2A',
   },
   scrollView: {
     flex: 1,
@@ -381,10 +428,23 @@ const styles = StyleSheet.create({
   },
   actionsGrid: {
     flexDirection: 'row',
-    gap: 12,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   actionButton: {
-    flex: 1,
+    width: '48%',
+    backgroundColor: '#2C3E50',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  actionText: {
+    fontSize: 12,
+    color: '#fff',
+    marginTop: 8,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   recentItem: {
     flexDirection: 'row',
@@ -413,6 +473,48 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
   },
+  viewAllText: {
+    color: '#3498DB',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  tournamentItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2C3E50',
+  },
+  tournamentInfo: {
+    flex: 1,
+  },
+  tournamentName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  tournamentDate: {
+    color: '#3498DB',
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  tournamentLocation: {
+    color: '#B0BEC5',
+    fontSize: 14,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  emptyStateText: {
+    color: '#B0BEC5',
+    fontSize: 16,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+
 
 });
 

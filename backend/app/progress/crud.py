@@ -114,6 +114,20 @@ async def get_public_achievements(db: AsyncSession, limit: int = 50) -> List[mod
     )
     return result.scalars().all()
 
+async def get_all_achievements(db: AsyncSession, skip: int = 0, limit: int = 50) -> List[models.Achievement]:
+    """Получить все достижения с пагинацией"""
+    result = await db.execute(
+        select(models.Achievement)
+        .options(
+            selectinload(models.Achievement.athlete),
+            selectinload(models.Achievement.tournament)
+        )
+        .order_by(models.Achievement.achieved_date.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    return result.scalars().all()
+
 # Tournament CRUD
 async def create_tournament(db: AsyncSession, tournament_data: schemas.TournamentCreate) -> models.Tournament:
     """Создать турнир"""

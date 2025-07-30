@@ -40,9 +40,8 @@ class ChatRoomOut(ChatRoomBase):
     id: int
     is_active: bool
     created_by_id: int
-    members_count: int
-    last_message_at: Optional[datetime] = None
     created_at: datetime
+    updated_at: datetime
     
     class Config:
         from_attributes = True
@@ -69,7 +68,6 @@ class ChatMessageOut(ChatMessageBase):
     is_edited: bool
     is_deleted: bool
     is_pinned: bool
-    reactions_count: dict = {}  # {"👍": 5, "❤️": 2}
     created_at: datetime
     updated_at: datetime
     
@@ -96,8 +94,6 @@ class ChatMembershipUpdate(BaseModel):
 class ChatMemberOut(BaseModel):
     id: int
     user_id: int
-    user_name: str
-    user_role: str
     is_admin: bool
     is_moderator: bool
     can_post: bool
@@ -116,7 +112,6 @@ class MessageReactionOut(BaseModel):
     id: int
     message_id: int
     user_id: int
-    user_name: str
     emoji: str
     created_at: datetime
     
@@ -149,8 +144,6 @@ class ForumCategoryOut(ForumCategoryBase):
     id: int
     is_active: bool
     sort_order: int
-    topics_count: int
-    last_topic_at: Optional[datetime] = None
     created_at: datetime
     
     class Config:
@@ -172,9 +165,7 @@ class ForumTopicUpdate(BaseModel):
 class ForumTopicOut(ForumTopicBase):
     id: int
     category_id: int
-    category_name: str
     created_by_id: int
-    author_name: str
     views_count: int
     replies_count: int
     is_pinned: bool
@@ -201,7 +192,6 @@ class ForumReplyOut(ForumReplyBase):
     id: int
     topic_id: int
     author_id: int
-    author_name: str
     is_edited: bool
     is_approved: bool
     created_at: datetime

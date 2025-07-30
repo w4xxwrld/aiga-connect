@@ -321,6 +321,15 @@ async def get_head_coach_info(db: AsyncSession = Depends(get_db)):
         )
     return head_coach
 
+@router.get("/coaches", response_model=List[schemas.UserSimple])
+async def get_coaches(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Получить список всех тренеров"""
+    coaches = await crud.get_coaches(db)
+    return coaches
+
 @router.get("/by-iin/{iin}", response_model=schemas.UserSimple)
 async def get_user_by_iin(
     iin: str,

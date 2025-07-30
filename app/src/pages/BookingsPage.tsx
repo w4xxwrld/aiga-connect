@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
-  StatusBar,
   Alert,
 } from 'react-native';
 import {
@@ -19,9 +18,11 @@ import {
 import { useAppContext } from '../context/AppContext';
 import bookingsService, { Booking } from '../services/bookings';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Layout from '../components/Layout';
+import Sidebar from '../components/Sidebar';
 
 const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
-  const { user, userRole } = useAppContext();
+  const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
   
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
@@ -93,6 +94,10 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const handleBookingPress = (booking: Booking) => {
     navigation?.navigate('BookingDetail', { bookingId: booking.id });
   };
+
+  const handleSidebarClose = useCallback(() => {
+    setIsSidebarOpen(false);
+  }, [setIsSidebarOpen]);
 
   const handleQuickApprove = async (booking: Booking) => {
     Alert.alert(
@@ -312,9 +317,11 @@ if (loading) {
   );
 }
 
-return (
-  <View style={styles.container}>
-    <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
+  return (
+    <Layout 
+      title="Записи"
+      onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
+    >
     
     <View style={styles.actionHeader}>
       <Button
@@ -442,14 +449,19 @@ return (
         </View>
       )}
     </ScrollView>
-  </View>
+
+    {/* Sidebar */}
+    <Sidebar
+              isVisible={isSidebarOpen}
+              onClose={handleSidebarClose}
+    />
+  </Layout>
 );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D1B2A',
   },
   loadingContainer: {
     flex: 1,
@@ -462,21 +474,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
   },
-  globalHeader: {
-    backgroundColor: '#0D1B2A',
-    paddingTop: 56, // Safe area for status bar
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2C3E50',
-    zIndex: 1000,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+
   actionHeader: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

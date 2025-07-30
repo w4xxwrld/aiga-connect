@@ -12,11 +12,13 @@ interface AppContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   linkedChildren: Child[];
+  isSidebarOpen: boolean;
   setHasSeenGreeting: (value: boolean) => void;
   setUserRole: (role: UserRole) => void;
   setUser: (user: User | null) => void;
   setIsAuthenticated: (value: boolean) => void;
   setLinkedChildren: (children: Child[]) => void;
+  setIsSidebarOpen: (value: boolean) => void;
   loadChildren: () => Promise<void>;
   resetApp: () => Promise<void>;
   logout: () => Promise<void>;
@@ -43,6 +45,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [linkedChildren, setLinkedChildren] = useState<Child[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     loadAppState();
@@ -52,11 +55,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     try {
       // Check authentication status
       const authenticated = await authService.isAuthenticated();
+      console.log('AppContext: Authentication status:', authenticated);
       setIsAuthenticated(authenticated);
 
       if (authenticated) {
         // Load user data
         const userData = await authService.getUserData();
+        console.log('AppContext: Loaded user data from storage:', userData);
+        
         if (userData) {
           setUser(userData);
           setUserRole(userData.primary_role);
@@ -64,6 +70,27 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           // Load children if user is a parent
           if (userData.primary_role === 'parent') {
             await loadChildren();
+          }
+        } else {
+          // Try to get fresh user data from API
+          const freshUserData = await authService.getCurrentUser();
+          console.log('AppContext: Fresh user data from API:', freshUserData);
+          
+          if (freshUserData) {
+            setUser(freshUserData);
+            setUserRole(freshUserData.primary_role);
+            
+            // Load children if user is a parent
+            if (freshUserData.primary_role === 'parent') {
+              await loadChildren();
+            }
+          } else {
+            // No valid user data, clear authentication
+            console.log('AppContext: No valid user data, clearing auth');
+            await authService.logout();
+            setIsAuthenticated(false);
+            setUser(null);
+            setUserRole(null);
           }
         }
       } else {
@@ -184,11 +211,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     isAuthenticated,
     isLoading,
     linkedChildren,
+    isSidebarOpen,
     setHasSeenGreeting: handleSetHasSeenGreeting,
     setUserRole: handleSetUserRole,
     setUser: handleSetUser,
     setIsAuthenticated,
     setLinkedChildren: handleSetLinkedChildren,
+    setIsSidebarOpen,
     loadChildren,
     resetApp,
     logout: handleLogout,

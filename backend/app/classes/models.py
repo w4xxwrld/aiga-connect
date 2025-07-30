@@ -4,6 +4,9 @@ from app.database import Base
 from enum import Enum
 from datetime import datetime
 
+# Import Booking model to fix relationship
+from app.bookings.models import Booking
+
 class DifficultyLevel(str, Enum):
     beginner = "beginner"
     intermediate = "intermediate"

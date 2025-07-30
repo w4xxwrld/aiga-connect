@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Animated, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -15,17 +15,25 @@ type RootStackParamList = {
   CreateClass: undefined;
   EditClass: { classId: number };
   ClassParticipants: { classId: number };
+  Profile: undefined;
   EditProfile: undefined;
   LinkChild: undefined;
   RequestIndividualTraining: undefined;
   IndividualTrainingRequests: undefined;
+  Progress: undefined;
+  Tournaments: undefined;
+  Chat: undefined;
+  Forum: undefined;
+  Store: undefined;
+  Notifications: undefined;
+  CoachRating: undefined;
+
 };
 
 type MainTabParamList = {
   Home: undefined;
   Classes: undefined;
   Bookings: undefined;
-  Profile: undefined;
 };
 
 import { useAppContext } from '../context/AppContext';
@@ -46,22 +54,22 @@ import BookingDetailPage from '../pages/BookingDetailPage';
 import RequestIndividualTrainingPage from '../pages/RequestIndividualTrainingPage';
 import IndividualTrainingRequestsPage from '../pages/IndividualTrainingRequestsPage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import ProgressPage from '../pages/ProgressPage';
+import TournamentsPage from '../pages/TournamentsPage';
+import ChatPage from '../pages/ChatPage';
+import ForumPage from '../pages/ForumPage';
+import StorePage from '../pages/StorePage';
+import NotificationsPage from '../pages/NotificationsPage';
+import CoachRatingPage from '../pages/CoachRatingPage';
+
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Fixed Header component
-const FixedHeader: React.FC = () => (
-  <View style={styles.fixedHeader}>
-    <Text style={styles.headerTitle}>AIGA Connect</Text>
-  </View>
-);
-
-// Main Layout with fixed header and tab navigation
+// Main Layout with tab navigation
 const MainLayout: React.FC = () => {
   return (
     <View style={styles.mainLayout}>
-      <FixedHeader />
       <View style={styles.tabContainer}>
         <MainTabs />
       </View>
@@ -69,12 +77,18 @@ const MainLayout: React.FC = () => {
   );
 };
 
-// Tab Navigator
-const MainTabs: React.FC = () => {
-  const { userRole } = useAppContext();
-  
-  // Don't show Bookings tab for coaches
-  const shouldShowBookings = userRole !== 'coach';
+// Custom Tab Bar Component
+const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
+  const { isSidebarOpen } = useAppContext();
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: isSidebarOpen ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isSidebarOpen, slideAnim]);
 
   const getTabIcon = (routeName: string, focused: boolean) => {
     const iconColor = focused ? '#E74C3C' : '#B0BEC5';
@@ -87,8 +101,6 @@ const MainTabs: React.FC = () => {
         return <MaterialCommunityIcons name="calendar" size={iconSize} color={iconColor} />;
       case 'Bookings':
         return <MaterialCommunityIcons name="bookmark" size={iconSize} color={iconColor} />;
-      case 'Profile':
-        return <MaterialCommunityIcons name="account" size={iconSize} color={iconColor} />;
       default:
         return <MaterialCommunityIcons name="home" size={iconSize} color={iconColor} />;
     }
@@ -102,39 +114,79 @@ const MainTabs: React.FC = () => {
         return 'Занятия';
       case 'Bookings':
         return 'Записи';
-      case 'Profile':
-        return 'Профиль';
       default:
         return 'Главная';
     }
   };
 
   return (
-    <Tab.Navigator
-      screenOptions={({ route }: { route: any }) => ({
-        tabBarIcon: ({ focused }: { focused: boolean }) => getTabIcon(route.name, focused),
-        tabBarLabel: getTabLabel(route.name),
-        tabBarActiveTintColor: '#E74C3C',
-        tabBarInactiveTintColor: '#B0BEC5',
-        tabBarStyle: {
-          backgroundColor: '#1B263B',
-          borderTopWidth: 1,
-          borderTopColor: '#2C3E50',
-          paddingBottom: 10,
-          paddingTop: 5,
-          height: 70,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
-        },
-        headerShown: false, // Hide default headers
+    <Animated.View
+      style={[
+        styles.customTabBar,
+        {
+          transform: [{
+            translateY: slideAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 70], // Slide down by tab bar height
+            })
+          }]
+        }
+      ]}
+    >
+      {state.routes.map((route: any, index: number) => {
+        const { options } = descriptors[route.key];
+        const label = getTabLabel(route.name);
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            style={styles.tabItem}
+            onPress={onPress}
+          >
+            {getTabIcon(route.name, isFocused)}
+            <Text style={[
+              styles.tabLabel,
+              { color: isFocused ? '#E74C3C' : '#B0BEC5' }
+            ]}>
+              {label}
+            </Text>
+          </TouchableOpacity>
+        );
       })}
+    </Animated.View>
+  );
+};
+
+// Tab Navigator
+const MainTabs: React.FC = () => {
+  const { userRole } = useAppContext();
+  
+  // Don't show Bookings tab for coaches
+  const shouldShowBookings = userRole !== 'coach';
+
+  return (
+    <Tab.Navigator
+      tabBar={props => <CustomTabBar {...props} />}
+      screenOptions={{
+        headerShown: false, // Hide default headers
+      }}
     >
       <Tab.Screen name="Home" component={HomePage} />
       <Tab.Screen name="Classes" component={ClassesPage} />
       {shouldShowBookings && <Tab.Screen name="Bookings" component={BookingsPage} />}
-      <Tab.Screen name="Profile" component={ProfilePage} />
     </Tab.Navigator>
   );
 };
@@ -188,6 +240,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Auth" component={AuthScreen} />
         <Stack.Screen name="MainTabs" component={MainLayout} />
         <Stack.Screen name="ClassDetail" component={ClassDetailPage} />
+        <Stack.Screen name="Profile" component={ProfilePage} />
         <Stack.Screen name="EditProfile" component={EditProfilePage} />
         <Stack.Screen name="LinkChild" component={LinkChildPage} />
         {/* Placeholder screens for future implementation */}
@@ -198,6 +251,14 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="CreateClass" component={CreateClassPage} />
         <Stack.Screen name="EditClass" component={EditClassPage} />
         <Stack.Screen name="ClassParticipants" component={ClassParticipantsPage} />
+        <Stack.Screen name="Progress" component={ProgressPage} />
+        <Stack.Screen name="Tournaments" component={TournamentsPage} />
+        <Stack.Screen name="Chat" component={ChatPage} />
+        <Stack.Screen name="Forum" component={ForumPage} />
+        <Stack.Screen name="Store" component={StorePage} />
+        <Stack.Screen name="Notifications" component={NotificationsPage} />
+        <Stack.Screen name="CoachRating" component={CoachRatingPage} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -219,23 +280,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0D1B2A',
   },
-  fixedHeader: {
-    backgroundColor: '#0D1B2A',
-    paddingTop: 56, // Safe area for status bar
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2C3E50',
-    zIndex: 1000,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
   tabContainer: {
     flex: 1,
+  },
+  customTabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#1B263B',
+    borderTopWidth: 1,
+    borderTopColor: '#2C3E50',
+    paddingBottom: 10,
+    paddingTop: 5,
+    height: 70,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  tabItem: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 4,
   },
 });
 

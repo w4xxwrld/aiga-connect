@@ -6,6 +6,11 @@ from app.progress.models import (
     TournamentLevel, TournamentStatus, ParticipationResult
 )
 
+# Simple belt level schema for promotion
+class BeltPromotion(BaseModel):
+    belt: BeltLevel
+    stripes: int = 0
+
 # Progress Schemas
 class ProgressBase(BaseModel):
     current_belt: BeltLevel = BeltLevel.white
@@ -26,17 +31,14 @@ class ProgressBase(BaseModel):
     @classmethod
     def validate_belt_system(cls, v):
         # Проверяем что пояс соответствует правильной системе
-        juvenile_belts = {
-            BeltLevel.juvenile_white, BeltLevel.juvenile_grey, 
-            BeltLevel.juvenile_yellow, BeltLevel.juvenile_orange, 
-            BeltLevel.juvenile_green
-        }
-        adult_belts = {
-            BeltLevel.white, BeltLevel.blue, BeltLevel.purple, 
-            BeltLevel.brown, BeltLevel.black
+        # Using the actual belt levels from the enum
+        valid_belts = {
+            BeltLevel.white, BeltLevel.yellow, BeltLevel.orange, 
+            BeltLevel.green, BeltLevel.blue, BeltLevel.brown, 
+            BeltLevel.black, BeltLevel.mixed
         }
         
-        if v in juvenile_belts or v in adult_belts:
+        if v in valid_belts:
             return v
         raise ValueError("Invalid belt level")
 
@@ -69,8 +71,8 @@ class ProgressOut(ProgressBase):
 # Схема для информации о системе поясов
 class BeltSystemInfo(BaseModel):
     """Информация о доступных поясах для разных возрастных групп"""
-    adult_belts: List[str] = ["white", "blue", "purple", "brown", "black"]
-    juvenile_belts: List[str] = ["juvenile_white", "juvenile_grey", "juvenile_yellow", "juvenile_orange", "juvenile_green"]
+    adult_belts: List[str] = ["white", "blue", "brown", "black"]
+    juvenile_belts: List[str] = ["white", "yellow", "orange", "green"]
     age_threshold: int = 16
 
 # Achievement Schemas

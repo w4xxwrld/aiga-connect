@@ -18,6 +18,6 @@ async def post_feedback(
 async def get_trainer_feedback(
     trainer_id: int,
     db: AsyncSession = Depends(get_db),
-    # any authenticated user
+    current_user=Depends(get_current_user)
 ):
     return await crud.get_feedback_for_trainer(db, trainer_id)

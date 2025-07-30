@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  StatusBar,
   Alert,
   Platform,
 } from 'react-native';
@@ -20,6 +19,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAppContext } from '../context/AppContext';
 import authService, { User } from '../services/auth';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Layout from '../components/Layout';
 
 interface EditProfilePageProps {
   navigation: any;
@@ -172,23 +172,11 @@ const EditProfilePage: React.FC<EditProfilePageProps> = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Button
-          mode="text"
-          onPress={() => navigation.goBack()}
-          textColor="#E74C3C"
-          icon="arrow-left"
-          style={styles.headerButton}
-        >
-          Назад
-        </Button>
-        <Title style={styles.headerTitle}>Редактировать профиль</Title>
-        <View style={{ width: 60 }} />
-      </View>
+    <Layout 
+      title="Редактировать профиль"
+      showBack={true}
+      onBackPress={() => navigation.goBack()}
+    >
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Card style={styles.card}>
@@ -333,16 +321,13 @@ const EditProfilePage: React.FC<EditProfilePageProps> = ({ navigation }) => {
           </Button>
         </View>
       </ScrollView>
-
-
-    </View>
+    </Layout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D1B2A',
   },
   loadingContainer: {
     flex: 1,
@@ -355,27 +340,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: 56,
-    backgroundColor: '#0D1B2A',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2C3E50',
-    zIndex: 1000,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerButton: {
-    minWidth: 60,
-  },
+
   scrollView: {
     flex: 1,
   },

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  StatusBar,
   Alert,
 } from 'react-native';
 import {
@@ -18,6 +17,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 import bookingsService, { Booking } from '../services/bookings';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Layout from '../components/Layout';
 
 interface BookingDetailPageProps {
   navigation: any;
@@ -163,22 +163,11 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
-      
-      <View style={styles.header}>
-        <Button
-          mode="text"
-          onPress={() => navigation.goBack()}
-          textColor="#E74C3C"
-          icon="arrow-left"
-          style={styles.backButton}
-        >
-          Назад
-        </Button>
-        <Title style={styles.headerTitle}>Детали записи</Title>
-        <View style={{ width: 60 }} />
-      </View>
+    <Layout 
+      title="Детали записи"
+      showBack={true}
+      onBackPress={() => navigation.goBack()}
+    >
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <Card style={styles.mainCard}>
@@ -325,14 +314,13 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
           )}
         </View>
       </ScrollView>
-    </View>
+    </Layout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D1B2A',
   },
   loadingContainer: {
     flex: 1,
@@ -349,7 +337,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0D1B2A',
     padding: 20,
   },
   errorText: {
@@ -358,27 +345,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: 56, // Safe area for status bar
-    backgroundColor: '#0D1B2A',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2C3E50',
-    zIndex: 1000,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  backButton: {
-    minWidth: 60,
-  },
+
   scrollView: {
     flex: 1,
   },

@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
-  StatusBar,
   Alert,
 } from 'react-native';
 import {
@@ -20,9 +19,11 @@ import {
 import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Layout from '../components/Layout';
+import Sidebar from '../components/Sidebar';
 
 const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
-  const { user, userRole } = useAppContext();
+  const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
   
   const [classes, setClasses] = useState<Class[]>([]);
   const [filteredClasses, setFilteredClasses] = useState<Class[]>([]);
@@ -123,6 +124,10 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const handleBookClass = (classItem: Class) => {
     navigation?.navigate('BookClass', { classId: classItem.id });
   };
+
+  const handleSidebarClose = useCallback(() => {
+    setIsSidebarOpen(false);
+  }, [setIsSidebarOpen]);
 
   const renderClassCard = (classItem: Class) => (
     <Card key={classItem.id} style={styles.classCard} onPress={() => handleClassPress(classItem)}>
@@ -225,29 +230,21 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     );
   }
 
+  const getHeaderTitle = () => {
+    if (userRole === 'coach' && user?.is_head_coach) {
+      return 'Все занятия';
+    } else if (userRole === 'coach') {
+      return 'Мои занятия';
+    } else {
+      return 'Занятия';
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
-      
-      {/* Header with title */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          {userRole === 'coach' && user?.is_head_coach 
-            ? 'Все занятия' 
-            : userRole === 'coach' 
-              ? 'Мои занятия'
-              : 'Занятия'
-          }
-        </Text>
-        {userRole === 'coach' && (
-          <Text style={styles.headerSubtitle}>
-            {user?.is_head_coach 
-              ? 'Управление всеми занятиями' 
-              : 'Управление вашими занятиями'
-            }
-          </Text>
-        )}
-      </View>
+    <Layout 
+      title={getHeaderTitle()}
+      onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
+    >
       
       {userRole === 'coach' && (
         <View style={styles.actionHeader}>
@@ -268,6 +265,7 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
         value={searchQuery}
         style={styles.searchBar}
         iconColor="#E74C3C"
+        placeholderTextColor="#B0BEC5"
       />
 
       <View style={styles.filterContainer}>
@@ -332,14 +330,19 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           </View>
         )}
       </ScrollView>
-    </View>
+
+      {/* Sidebar */}
+      <Sidebar
+        isVisible={isSidebarOpen}
+        onClose={handleSidebarClose}
+      />
+    </Layout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D1B2A',
   },
   loadingContainer: {
     flex: 1,
@@ -352,24 +355,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
   },
-  header: {
-    padding: 16,
-    paddingTop: 8,
-    backgroundColor: '#0D1B2A',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    color: '#B0BEC5',
-    fontSize: 16,
-    marginTop: 4,
-    textAlign: 'center',
-  },
+
   actionHeader: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -380,6 +366,7 @@ const styles = StyleSheet.create({
 
   searchBar: {
     marginHorizontal: 16,
+    marginTop: 16,
     marginBottom: 16,
     backgroundColor: '#1B263B',
   },

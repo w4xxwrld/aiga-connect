@@ -282,6 +282,16 @@ async def get_athletes_by_parent(db: AsyncSession, parent_id: int) -> List[model
     return result.scalars().all()
 
 
+async def get_coaches(db: AsyncSession) -> List[models.User]:
+    """Получить список всех тренеров"""
+    result = await db.execute(
+        select(models.User)
+        .join(models.UserRoleAssignment, models.User.id == models.UserRoleAssignment.user_id)
+        .where(models.UserRoleAssignment.role == models.UserRole.coach)
+        .options(selectinload(models.User.user_roles))
+    )
+    return result.scalars().all()
+
 async def get_parents_by_athlete(db: AsyncSession, athlete_id: int) -> List[models.User]:
     """Получить список родителей для спортсмена"""
     result = await db.execute(

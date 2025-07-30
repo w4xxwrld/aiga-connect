@@ -81,8 +81,7 @@ async def update_athlete_progress(
 @router.post("/progress/{athlete_id}/promote", response_model=schemas.ProgressOut)
 async def promote_athlete_belt(
     athlete_id: int,
-    new_belt: schemas.BeltLevel,
-    new_stripes: int = 0,
+    promotion_data: schemas.BeltPromotion,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -94,7 +93,7 @@ async def promote_athlete_belt(
             detail="Only coaches can promote athletes"
         )
     
-    progress = await crud.promote_belt(db, athlete_id, new_belt, new_stripes)
+    progress = await crud.promote_belt(db, athlete_id, promotion_data.belt, promotion_data.stripes)
     if not progress:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -120,6 +119,16 @@ async def get_athlete_achievements(
 ):
     """Получить достижения спортсмена"""
     return await crud.get_achievements_by_athlete(db, athlete_id)
+
+@router.get("/achievements", response_model=List[schemas.AchievementWithDetails])
+async def get_all_achievements(
+    skip: int = 0,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Получить все достижения (для авторизованных пользователей)"""
+    return await crud.get_all_achievements(db, skip, limit)
 
 @router.post("/achievements", response_model=schemas.AchievementOut)
 async def create_achievement(
@@ -298,3 +307,5 @@ async def update_tournament_result(
         )
     
     return participation
+
+

@@ -10,10 +10,25 @@ class FeedbackBase(BaseModel):
 class FeedbackCreate(FeedbackBase):
     pass
 
+from typing import Union
+from pydantic import field_validator
+
 class FeedbackResponse(FeedbackBase):
     id: int
     author_id: int
+    author: dict  # Will contain author info with full_name, email, etc.
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+        
+    @field_validator('author', mode='before')
+    @classmethod
+    def validate_author(cls, v):
+        if hasattr(v, 'id'):  # It's a User object
+            return {
+                'id': v.id,
+                'full_name': v.full_name,
+                'email': v.email
+            }
+        return v

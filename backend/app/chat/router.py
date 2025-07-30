@@ -43,3 +43,64 @@ async def create_message(
 ):
     """Создать сообщение"""
     return await crud.create_message(db=db, message=message, sender_id=current_user.id)
+
+# Forum endpoints
+@router.get("/forum/categories", response_model=List[schemas.ForumCategoryOut])
+async def get_forum_categories(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Получить категории форума"""
+    return await crud.get_forum_categories(db=db)
+
+@router.get("/forum/categories/{category_id}/topics", response_model=List[schemas.ForumTopicOut])
+async def get_forum_topics(
+    category_id: int,
+    skip: int = 0,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Получить топики категории"""
+    return await crud.get_forum_topics(db=db, category_id=category_id, skip=skip, limit=limit)
+
+@router.post("/forum/topics", response_model=schemas.ForumTopicOut)
+async def create_forum_topic(
+    topic: schemas.ForumTopicCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Создать топик"""
+    return await crud.create_forum_topic(db=db, topic=topic, created_by_id=current_user.id)
+
+@router.get("/forum/topics/{topic_id}", response_model=schemas.ForumTopicOut)
+async def get_forum_topic(
+    topic_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Получить топик"""
+    topic = await crud.get_forum_topic(db=db, topic_id=topic_id)
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+    return topic
+
+@router.get("/forum/topics/{topic_id}/replies", response_model=List[schemas.ForumReplyOut])
+async def get_forum_replies(
+    topic_id: int,
+    skip: int = 0,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Получить ответы топика"""
+    return await crud.get_forum_replies(db=db, topic_id=topic_id, skip=skip, limit=limit)
+
+@router.post("/forum/replies", response_model=schemas.ForumReplyOut)
+async def create_forum_reply(
+    reply: schemas.ForumReplyCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Создать ответ"""
+    return await crud.create_forum_reply(db=db, reply=reply, author_id=current_user.id)

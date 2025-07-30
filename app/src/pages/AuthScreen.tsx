@@ -112,8 +112,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       return;
     }
 
-    if (iin.length !== 12 || !/^\d+$/.test(iin)) {
-      Alert.alert('Ошибка', 'ИИН должен содержать ровно 12 цифр');
+    if (!validateIIN(iin)) {
+      Alert.alert('Ошибка', 'ИИН должен содержать ровно 12 цифр и корректную дату рождения');
       return;
     }
 
@@ -149,6 +149,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       let errorMessage = 'Не удалось войти в систему';
       if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -160,13 +162,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   };
 
   const handleRegister = async () => {
-    if (!iin || !password || !fullName) {
+    if (!iin || !password || !fullName || !email) {
       Alert.alert('Ошибка', 'Пожалуйста, заполните все обязательные поля');
       return;
     }
 
-    if (iin.length !== 12 || !/^\d+$/.test(iin)) {
-      Alert.alert('Ошибка', 'ИИН должен содержать ровно 12 цифр');
+    if (!validateIIN(iin)) {
+      Alert.alert('Ошибка', 'ИИН должен содержать ровно 12 цифр и корректную дату рождения');
       return;
     }
 
@@ -177,22 +179,20 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email && !emailRegex.test(email)) {
+    if (!emailRegex.test(email)) {
       Alert.alert('Ошибка', 'Пожалуйста, введите корректный email адрес');
-      return;
-    }
-
-    // Require email for registration
-    if (!email) {
-      Alert.alert('Ошибка', 'Email обязателен для регистрации');
       return;
     }
 
     setLoading(true);
     try {
-      // Calculate a reasonable birth date (18 years ago for adults)
-      const today = new Date();
-      const birthDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+      // Extract birth date from IIN
+      const birthDate = extractBirthDateFromIIN(iin);
+      
+      if (!birthDate) {
+        Alert.alert('Ошибка', 'Неверный формат даты рождения в ИИН');
+        return;
+      }
       
       const registerData: RegisterData = {
         iin,
@@ -294,6 +294,49 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     }
   };
 
+  const validateIIN = (iin: string): boolean => {
+    if (iin.length !== 12 || !/^\d+$/.test(iin)) {
+      return false;
+    }
+    
+    // Check if birth date is valid
+    const birthYear = parseInt(iin.substring(0, 2));
+    const birthMonth = parseInt(iin.substring(2, 4));
+    const birthDay = parseInt(iin.substring(4, 6));
+    
+    if (birthMonth < 1 || birthMonth > 12 || birthDay < 1 || birthDay > 31) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  const extractBirthDateFromIIN = (iin: string): Date | null => {
+    if (!validateIIN(iin)) {
+      return null;
+    }
+    
+    const birthYear = parseInt(iin.substring(0, 2));
+    const birthMonth = parseInt(iin.substring(2, 4));
+    const birthDay = parseInt(iin.substring(4, 6));
+    
+    // Determine century based on birth year
+    let fullYear;
+    if (birthYear <= 23) {
+      fullYear = 2000 + birthYear;
+    } else {
+      fullYear = 1900 + birthYear;
+    }
+    
+    const birthDate = new Date(fullYear, birthMonth - 1, birthDay);
+    
+    if (isNaN(birthDate.getTime())) {
+      return null;
+    }
+    
+    return birthDate;
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -349,7 +392,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               keyboardType="numeric"
               maxLength={12}
               style={styles.input}
-              outlineColor="#fff"
+              outlineColor={iin.length === 12 ? (validateIIN(iin) ? '#27AE60' : '#E74C3C') : '#fff'}
               activeOutlineColor="#E74C3C"
               textColor="#fff"
               placeholderTextColor="#fff"
@@ -359,7 +402,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                 }
               }}
               left={<TextInput.Icon icon="card-account-details" />}
+              right={iin.length === 12 && (
+                <TextInput.Icon 
+                  icon={validateIIN(iin) ? "check-circle" : "alert-circle"} 
+                  color={validateIIN(iin) ? '#27AE60' : '#E74C3C'}
+                />
+              )}
             />
+            {iin.length === 12 && !validateIIN(iin) && (
+              <HelperText type="error" visible={true}>
+                ИИН содержит неверную дату рождения
+              </HelperText>
+            )}
 
             {mode === 'register' && (
               <>
@@ -382,7 +436,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                 />
 
                 <TextInput
-                  label="Email (необязательно)"
+                  label="Email *"
                   value={email}
                   onChangeText={setEmail}
                   mode="outlined"
@@ -448,7 +502,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               mode="contained"
               onPress={handleSubmit}
               loading={loading}
-              disabled={loading}
+              disabled={loading || (mode === 'register' && (!iin || !password || !fullName || !email))}
               style={styles.button}
               buttonColor="#E74C3C"
               icon={mode === 'login' ? 'login' : 'account-plus'}

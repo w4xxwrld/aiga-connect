@@ -67,8 +67,17 @@ class AuthService {
       
       return response.data;
     } catch (error: any) {
+      console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
+      
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
+      }
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      if (error.message) {
+        throw new Error(error.message);
       }
       throw new Error('Login failed. Please check your credentials.');
     }
@@ -85,6 +94,7 @@ class AuthService {
     } catch (error: any) {
       console.error('AuthService: Registration error:', error);
       console.error('AuthService: Error response:', error.response?.data);
+      console.error('AuthService: Error status:', error.response?.status);
       
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
@@ -180,10 +190,18 @@ class AuthService {
     try {
       const response = await api.get('/users/me');
       const userData = response.data;
+      console.log('Current user data received:', userData);
       await this.storeUserData(userData);
       return userData;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching current user:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      // If token is invalid, clear stored data
+      if (error.response?.status === 401) {
+        await this.clearTokens();
+      }
       return null;
     }
   }

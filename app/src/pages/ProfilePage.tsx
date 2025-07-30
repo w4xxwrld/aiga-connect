@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  StatusBar,
   Alert,
 } from 'react-native';
 import {
@@ -18,9 +17,11 @@ import {
 import { useAppContext } from '../context/AppContext';
 import childrenService, { Child } from '../services/children';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Layout from '../components/Layout';
+import Sidebar from '../components/Sidebar';
 
 const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
-  const { user, userRole, logout } = useAppContext();
+  const { user, userRole, logout, isSidebarOpen, setIsSidebarOpen } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [linkedChildren, setLinkedChildren] = useState<Child[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(false);
@@ -107,6 +108,10 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     loadLinkedChildren();
   }, [userRole]);
 
+  const handleSidebarClose = useCallback(() => {
+    setIsSidebarOpen(false);
+  }, [setIsSidebarOpen]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -116,9 +121,11 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
+    return (
+    <Layout
+      title="Профиль"
+      onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
+    >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -215,7 +222,7 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View style={styles.infoContainer}>
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons name="account" size={20} color="#E74C3C" />
-                <Text style={styles.infoLabel}>ID пользователя:</Text>
+                <Text style={styles.infoLabel}>ID:</Text>
                 <Text style={styles.infoValue}>{user?.id || 'Не указан'}</Text>
               </View>
 
@@ -345,14 +352,19 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           </Card.Content>
         </Card>
       </ScrollView>
-    </View>
+
+      {/* Sidebar */}
+      <Sidebar
+        isVisible={isSidebarOpen}
+        onClose={handleSidebarClose}
+      />
+    </Layout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D1B2A',
   },
   loadingContainer: {
     flex: 1,
@@ -439,7 +451,7 @@ const styles = StyleSheet.create({
     color: '#B0BEC5',
     fontSize: 16,
     fontWeight: '500',
-    marginLeft: 12,
+    marginLeft: 24,
     minWidth: 140,
   },
   infoValue: {

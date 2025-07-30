@@ -8,7 +8,6 @@ from app.merchandise.router import router as merchandise_router
 from app.chat.router import router as chat_router
 from app.chat.websocket import websocket_endpoint
 from app.feedback.router import router as feedback_router
-from app.forum.router import router as forum_router
 from app import models  # Import models to ensure they are registered
 
 app = FastAPI(
@@ -35,4 +34,3 @@ def read_root():
     return {"message": "AIGA Connect - Грэпплинг клуб MVP backend", "version": "1.0.0"}
     
 app.include_router(feedback_router, prefix="/feedback", tags=["feedback"])
-app.include_router(forum_router, prefix="/forum", tags=["forum"])

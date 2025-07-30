@@ -96,7 +96,7 @@ class ChatMessage(Base):
     # Relationships
     room = relationship("ChatRoom", back_populates="messages")
     sender = relationship("User", foreign_keys=[sender_id])
-    reply_to = relationship("ChatMessage", remote_side=[id])
+    reply_to = relationship("ChatMessage", remote_side=[id], foreign_keys=[reply_to_id])
     reactions = relationship("MessageReaction", back_populates="message", cascade="all, delete-orphan")
 
 class MessageReaction(Base):
@@ -161,7 +161,6 @@ class ForumTopic(Base):
     is_approved = Column(Boolean, default=True)
     
     # Последняя активность
-    last_reply_id = Column(Integer, ForeignKey("forum_replies.id"), nullable=True)
     last_reply_at = Column(DateTime, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -171,7 +170,6 @@ class ForumTopic(Base):
     category = relationship("ForumCategory", back_populates="topics")
     created_by = relationship("User", foreign_keys=[created_by_id])
     replies = relationship("ForumReply", back_populates="topic", cascade="all, delete-orphan")
-    last_reply = relationship("ForumReply", foreign_keys=[last_reply_id], post_update=True)
 
 class ForumReply(Base):
     """Ответы в форуме"""
@@ -195,6 +193,6 @@ class ForumReply(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    topic = relationship("ForumTopic", back_populates="replies", foreign_keys=[topic_id])
+    topic = relationship("ForumTopic", back_populates="replies")
     author = relationship("User", foreign_keys=[author_id])
-    reply_to = relationship("ForumReply", remote_side=[id])
+    reply_to = relationship("ForumReply", remote_side=[id], foreign_keys=[reply_to_id])
