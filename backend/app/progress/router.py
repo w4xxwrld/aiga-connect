@@ -274,6 +274,32 @@ async def get_tournament_participants(
     
     return await crud.get_tournament_participants(db, tournament_id)
 
+
+@router.get("/tournaments/{tournament_id}/check-registration", response_model=schemas.TournamentParticipationOut)
+async def check_tournament_registration(
+    tournament_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Проверить регистрацию текущего пользователя на турнир (для спортсменов)"""
+    # Проверяем что пользователь является спортсменом
+    user_roles = [ur.role for ur in current_user.user_roles]
+    if UserRole.athlete not in user_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only athletes can check their own registration"
+        )
+    
+    # Проверяем регистрацию текущего пользователя
+    participation = await crud.get_tournament_participation_by_athlete(db, tournament_id, current_user.id)
+    if not participation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not registered for this tournament"
+        )
+    
+    return participation
+
 @router.get("/athletes/{athlete_id}/tournaments", response_model=List[schemas.TournamentParticipationWithDetails])
 async def get_athlete_tournaments(
     athlete_id: int,

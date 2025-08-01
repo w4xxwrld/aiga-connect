@@ -203,15 +203,27 @@ async def create_collection(db: AsyncSession, collection_data: ProductCollection
 
 async def get_collections(db: AsyncSession, is_featured: Optional[bool] = None) -> List[ProductCollection]:
     """Получить коллекции"""
-    query = select(ProductCollection).where(ProductCollection.is_active == True)
-    
-    if is_featured is not None:
-        query = query.where(ProductCollection.is_featured == is_featured)
-    
-    query = query.order_by(asc(ProductCollection.sort_order), desc(ProductCollection.created_at))
-    
-    result = await db.execute(query)
-    return result.scalars().all()
+    try:
+        query = select(ProductCollection).where(ProductCollection.is_active == True)
+        
+        if is_featured is not None:
+            query = query.where(ProductCollection.is_featured == is_featured)
+        
+        query = query.order_by(asc(ProductCollection.sort_order), desc(ProductCollection.created_at))
+        
+        result = await db.execute(query)
+        collections = result.scalars().all()
+        
+        # Filter out collections without required fields
+        valid_collections = []
+        for collection in collections:
+            if collection.name:  # Only include collections with names
+                valid_collections.append(collection)
+        
+        return valid_collections
+    except Exception as e:
+        print(f"Error in get_collections: {e}")
+        return []
 
 async def get_collection_with_products(db: AsyncSession, collection_id: int) -> Optional[ProductCollection]:
     """Получить коллекцию с товарами"""

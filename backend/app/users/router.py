@@ -330,6 +330,44 @@ async def get_coaches(
     coaches = await crud.get_coaches(db)
     return coaches
 
+@router.get("/all", response_model=List[schemas.UserOut])
+async def get_all_users(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Получить всех пользователей (только для главных тренеров)"""
+    if not current_user.is_head_coach:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only head coaches can view all users"
+        )
+    
+    users = await crud.get_all_users(db)
+    return users
+
+
+@router.post("/{user_id}/make-coach", response_model=schemas.UserOut)
+async def make_user_coach(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Назначить пользователя тренером (только для главных тренеров)"""
+    if not current_user.is_head_coach:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only head coaches can assign coach role"
+        )
+    
+    try:
+        user = await crud.make_user_coach(db, user_id, current_user.id)
+        return user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
 @router.get("/by-iin/{iin}", response_model=schemas.UserSimple)
 async def get_user_by_iin(
     iin: str,
@@ -351,4 +389,34 @@ async def get_user_by_iin(
         )
     
     # Return only basic user info for security
+    return user
+
+@router.get("/{user_id}", response_model=schemas.UserSimple)
+async def get_user_by_id(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Получить пользователя по ID (только для родителей для просмотра своих детей)"""
+    if current_user.primary_role != UserRole.parent:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only parents can view user details by ID"
+        )
+    
+    user = await crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Check if the user is a child of the current parent
+    is_child = await crud.is_user_child_of_parent(db, user_id, current_user.id)
+    if not is_child:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only view your own children"
+        )
+    
     return user

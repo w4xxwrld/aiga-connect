@@ -24,12 +24,13 @@ interface TournamentParticipation {
   notes: string;
 }
 
-const TournamentsPage: React.FC = () => {
-  const { user, isSidebarOpen, setIsSidebarOpen } = useAppContext();
+const TournamentsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
+  const { user, isSidebarOpen, setIsSidebarOpen, linkedChildren } = useAppContext();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [participations, setParticipations] = useState<TournamentParticipation[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
+
 
   const handleSidebarClose = useCallback(() => {
     setIsSidebarOpen(false);
@@ -108,6 +109,14 @@ const TournamentsPage: React.FC = () => {
     return participations.find(p => p.tournament_id === tournamentId);
   };
 
+
+
+
+
+  const canCreateTournament = () => {
+    return user?.is_head_coach === true;
+  };
+
   const filteredTournaments = tournaments.filter(tournament => {
     const isUpcoming = new Date(tournament.event_date) > new Date();
     return activeTab === 'upcoming' ? isUpcoming : !isUpcoming;
@@ -128,6 +137,19 @@ const TournamentsPage: React.FC = () => {
   return (
     <Layout title="Турниры" onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}>
       <ScrollView style={styles.container}>
+
+      {/* Create Tournament Button for Head Coaches */}
+      {canCreateTournament() && (
+        <View style={styles.createButtonContainer}>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => navigation.navigate('CreateTournament')}
+          >
+            <MaterialCommunityIcons name="plus" size={20} color="#fff" />
+            <Text style={styles.createButtonText}>Создать турнир</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
@@ -157,7 +179,12 @@ const TournamentsPage: React.FC = () => {
             const isParticipating = isUserParticipating(tournament.id);
             
             return (
-              <View key={tournament.id} style={styles.tournamentCard}>
+              <TouchableOpacity 
+                key={tournament.id} 
+                style={[styles.tournamentCard, styles.clickableCard]}
+                onPress={() => navigation.navigate('TournamentDetail', { tournamentId: tournament.id })}
+                activeOpacity={0.7}
+              >
                 <View style={styles.tournamentHeader}>
                   <View style={styles.tournamentTitleContainer}>
                     <Text style={styles.tournamentTitle}>{tournament.name}</Text>
@@ -200,7 +227,7 @@ const TournamentsPage: React.FC = () => {
                   </View>
                 </View>
 
-                {participation && (
+                {participation && tournament.status === 'completed' && (
                   <View style={styles.participationInfo}>
                     <Text style={styles.participationTitle}>Ваше участие:</Text>
                     <View style={styles.participationDetails}>
@@ -217,12 +244,15 @@ const TournamentsPage: React.FC = () => {
                   </View>
                 )}
 
+
+
                 <View style={styles.tournamentStatus}>
                   <View style={[styles.statusBadge, { backgroundColor: tournamentsService.getStatusColor(tournament.status) }]}>
                     <Text style={styles.statusText}>{tournamentsService.getStatusDisplayName(tournament.status)}</Text>
                   </View>
+                  <MaterialCommunityIcons name="chevron-right" size={30} color="#B0BEC5" style={styles.chevronIcon} />
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })
         ) : (
@@ -373,6 +403,11 @@ const styles = StyleSheet.create({
     color: '#B0BEC5',
   },
   tournamentStatus: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  statusContainer: {
     alignItems: 'flex-end',
   },
   statusBadge: {
@@ -400,6 +435,53 @@ const styles = StyleSheet.create({
     color: '#7F8C8D',
     textAlign: 'center',
     marginTop: 8,
+  },
+  clickableCard: {
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  chevronIcon: {
+    marginLeft: 8,
+  },
+  createButtonContainer: {
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+  createButton: {
+    backgroundColor: '#E74C3C',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  createButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  registerButton: {
+    backgroundColor: '#27AE60',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  registerButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  registerButtonDisabled: {
+    backgroundColor: '#7F8C8D',
   },
 });
 

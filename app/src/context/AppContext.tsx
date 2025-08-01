@@ -59,29 +59,29 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setIsAuthenticated(authenticated);
 
       if (authenticated) {
-        // Load user data
-        const userData = await authService.getUserData();
-        console.log('AppContext: Loaded user data from storage:', userData);
+        // Always try to get fresh user data from API first
+        const freshUserData = await authService.getCurrentUser();
+        console.log('AppContext: Fresh user data from API:', freshUserData);
         
-        if (userData) {
-          setUser(userData);
-          setUserRole(userData.primary_role);
+        if (freshUserData) {
+          setUser(freshUserData);
+          setUserRole(freshUserData.primary_role);
           
           // Load children if user is a parent
-          if (userData.primary_role === 'parent') {
+          if (freshUserData.primary_role === 'parent') {
             await loadChildren();
           }
         } else {
-          // Try to get fresh user data from API
-          const freshUserData = await authService.getCurrentUser();
-          console.log('AppContext: Fresh user data from API:', freshUserData);
+          // Fallback to stored data if API fails
+          const userData = await authService.getUserData();
+          console.log('AppContext: Loaded user data from storage:', userData);
           
-          if (freshUserData) {
-            setUser(freshUserData);
-            setUserRole(freshUserData.primary_role);
+          if (userData) {
+            setUser(userData);
+            setUserRole(userData.primary_role);
             
             // Load children if user is a parent
-            if (freshUserData.primary_role === 'parent') {
+            if (userData.primary_role === 'parent') {
               await loadChildren();
             }
           } else {

@@ -162,6 +162,8 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
               key={child.id}
               title={child.full_name}
               description={`Возраст: ${childrenService.calculateAge(child.birth_date)} лет`}
+              titleStyle={styles.childName}
+              descriptionStyle={styles.childAge}
               left={() => (
                 <Avatar.Text 
                   size={40} 
@@ -224,7 +226,24 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
             ]}
             style={styles.segmentedButtons}
             density="small"
+            theme={{
+              colors: {
+                primary: '#E74C3C',
+                onSurface: '#fff',
+                onSurfaceVariant: '#fff',
+                outline: '#2C3E50',
+              }
+            }}
           />
+
+          {bookingType === 'trial' && classData && !classData.is_trial_available && (
+            <View style={styles.errorContainer}>
+              <MaterialCommunityIcons name="alert-circle" size={20} color="#E74C3C" />
+              <Text style={styles.errorText}>
+                Пробные занятия не разрешены для этого класса
+              </Text>
+            </View>
+          )}
 
           <Title style={styles.sectionTitle}>Дата занятия</Title>
           <TextInput
@@ -400,6 +419,7 @@ const styles: any = {
   segmentedButtons: {
     marginBottom: 12,
     marginHorizontal: -4,
+    textColor: '#fff',
   },
   input: {
     marginBottom: 8,
@@ -417,9 +437,20 @@ const styles: any = {
   },
   childAvatar: {
     backgroundColor: '#34495E',
+    marginLeft: 16,
+    alignSelf: 'center',
   },
   selectedChildAvatar: {
     backgroundColor: '#E74C3C',
+  },
+  childName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  childAge: {
+    color: '#B0BEC5',
+    fontSize: 14,
   },
   actionsContainer: {
     gap: 12,
@@ -429,6 +460,20 @@ const styles: any = {
   },
   cancelButton: {
     marginTop: 4,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2C3E50',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  errorText: {
+    color: '#E74C3C',
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
   },
 };
 

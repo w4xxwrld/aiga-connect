@@ -331,6 +331,30 @@ class AuthService {
       throw new Error('Failed to get head coach');
     }
   }
+
+  async makeUserCoach(userId: number): Promise<any> {
+    try {
+      const response = await api.post(`/users/${userId}/make-coach`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Failed to make user coach');
+    }
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    try {
+      const response = await api.get('/users/all');
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Failed to get all users');
+    }
+  }
 }
 
 export default new AuthService(); 

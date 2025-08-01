@@ -15,6 +15,7 @@ import { useAppContext } from '../context/AppContext';
 import Layout from '../components/Layout';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
+import { useNavigation } from '@react-navigation/native';
 
 interface Product {
   id: number;
@@ -48,6 +49,7 @@ const { width } = Dimensions.get('window');
 
 const StorePage: React.FC = () => {
   const { user, isSidebarOpen, setIsSidebarOpen } = useAppContext();
+  const navigation = useNavigation();
   const [products, setProducts] = useState<Product[]>([]);
   const [collections, setCollections] = useState<ProductCollection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,12 +68,12 @@ const StorePage: React.FC = () => {
     try {
       setLoading(true);
       const [productsResponse, collectionsResponse] = await Promise.all([
-        api.get('/merchandise/'),
+        api.get('/merchandise'),
         api.get('/merchandise/collections/'),
       ]);
       
       setProducts(productsResponse.data.products || productsResponse.data);
-      setCollections(collectionsResponse.data);
+      setCollections(collectionsResponse.data || []);
     } catch (error) {
       console.error('Error fetching store data:', error);
       // Don't show alert, just set empty arrays
@@ -84,12 +86,9 @@ const StorePage: React.FC = () => {
 
   const getCategoryName = (category: string) => {
     const categories = {
-      gi: 'Кимоно',
       rashguard: 'Рашгард',
       shorts: 'Шорты',
-      belt: 'Пояса',
-      equipment: 'Экипировка',
-      accessories: 'Аксессуары',
+      equipment: 'Мерч',
     };
     return categories[category as keyof typeof categories] || category;
   };
@@ -108,17 +107,7 @@ const StorePage: React.FC = () => {
   };
 
   const handleProductPress = (product: Product) => {
-    if (product.external_url) {
-      // In a real app, you would open the external URL
-      Alert.alert(
-        'Переход к покупке',
-        `Открыть товар "${product.name}" в магазине?`,
-        [
-          { text: 'Отмена', style: 'cancel' },
-          { text: 'Открыть', onPress: () => console.log('Open external URL:', product.external_url) },
-        ]
-      );
-    }
+    (navigation as any).navigate('ProductDetail', { productId: product.id });
   };
 
   const filteredProducts = products.filter(product => {
@@ -132,7 +121,7 @@ const StorePage: React.FC = () => {
     return true;
   });
 
-  const categories = ['all', 'gi', 'rashguard', 'shorts', 'belt', 'equipment', 'accessories'];
+  const categories = ['all', 'rashguard', 'shorts', 'equipment'];
 
   if (loading) {
     return (
@@ -150,7 +139,7 @@ const StorePage: React.FC = () => {
     <Layout title="Магазин AIGA" onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}>
       <ScrollView style={styles.container}>
         <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitle}>Экипировка и аксессуары</Text>
+          <Text style={styles.subtitle}>Рашгарды, шорты и мерч</Text>
         </View>
 
       {/* Featured Collections */}

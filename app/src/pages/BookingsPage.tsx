@@ -190,7 +190,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           {userRole === 'parent' && booking.athlete && (
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-child" size={16} color="#E74C3C" />
-              <Text style={styles.detailText}>
+              <Text style={[styles.detailText, { color: '#FFFFFF', fontWeight: '600' }]}>
                 Спортсмен: {booking.athlete.full_name}
               </Text>
             </View>
@@ -324,39 +324,42 @@ if (loading) {
     >
     
     <View style={styles.actionHeader}>
-      <Button
-        mode="contained"
-        onPress={() => navigation?.navigate('Classes')}
-        buttonColor="#E74C3C"
-        icon="plus"
-      >
-        {userRole === 'coach' ? 'Управление' : 'Записаться'}
-      </Button>
-      
-      {/* Individual Training Request buttons */}
-      {(userRole === 'athlete' || userRole === 'parent') && (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <Button
-          mode="outlined"
-          onPress={() => navigation?.navigate('RequestIndividualTraining')}
-          style={styles.individualTrainingButton}
-          textColor="#E74C3C"
-          icon="account-star"
+          mode="contained"
+          onPress={() => navigation?.navigate('Classes')}
+          buttonColor="#E74C3C"
+          icon="plus"
+          style={styles.actionButton}
         >
-          Индивидуальная тренировка
+          {userRole === 'coach' ? 'Управление' : 'Записаться'}
         </Button>
-      )}
-      
-      {userRole === 'coach' && (
-        <Button
-          mode="outlined"
-          onPress={() => navigation?.navigate('IndividualTrainingRequests')}
-          style={styles.individualTrainingButton}
-          textColor="#E74C3C"
-          icon="account-star"
-        >
-          Индивидуальные запросы
-        </Button>
-      )}
+        
+        {/* Individual Training Request buttons */}
+        {(userRole === 'athlete' || userRole === 'parent') && (
+          <Button
+            mode="outlined"
+            onPress={() => navigation?.navigate('RequestIndividualTraining')}
+            style={[styles.individualTrainingButton, styles.actionButton]}
+            textColor="#E74C3C"
+            icon="account-star"
+          >
+            Индивидуальная тренировка
+          </Button>
+        )}
+        
+        {userRole === 'coach' && (
+          <Button
+            mode="outlined"
+            onPress={() => navigation?.navigate('IndividualTrainingRequests')}
+            style={[styles.individualTrainingButton, styles.actionButton]}
+            textColor="#E74C3C"
+            icon="account-star"
+          >
+            Индивидуальные запросы
+          </Button>
+        )}
+      </ScrollView>
     </View>
 
     <View style={styles.statsContainer}>
@@ -526,7 +529,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 80, 
   },
   bookingCard: {
     backgroundColor: '#1B263B',
@@ -554,7 +557,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   bookingType: {
-    color: '#B0BEC5',
+    color: '#fff',
     fontSize: 12,
   },
   bookingMeta: {
@@ -582,8 +585,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   actionButton: {
-    flex: 1,
-    marginHorizontal: 4,
+    marginRight: 8,
+    minWidth: 160,
   },
   cancelButton: {
     marginLeft: 8,

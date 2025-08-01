@@ -77,7 +77,7 @@ class TournamentsService {
       if (status) params.status = status;
       if (category) params.category = category;
       
-      const response = await api.get('/progress/tournaments/', { params });
+      const response = await api.get('/progress/tournaments', { params });
       return response.data;
     } catch (error: any) {
       if (error.response?.data?.detail) {
@@ -101,7 +101,7 @@ class TournamentsService {
 
   async createTournament(tournamentData: TournamentCreate): Promise<Tournament> {
     try {
-      const response = await api.post('/progress/tournaments/', tournamentData);
+      const response = await api.post('/progress/tournaments', tournamentData);
       return response.data;
     } catch (error: any) {
       if (error.response?.data?.detail) {
@@ -146,9 +146,14 @@ class TournamentsService {
     }
   }
 
-  async registerForTournament(tournamentId: number, participantData: Omit<TournamentParticipantCreate, 'tournament_id'>): Promise<TournamentParticipant> {
+  async registerForTournament(tournamentId: number, participantData: Omit<TournamentParticipantCreate, 'tournament_id'>, athleteId?: number): Promise<TournamentParticipant> {
     try {
-      const response = await api.post(`/progress/tournaments/${tournamentId}/register`, participantData);
+      const params: any = {};
+      if (athleteId) {
+        params.athlete_id = athleteId;
+      }
+      
+      const response = await api.post(`/progress/tournaments/${tournamentId}/register`, participantData, { params });
       return response.data;
     } catch (error: any) {
       if (error.response?.data?.detail) {
@@ -167,6 +172,24 @@ class TournamentsService {
         throw new Error(error.response.data.detail);
       }
       throw new Error('Failed to get athlete tournaments');
+    }
+  }
+
+  async isAthleteRegisteredForTournament(tournamentId: number, athleteId: number): Promise<boolean> {
+    try {
+      // Use the new endpoint that allows athletes to check their own registration
+      const response = await api.get(`/progress/tournaments/${tournamentId}/check-registration`);
+      // If we get here, the athlete is registered
+      return true;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // 404 means not registered
+        return false;
+      }
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Failed to check tournament participation');
     }
   }
 

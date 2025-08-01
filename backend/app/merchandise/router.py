@@ -77,8 +77,13 @@ async def get_collections(
     db: AsyncSession = Depends(get_db)
 ):
     """Получить список коллекций"""
-    collections = await crud.get_collections(db, is_featured)
-    return collections
+    try:
+        collections = await crud.get_collections(db, is_featured)
+        return collections
+    except Exception as e:
+        print(f"Error getting collections: {e}")
+        # Return empty list if there's an error
+        return []
 
 @router.get("/collections/{collection_id}", response_model=schemas.ProductCollectionWithProducts)
 async def get_collection(

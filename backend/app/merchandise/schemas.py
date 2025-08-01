@@ -91,7 +91,7 @@ class ProductWithVariants(ProductOut):
 class ProductCollectionBase(BaseModel):
     name: str
     description: Optional[str] = None
-    slug: str
+    slug: Optional[str] = None  # Make slug optional to handle existing data
     banner_image_url: Optional[str] = None
     thumbnail_image_url: Optional[str] = None
 

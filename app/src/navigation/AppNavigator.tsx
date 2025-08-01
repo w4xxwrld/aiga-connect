@@ -18,16 +18,20 @@ type RootStackParamList = {
   Profile: undefined;
   EditProfile: undefined;
   LinkChild: undefined;
+  ChildProfile: { childId: number; childName: string };
   RequestIndividualTraining: undefined;
   IndividualTrainingRequests: undefined;
   Progress: undefined;
   Tournaments: undefined;
+  TournamentDetail: { tournamentId: number };
+  CreateTournament: undefined;
   Chat: undefined;
   Forum: undefined;
   Store: undefined;
+  ProductDetail: { productId: number };
   Notifications: undefined;
   CoachRating: undefined;
-
+  UsersManagement: undefined;
 };
 
 type MainTabParamList = {
@@ -56,11 +60,16 @@ import IndividualTrainingRequestsPage from '../pages/IndividualTrainingRequestsP
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ProgressPage from '../pages/ProgressPage';
 import TournamentsPage from '../pages/TournamentsPage';
+import TournamentDetailPage from '../pages/TournamentDetailPage';
+import CreateTournamentPage from '../pages/CreateTournamentPage';
 import ChatPage from '../pages/ChatPage';
 import ForumPage from '../pages/ForumPage';
 import StorePage from '../pages/StorePage';
+import ProductDetailPage from '../pages/ProductDetailPage';
 import NotificationsPage from '../pages/NotificationsPage';
 import CoachRatingPage from '../pages/CoachRatingPage';
+import UsersManagementPage from '../pages/UsersManagementPage';
+import ChildProfilePage from '../pages/ChildProfilePage';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -243,6 +252,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Profile" component={ProfilePage} />
         <Stack.Screen name="EditProfile" component={EditProfilePage} />
         <Stack.Screen name="LinkChild" component={LinkChildPage} />
+        <Stack.Screen name="ChildProfile" component={ChildProfilePage} />
         {/* Placeholder screens for future implementation */}
         <Stack.Screen name="BookingDetail" component={BookingDetailPage} />
         <Stack.Screen name="RequestIndividualTraining" component={RequestIndividualTrainingPage} />
@@ -253,11 +263,15 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="ClassParticipants" component={ClassParticipantsPage} />
         <Stack.Screen name="Progress" component={ProgressPage} />
         <Stack.Screen name="Tournaments" component={TournamentsPage} />
+        <Stack.Screen name="TournamentDetail" component={TournamentDetailPage} />
+        <Stack.Screen name="CreateTournament" component={CreateTournamentPage} />
         <Stack.Screen name="Chat" component={ChatPage} />
         <Stack.Screen name="Forum" component={ForumPage} />
         <Stack.Screen name="Store" component={StorePage} />
+        <Stack.Screen name="ProductDetail" component={ProductDetailPage} />
         <Stack.Screen name="Notifications" component={NotificationsPage} />
         <Stack.Screen name="CoachRating" component={CoachRatingPage} />
+        <Stack.Screen name="UsersManagement" component={UsersManagementPage} />
 
       </Stack.Navigator>
     </NavigationContainer>

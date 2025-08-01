@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
@@ -47,16 +48,22 @@ const ChatPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  
+  const scrollToBottom = useCallback((animated = true) => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated });
+    }, 100);
+  }, []);
 
   useEffect(() => {
     fetchRooms();
-  }, []);
+  }, [user?.primary_role]);
 
   useEffect(() => {
     if (currentRoom) {
       fetchMessages();
-      // Set up polling for new messages
-      const interval = setInterval(fetchMessages, 5000);
+      // Set up polling for new messages - increased interval to reduce refresh frequency
+      const interval = setInterval(fetchMessages, 10000); // Changed from 5000 to 10000ms
       return () => clearInterval(interval);
     }
   }, [currentRoom]);
@@ -65,12 +72,54 @@ const ChatPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await api.get('/chat/rooms');
-      setRooms(response.data);
+      const allRooms = response.data;
       
-      // Select the first public room as default
-      const publicRoom = response.data.find((room: ChatRoom) => room.is_public);
-      if (publicRoom) {
-        setCurrentRoom(publicRoom);
+      // Filter rooms based on user role
+      let accessibleRooms = allRooms.filter((room: ChatRoom) => {
+        // General chat is always accessible
+        if (room.name.toLowerCase().includes('общий') || room.name.toLowerCase().includes('general')) {
+          return true;
+        }
+        
+        // Role-specific access
+        if (user?.primary_role === 'athlete') {
+          // Athletes: only athlete chat and general chat
+          return room.name.toLowerCase().includes('спортсмен') || 
+                 room.name.toLowerCase().includes('спортсмены') ||
+                 room.name.toLowerCase().includes('athlete');
+        } else if (user?.primary_role === 'parent') {
+          // Parents: only parent chat and general chat
+          return room.name.toLowerCase().includes('родитель') || 
+                 room.name.toLowerCase().includes('родители') ||
+                 room.name.toLowerCase().includes('parent');
+        } else if (user?.primary_role === 'coach') {
+          // Coaches: access to all chats
+          return true;
+        }
+        
+        // Default to general chat only
+        return room.name.toLowerCase().includes('общий') || room.name.toLowerCase().includes('general');
+      });
+      
+      console.log('ChatPage: User role:', user?.primary_role);
+      console.log('ChatPage: All rooms:', allRooms.map((r: ChatRoom) => r.name));
+      console.log('ChatPage: Accessible rooms:', accessibleRooms.map((r: ChatRoom) => r.name));
+      
+      // Debug: Check each room's filtering
+      allRooms.forEach((room: ChatRoom) => {
+        const roomNameLower = room.name.toLowerCase();
+        const isGeneral = roomNameLower.includes('общий') || roomNameLower.includes('general');
+        const isParent = roomNameLower.includes('родитель') || roomNameLower.includes('родители') || roomNameLower.includes('parent');
+        const isAthlete = roomNameLower.includes('спортсмен') || roomNameLower.includes('спортсмены') || roomNameLower.includes('athlete');
+        
+        console.log(`ChatPage: Room "${room.name}" - General: ${isGeneral}, Parent: ${isParent}, Athlete: ${isAthlete}`);
+      });
+      
+      setRooms(accessibleRooms);
+      
+      // Select the first accessible room as default
+      if (accessibleRooms.length > 0) {
+        setCurrentRoom(accessibleRooms[0]);
       }
     } catch (error) {
       console.error('Error fetching chat rooms:', error);
@@ -85,7 +134,27 @@ const ChatPage: React.FC = () => {
     
     try {
       const response = await api.get(`/chat/rooms/${currentRoom.id}/messages`);
-      setMessages(response.data);
+      console.log('ChatPage: Raw messages from server:', response.data.map((m: ChatMessage) => ({
+        id: m.id,
+        content: m.content.substring(0, 30) + '...',
+        sender: m.sender_name,
+        created_at: m.created_at,
+        parsed_time: new Date(m.created_at + 'Z').toISOString(),
+        timestamp: new Date(m.created_at + 'Z').getTime(),
+        date_only: m.created_at.split('T')[0] // Just the date part
+      })));
+      
+      // Server returns newest first, so reverse to get oldest first
+      const sortedMessages = response.data.reverse();
+      console.log('ChatPage: Reversed server order to get oldest first');
+      
+      console.log('ChatPage: Final sorted order:', sortedMessages.map((m: ChatMessage) => ({
+        id: m.id,
+        content: m.content.substring(0, 30) + '...',
+        sender: m.sender_name
+      })));
+      
+      setMessages(sortedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
@@ -103,13 +172,13 @@ const ChatPage: React.FC = () => {
       });
       
       setNewMessage('');
-      // Add the new message to the list
-      setMessages(prev => [...prev, response.data]);
       
-      // Scroll to bottom
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      // Instead of manually sorting, just refresh the messages from server
+      // This ensures we get the correct order from the database
+      await fetchMessages();
+      
+      // Scroll to bottom after refreshing
+      scrollToBottom(true);
     } catch (error) {
       console.error('Error sending message:', error);
       Alert.alert('Ошибка', 'Не удалось отправить сообщение');
@@ -118,12 +187,63 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('ru-RU', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+  // Auto-scroll to bottom when new messages are loaded (only for initial load)
+  useEffect(() => {
+    if (messages.length > 0 && !sending) {
+      // Only auto-scroll if we're not currently sending a message
+      scrollToBottom(false);
+    }
+  }, [messages, sending, scrollToBottom]);
+
+  // Handle keyboard events
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 300);
     });
+
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      // Optional: handle keyboard hide if needed
+    });
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
+
+  const formatTime = (dateString: string) => {
+    // Parse the date string as UTC to avoid timezone issues
+    const date = new Date(dateString + 'Z');
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const isYesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toDateString() === date.toDateString();
+    
+    if (isToday) {
+      return date.toLocaleTimeString('ru-RU', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZone: 'Asia/Almaty' // Use Kazakhstan timezone
+      });
+    } else if (isYesterday) {
+      return `Вчера ${date.toLocaleTimeString('ru-RU', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZone: 'Asia/Almaty' // Use Kazakhstan timezone
+      })}`;
+    } else {
+      return date.toLocaleDateString('ru-RU', { 
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        timeZone: 'Asia/Almaty' // Use Kazakhstan timezone
+      }) + ' ' + date.toLocaleTimeString('ru-RU', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZone: 'Asia/Almaty' // Use Kazakhstan timezone
+      });
+    }
   };
 
   const isOwnMessage = (message: ChatMessage) => {
@@ -149,10 +269,7 @@ const ChatPage: React.FC = () => {
       showFooter={false}
       onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
     >
-      <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <View style={styles.container}>
 
       {/* Room Selector */}
       <View style={styles.roomSelector}>
@@ -182,39 +299,98 @@ const ChatPage: React.FC = () => {
         ref={scrollViewRef}
         style={styles.messagesContainer}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.messagesContentContainer}
       >
         {messages.length > 0 ? (
-          [...messages].reverse().map((message) => (
-            <View
-              key={message.id}
-              style={[
-                styles.messageContainer,
-                isOwnMessage(message) ? styles.ownMessage : styles.otherMessage
-              ]}
-            >
-              {!isOwnMessage(message) && (
-                <Text style={styles.senderName}>{message.sender_name}</Text>
-              )}
-              <View style={[
-                styles.messageBubble,
-                isOwnMessage(message) ? styles.ownBubble : styles.otherBubble
-              ]}>
-                <Text style={[
-                  styles.messageText,
-                  isOwnMessage(message) ? styles.ownMessageText : styles.otherMessageText
-                ]}>
-                  {message.content}
-                </Text>
-                <Text style={[
-                  styles.messageTime,
-                  isOwnMessage(message) ? styles.ownMessageTime : styles.otherMessageTime
-                ]}>
-                  {formatTime(message.created_at)}
-                  {message.is_edited && ' (ред.)'}
-                </Text>
-              </View>
-            </View>
-          ))
+          (() => {
+            // Messages are already sorted in state, just use them directly
+            const sortedMessages = [...messages];
+
+            
+            // Group messages by date
+            const groupedMessages: { [key: string]: ChatMessage[] } = {};
+            sortedMessages.forEach(message => {
+              // Parse date as UTC to avoid timezone issues
+              const date = new Date(message.created_at + 'Z');
+              const dateKey = date.toDateString();
+              if (!groupedMessages[dateKey]) {
+                groupedMessages[dateKey] = [];
+              }
+              groupedMessages[dateKey].push(message);
+            });
+            
+            // Render messages with date separators
+            const renderMessages: React.ReactNode[] = [];
+            // Sort date keys chronologically (oldest first)
+            const sortedDateKeys = Object.keys(groupedMessages).sort((a, b) => {
+              return new Date(a).getTime() - new Date(b).getTime();
+            });
+            
+            sortedDateKeys.forEach(dateKey => {
+              const messagesForDate = groupedMessages[dateKey];
+              const date = new Date(dateKey);
+              const now = new Date();
+              const isToday = date.toDateString() === now.toDateString();
+              const isYesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toDateString() === date.toDateString();
+              
+              let dateLabel = '';
+              if (isToday) {
+                dateLabel = 'Сегодня';
+              } else if (isYesterday) {
+                dateLabel = 'Вчера';
+              } else {
+                dateLabel = date.toLocaleDateString('ru-RU', { 
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long'
+                });
+              }
+              
+              // Add date separator with unique key
+              renderMessages.push(
+                <View key={`date-${dateKey}-${Date.now()}-${Math.random()}`} style={styles.dateSeparator}>
+                  <Text style={styles.dateSeparatorText}>{dateLabel}</Text>
+                </View>
+              );
+              
+              // Add messages for this date
+              messagesForDate.forEach(message => {
+                renderMessages.push(
+                  <View
+                    key={message.id}
+                    style={[
+                      styles.messageContainer,
+                      isOwnMessage(message) ? styles.ownMessage : styles.otherMessage
+                    ]}
+                  >
+                    {!isOwnMessage(message) && (
+                      <Text style={styles.senderName}>{message.sender_name}</Text>
+                    )}
+                    <View style={[
+                      styles.messageBubble,
+                      isOwnMessage(message) ? styles.ownBubble : styles.otherBubble
+                    ]}>
+                      <Text style={[
+                        styles.messageText,
+                        isOwnMessage(message) ? styles.ownMessageText : styles.otherMessageText
+                      ]}>
+                        {message.content}
+                      </Text>
+                      <Text style={[
+                        styles.messageTime,
+                        isOwnMessage(message) ? styles.ownMessageTime : styles.otherMessageTime
+                      ]}>
+                        {formatTime(message.created_at)}
+                        {message.is_edited && ' (ред.)'}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              });
+            });
+            
+            return renderMessages;
+          })()
         ) : (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="chat-outline" size={48} color="#B0BEC5" />
@@ -225,29 +401,41 @@ const ChatPage: React.FC = () => {
       </ScrollView>
 
       {/* Message Input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.textInput}
-          value={newMessage}
-          onChangeText={setNewMessage}
-          placeholder="Введите сообщение..."
-          placeholderTextColor="#7F8C8D"
-          multiline
-          maxLength={500}
-        />
-        <TouchableOpacity
-          style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]}
-          onPress={sendMessage}
-          disabled={!newMessage.trim() || sending}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <MaterialCommunityIcons name="send" size={20} color="#fff" />
-          )}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        style={styles.keyboardAvoidingView}
+      >
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.textInput}
+            value={newMessage}
+            onChangeText={setNewMessage}
+            placeholder="Введите сообщение..."
+            placeholderTextColor="#7F8C8D"
+            multiline
+            maxLength={500}
+            textAlignVertical="top"
+                      onFocus={() => {
+            setTimeout(() => {
+              scrollToBottom(true);
+            }, 300);
+          }}
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]}
+            onPress={sendMessage}
+            disabled={!newMessage.trim() || sending}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <MaterialCommunityIcons name="send" size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
 
     {/* Sidebar */}
     <Sidebar
@@ -261,6 +449,9 @@ const ChatPage: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  keyboardAvoidingView: {
+    flex: 0,
   },
   loadingContainer: {
     flex: 1,
@@ -300,6 +491,10 @@ const styles = StyleSheet.create({
   messagesContainer: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  messagesContentContainer: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   messageContainer: {
     marginBottom: 16,
@@ -351,6 +546,19 @@ const styles = StyleSheet.create({
   otherMessageTime: {
     color: '#7F8C8D',
   },
+  dateSeparator: {
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dateSeparatorText: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    backgroundColor: '#0D1B2A',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontWeight: '500',
+  },
   emptyState: {
     alignItems: 'center',
     padding: 40,
@@ -373,6 +581,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     borderTopWidth: 1,
     borderTopColor: '#2C3E50',
+    backgroundColor: '#0D1B2A',
+    minHeight: 80,
   },
   textInput: {
     flex: 1,
@@ -384,6 +594,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     maxHeight: 100,
+    minHeight: 44,
   },
   sendButton: {
     backgroundColor: '#E74C3C',

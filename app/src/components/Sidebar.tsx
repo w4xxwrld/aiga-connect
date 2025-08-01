@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -60,23 +60,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
     }
   }, [isVisible, slideAnim, fadeAnim]);
 
-  // Reset animation values when component mounts
+  // Initialize animation values only once
   useEffect(() => {
+    // Set initial values without animation
     slideAnim.setValue(-280);
     fadeAnim.setValue(0);
-  }, []);
+  }, [slideAnim, fadeAnim]);
 
-  // Simple render condition
-  if (!isVisible && !isAnimating) {
-    return null;
-  }
-
-  const handleProfilePress = () => {
+  const handleProfilePress = useCallback(() => {
     navigation?.navigate('Profile' as never);
     onClose();
-  };
+  }, [navigation, onClose]);
 
-  const handleQuickAction = (route: string) => {
+  const handleQuickAction = useCallback((route: string) => {
     if (navigation) {
       // Handle tab navigation for Classes and Bookings
       if (route === 'Classes' || route === 'Bookings') {
@@ -86,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       }
       onClose();
     }
-  };
+  }, [navigation, onClose]);
 
   const quickActions = [
     {
@@ -111,12 +107,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       icon: 'medal',
       route: 'Tournaments',
     },
-
     {
       title: 'Рейтинг тренеров',
       icon: 'star',
       route: 'CoachRating',
       showFor: ['athlete', 'parent'],
+    },
+    {
+      title: 'Управление аккаунтами',
+      icon: 'account-group',
+      route: 'UsersManagement',
+      showFor: ['coach'],
+      headCoachOnly: true,
     },
     {
       title: 'Чат',
@@ -142,8 +144,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
 
 
 
+  // Always render the sidebar, but control visibility with opacity and transform
+  // This prevents flickering by keeping the component in the DOM
+
   return (
-    <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+    <Animated.View 
+      style={[
+        styles.overlay, 
+        { 
+          opacity: fadeAnim,
+        }
+      ]}
+      pointerEvents={(!isVisible && !isAnimating) ? 'none' : 'auto'}
+    >
       <TouchableOpacity 
         style={styles.backdrop} 
         onPress={onClose}
@@ -154,21 +167,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
           {/* Profile Section */}
           <TouchableOpacity onPress={handleProfilePress} activeOpacity={0.8} style={styles.profileSection}>
             <View style={styles.profileHeader}>
-              <MaterialCommunityIcons name="account-circle" size={60} color="#3498DB" />
+              <MaterialCommunityIcons name="account-circle" size={40} color="#3498DB" />
               <View style={styles.profileInfo}>
-                <TouchableOpacity>
                   <Text style={styles.profileName}>{user?.full_name || 'Пользователь'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity>
                   <Text style={styles.profileEmail}>{user?.email || 'email@example.com'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity>
                   <Text style={styles.profileRole}>
-                    {userRole === 'athlete' ? 'Спортсмен' : 
-                     userRole === 'parent' ? 'Родитель' : 
-                     userRole === 'coach' ? 'Тренер' : 'Пользователь'}
+                    {userRole === 'athlete'
+                      ? 'Спортсмен'
+                      : userRole === 'parent'
+                      ? 'Родитель'
+                      : userRole === 'coach'
+                        ? (user?.is_head_coach ? 'Главный тренер' : 'Тренер')
+                        : 'Пользователь'
+                    }
                   </Text>
-                </TouchableOpacity>
               </View>
             </View>
           </TouchableOpacity>
@@ -180,6 +192,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
               {quickActions.map((action, index) => {
                 // Check if action should be shown for current user role
                 if (action.showFor && userRole && !action.showFor.includes(userRole)) {
+                  return null;
+                }
+                
+                // Check if action is head coach only
+                if (action.headCoachOnly && !user?.is_head_coach) {
                   return null;
                 }
                 

@@ -301,3 +301,66 @@ async def get_parents_by_athlete(db: AsyncSession, athlete_id: int) -> List[mode
         .options(selectinload(models.User.user_roles))
     )
     return result.scalars().all()
+
+
+async def get_all_users(db: AsyncSession) -> List[models.User]:
+    """Получить всех пользователей (только для главных тренеров)"""
+    result = await db.execute(
+        select(models.User)
+        .options(selectinload(models.User.user_roles))
+        .order_by(models.User.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+async def make_user_coach(db: AsyncSession, user_id: int, requesting_user_id: int) -> models.User:
+    """Назначить пользователя тренером (обновляет primary_role и добавляет роль в user_role_assignments)"""
+    # Проверить, что пользователь существует
+    user = await get_user(db, user_id)
+    if not user:
+        raise ValueError("User not found")
+    
+    # Проверить права на назначение (только главный тренер может назначать тренеров)
+    requesting_user = await get_user(db, requesting_user_id)
+    if not requesting_user or not requesting_user.is_head_coach:
+        raise ValueError("Only head coach can assign coach role")
+    
+    # Проверить, что пользователь еще не является тренером
+    if await user_has_role(db, user_id, schemas.UserRole.coach):
+        raise ValueError("User is already a coach")
+    
+    # Вычислить возраст пользователя
+    today = date.today()
+    user_age = today.year - user.birth_date.year
+    if today.month < user.birth_date.month or (today.month == user.birth_date.month and today.day < user.birth_date.day):
+        user_age -= 1
+    
+    # Проверка возраста для роли тренера
+    if user_age < 16:
+        raise ValueError("Users under 16 cannot have coach role")
+    
+    # Обновить primary_role в таблице users
+    user.primary_role = models.UserRole.coach
+    
+    # Добавить роль в таблицу user_role_assignments
+    role_assignment = models.UserRoleAssignment(
+        user_id=user_id,
+        role=schemas.UserRole.coach
+    )
+    db.add(role_assignment)
+    
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def is_user_child_of_parent(db: AsyncSession, user_id: int, parent_id: int) -> bool:
+    """Проверить, является ли пользователь ребенком данного родителя"""
+    result = await db.execute(
+        select(models.ParentAthleteRelationship)
+        .where(
+            models.ParentAthleteRelationship.athlete_id == user_id,
+            models.ParentAthleteRelationship.parent_id == parent_id
+        )
+    )
+    return result.scalar_one_or_none() is not None

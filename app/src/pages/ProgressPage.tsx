@@ -133,13 +133,16 @@ const ProgressPage: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Текущий уровень</Text>
         <View style={styles.beltContainer}>
-          <View style={[styles.beltVisual, { backgroundColor: getBeltColor(progress?.current_belt || 'white') }]}>
-            <Text style={styles.beltText}>{getBeltName(progress?.current_belt || 'white')}</Text>
-            {progress?.current_stripes && progress.current_stripes > 0 && (
-              <Text style={styles.stripesText}>{progress.current_stripes} полосы</Text>
-            )}
+          <View style={styles.beltVisual}>
+            <MaterialCommunityIcons name="karate" size={40} color="#E74C3C" />
           </View>
           <View style={styles.beltInfo}>
+            <View style={styles.beltDisplay}>
+              <Text style={styles.beltText}>{getBeltName(progress?.current_belt || 'white')}</Text>
+              {progress?.current_stripes && progress.current_stripes > 0 && (
+                <Text style={styles.stripesText}>{progress.current_stripes} полосы</Text>
+              )}
+            </View>
             <Text style={styles.beltDate}>
               Получен: {progress?.belt_received_date ? new Date(progress.belt_received_date).toLocaleDateString('ru-RU') : 'Не указано'}
             </Text>
@@ -262,19 +265,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    backgroundColor: '#1B263B',
     borderWidth: 2,
     borderColor: '#2C3E50',
   },
+  beltDisplay: {
+    marginBottom: 12,
+  },
+  actualBelt: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 120,
+  },
   beltText: {
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
-    textAlign: 'center',
+    color: '#E74C3C',
+    textAlign: 'left',
   },
   stripesText: {
-    fontSize: 10,
-    color: '#000',
-    marginTop: 2,
+    fontSize: 14,
+    color: '#B0BEC5',
+    marginTop: 4,
   },
   beltInfo: {
     flex: 1,

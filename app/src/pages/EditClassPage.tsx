@@ -214,6 +214,14 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
           ]}
           style={styles.segmentedButtons}
           density="small"
+          theme={{
+            colors: {
+              primary: '#E74C3C',
+              onSurface: '#fff',
+              onSurfaceVariant: '#fff',
+              outline: '#2C3E50',
+            }
+          }}
         />
 
         <Title style={styles.sectionTitle}>Статус занятия</Title>
@@ -227,6 +235,14 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
           ]}
           style={styles.segmentedButtons}
           density="small"
+          theme={{
+            colors: {
+              primary: '#E74C3C',
+              onSurface: '#fff',
+              onSurfaceVariant: '#fff',
+              outline: '#2C3E50',
+            }
+          }}
         />
       </Card.Content>
     </Card>
@@ -250,6 +266,14 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
               ]}
               style={styles.weekdayButtons}
               density="small"
+              theme={{
+                colors: {
+                  primary: '#E74C3C',
+                  onSurface: '#fff',
+                  onSurfaceVariant: '#fff',
+                  outline: '#2C3E50',
+                }
+              }}
             />
           </View>
           <View style={styles.weekdayRow}>
@@ -264,6 +288,14 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
               ]}
               style={styles.weekdayButtons}
               density="small"
+              theme={{
+                colors: {
+                  primary: '#E74C3C',
+                  onSurface: '#fff',
+                  onSurfaceVariant: '#fff',
+                  outline: '#2C3E50',
+                }
+              }}
             />
           </View>
         </View>

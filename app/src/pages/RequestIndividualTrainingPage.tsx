@@ -6,6 +6,8 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import {
   Card,
@@ -134,21 +136,14 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
       
       <View style={styles.header}>
-        <Button
-          mode="text"
-          onPress={() => navigation.goBack()}
-          textColor="#E74C3C"
-          icon="arrow-left"
-          style={styles.backButton}
-        >
-          Назад
-        </Button>
         <Title style={styles.headerTitle}>Индивидуальная тренировка</Title>
-        <View style={{ width: 60 }} />
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -167,18 +162,16 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
                     key={coach.id}
                     selected={selectedCoach?.id === coach.id}
                     onPress={() => setSelectedCoach(coach)}
-                    style={styles.coachChip}
+                    style={[
+                      styles.coachChip,
+                      selectedCoach?.id === coach.id ? styles.selectedCoachChip : styles.unselectedCoachChip
+                    ]}
                     textStyle={styles.coachChipText}
                   >
                     {coach.full_name}
                   </Chip>
                 ))}
               </View>
-              {selectedCoach && (
-                <Text style={styles.selectedCoachText}>
-                  Выбран: {selectedCoach.full_name}
-                </Text>
-              )}
             </View>
 
             <Divider style={styles.divider} />
@@ -192,6 +185,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
                 style={styles.dateButton}
                 textColor="#E74C3C"
                 icon="calendar"
+                buttonColor="transparent"
               >
                 {formatDate(requestedDate)}
               </Button>
@@ -211,6 +205,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
                     onPress={() => setShowTimeStartPicker(true)}
                     style={styles.timeButton}
                     textColor="#E74C3C"
+                    buttonColor="transparent"
                   >
                     {formatTime(preferredTimeStart)}
                   </Button>
@@ -223,6 +218,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
                     onPress={() => setShowTimeEndPicker(true)}
                     style={styles.timeButton}
                     textColor="#E74C3C"
+                    buttonColor="transparent"
                   >
                     {formatTime(preferredTimeEnd)}
                   </Button>
@@ -243,24 +239,44 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
                 multiline
                 numberOfLines={4}
                 style={styles.notesInput}
-                outlineColor="#E74C3C"
+                outlineColor="#fff"
                 activeOutlineColor="#E74C3C"
+                textColor="#fff"
+                placeholderTextColor="#fff"
+                theme={{
+                  colors: {
+                    onSurfaceVariant: '#fff',
+                  }
+                }}
               />
             </View>
           </Card.Content>
         </Card>
 
-        <Button
-          mode="contained"
-          onPress={handleSubmit}
-          loading={loading}
-          disabled={loading || !selectedCoach}
-          style={styles.submitButton}
-          buttonColor="#E74C3C"
-          icon="send"
-        >
-          Отправить запрос
-        </Button>
+        <View style={styles.actionsContainer}>
+          <Button
+            mode="contained"
+            onPress={handleSubmit}
+            loading={loading}
+            disabled={loading || !selectedCoach}
+            style={[styles.bookButton, !selectedCoach && styles.disabledButton]}
+            buttonColor={selectedCoach ? "#E74C3C" : "#666"}
+            icon="send"
+          >
+            {selectedCoach ? "Отправить запрос" : "Выберите тренера"}
+          </Button>
+          
+          <Button
+            mode="outlined"
+            onPress={() => navigation.goBack()}
+            style={styles.cancelButton}
+            textColor="#E74C3C"
+            icon="close"
+            disabled={loading}
+          >
+            Отмена
+          </Button>
+        </View>
       </ScrollView>
 
       {/* Date Picker */}
@@ -268,7 +284,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
         <DateTimePicker
           value={requestedDate}
           mode="date"
-          display="default"
+          display="inline"
           onChange={(event, selectedDate) => {
             setShowDatePicker(false);
             if (selectedDate) {
@@ -284,7 +300,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
         <DateTimePicker
           value={new Date()}
           mode="time"
-          display="default"
+          display="spinner"
           onChange={(event, selectedDate) => {
             setShowTimeStartPicker(false);
             if (selectedDate) {
@@ -301,7 +317,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
         <DateTimePicker
           value={new Date()}
           mode="time"
-          display="default"
+          display="spinner"
           onChange={(event, selectedDate) => {
             setShowTimeEndPicker(false);
             if (selectedDate) {
@@ -312,7 +328,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
           }}
         />
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -324,14 +340,11 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
     backgroundColor: '#0D1B2A',
-  },
-  backButton: {
-    marginRight: 8,
   },
   headerTitle: {
     color: '#E74C3C',
@@ -374,19 +387,20 @@ const styles = StyleSheet.create({
   },
   coachChip: {
     backgroundColor: '#2C3E50',
+  },
+  selectedCoachChip: {
     borderColor: '#E74C3C',
+    borderWidth: 2,
+  },
+  unselectedCoachChip: {
+    borderColor: '#fff',
+    borderWidth: 1,
   },
   coachChipText: {
     color: '#FFFFFF',
   },
-  selectedCoachText: {
-    color: '#4CAF50',
-    fontSize: 14,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
   dateButton: {
-    borderColor: '#E74C3C',
+    borderColor: '#fff',
   },
   timeContainer: {
     flexDirection: 'row',
@@ -402,13 +416,25 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   timeButton: {
-    borderColor: '#E74C3C',
+    borderColor: '#fff',
   },
   notesInput: {
     backgroundColor: '#2C3E50',
   },
   submitButton: {
     marginTop: 16,
+  },
+  actionsContainer: {
+    gap: 12,
+  },
+  bookButton: {
+    marginTop: 8,
+  },
+  cancelButton: {
+    marginTop: 4,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

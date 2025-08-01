@@ -1,5 +1,30 @@
 // Backend API configuration
-export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+// You can change this URL to match your current ngrok URL or local IP
+export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://15fe51d4942a.ngrok-free.app';
+
+// Alternative URLs for different environments
+export const BACKEND_URLS = {
+  NGROK: 'https://15fe51d4942a.ngrok-free.app',
+  LOCAL: 'http://localhost:8000',
+  LOCAL_IP: 'http://192.168.1.100:8000', // Change this to your computer's IP
+};
+
+// Function to get the current backend URL
+export const getCurrentBackendUrl = (): string => {
+  // You can modify this function to return different URLs based on environment
+  return BACKEND_URL;
+};
+
+// Function to set a new backend URL (for development/testing)
+let currentBackendUrl = BACKEND_URL;
+export const setBackendUrl = (url: string) => {
+  currentBackendUrl = url;
+};
+
+// Function to get the current backend URL with override capability
+export const getBackendUrlWithOverride = (): string => {
+  return currentBackendUrl;
+};
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -35,7 +60,7 @@ export const API_ENDPOINTS = {
 
 // Helper function to get full URL for an endpoint
 export const getBackendUrl = (): string => {
-  return BACKEND_URL;
+  return getBackendUrlWithOverride();
 };
 
 // Helper function to get full URL for an endpoint with path parameters

@@ -20,6 +20,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Sidebar from '../components/Sidebar';
 import Layout from '../components/Layout';
 import api from '../services/api';
+import tournamentsService, { Tournament } from '../services/tournaments';
 
 const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
@@ -145,11 +146,11 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               <View style={styles.tournamentInfo}>
                 <Text style={styles.tournamentName}>{tournament.name}</Text>
                 <Text style={styles.tournamentDate}>
-                  {new Date(tournament.date).toLocaleDateString('ru-RU')}
+                  {tournamentsService.formatDate(tournament.event_date)}
                 </Text>
                 <Text style={styles.tournamentLocation}>{tournament.location}</Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
             </TouchableOpacity>
           ))
         ) : (
@@ -214,14 +215,6 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           </View>
           
           <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => navigation?.navigate('Progress')}
-            >
-              <MaterialCommunityIcons name="target" size={24} color="#E74C3C" />
-              <Text style={styles.actionText}>Мотивация</Text>
-            </TouchableOpacity>
-            
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => navigation?.navigate('CoachRating')}
@@ -348,7 +341,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingTop: 8,
-    paddingBottom: 32,
+    paddingBottom: 80,
   },
   loadingContainer: {
     flex: 1,

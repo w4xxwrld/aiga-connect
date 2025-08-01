@@ -72,6 +72,18 @@ class ChildrenService {
     }
   }
 
+  async getChildById(childId: number): Promise<Child> {
+    try {
+      const response = await api.get(`/users/${childId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Failed to get child by ID');
+    }
+  }
+
 
 
   async linkChild(relationship: ChildLinkRequest): Promise<any> {

@@ -3,6 +3,8 @@ import {
   View,
   ScrollView,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import {
   Card,
@@ -25,11 +27,49 @@ interface CreateClassPageProps {
 const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
   const { user } = useAppContext();
   
+  // Helper function to get display name for weekdays
+  const getDayDisplayName = (day: string): string => {
+    const dayNames: { [key: string]: string } = {
+      'понедельник': 'Пн',
+      'вторник': 'Вт', 
+      'среда': 'Ср',
+      'четверг': 'Чт',
+      'пятница': 'Пт',
+      'суббота': 'Сб',
+      'воскресенье': 'Вс'
+    };
+    return dayNames[day] || day;
+  };
+
+  // Helper function to format time input
+  const formatTimeInput = (text: string): string => {
+    // Remove all non-numeric characters
+    const numbers = text.replace(/\D/g, '');
+    
+    // Limit to 4 digits
+    const limited = numbers.slice(0, 4);
+    
+    // Format with colon
+    if (limited.length >= 3) {
+      return `${limited.slice(0, 2)}:${limited.slice(2)}`;
+    } else if (limited.length >= 1) {
+      return limited;
+    }
+    
+    return '';
+  };
+
+  // Helper function to handle time input change
+  const handleTimeChange = (text: string, setter: (value: string) => void) => {
+    const formatted = formatTimeInput(text);
+    setter(formatted);
+  };
+  
   // State
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [difficultyLevel, setDifficultyLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
-  const [dayOfWeek, setDayOfWeek] = useState<'понедельник' | 'вторник' | 'среда' | 'четверг' | 'пятница' | 'суббота' | 'воскресенье'>('понедельник');
+  const [selectedDays, setSelectedDays] = useState<string[]>(['понедельник']);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [ageGroupMin, setAgeGroupMin] = useState('');
@@ -94,7 +134,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
         name: name.trim(),
         description: description.trim() || undefined,
         difficulty_level: difficultyLevel,
-        day_of_week: dayOfWeek,
+        day_of_week: selectedDays.join(', '),
         start_time: startTime,
         end_time: endTime,
         age_group_min: ageGroupMin ? parseInt(ageGroupMin) : undefined,
@@ -194,34 +234,59 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
       <Card.Content>
         <Title style={styles.sectionTitle}>Расписание</Title>
         
-        <Title style={styles.subsectionTitle}>День недели</Title>
+        <Title style={styles.subsectionTitle}>Дни недели (выберите несколько)</Title>
         <View style={styles.weekdayContainer}>
           <View style={styles.weekdayRow}>
-            <SegmentedButtons
-              value={dayOfWeek}
-              onValueChange={(value) => setDayOfWeek(value as any)}
-              buttons={[
-                { value: 'понедельник', label: 'Пн' },
-                { value: 'вторник', label: 'Вт' },
-                { value: 'среда', label: 'Ср' },
-              ]}
-              style={styles.weekdayButtons}
-              density="small"
-            />
+            {['понедельник', 'вторник', 'среда', 'четверг'].map((day) => (
+              <Button
+                key={day}
+                mode="outlined"
+                onPress={() => {
+                  if (selectedDays.includes(day)) {
+                    setSelectedDays(selectedDays.filter(d => d !== day));
+                  } else {
+                    setSelectedDays([...selectedDays, day]);
+                  }
+                }}
+                style={[
+                  styles.dayButton,
+                  { 
+                    backgroundColor: '#0D1B2A',
+                    borderColor: selectedDays.includes(day) ? '#E74C3C' : '#fff',
+                    borderWidth: 1,
+                  }
+                ]}
+                textColor="#fff"
+              >
+                {getDayDisplayName(day)}
+              </Button>
+            ))}
           </View>
           <View style={styles.weekdayRow}>
-            <SegmentedButtons
-              value={dayOfWeek}
-              onValueChange={(value) => setDayOfWeek(value as any)}
-              buttons={[
-                { value: 'четверг', label: 'Чт' },
-                { value: 'пятница', label: 'Пт' },
-                { value: 'суббота', label: 'Сб' },
-                { value: 'воскресенье', label: 'Вс' },
-              ]}
-              style={styles.weekdayButtons}
-              density="small"
-            />
+            {['пятница', 'суббота', 'воскресенье'].map((day) => (
+              <Button
+                key={day}
+                mode="outlined"
+                onPress={() => {
+                  if (selectedDays.includes(day)) {
+                    setSelectedDays(selectedDays.filter(d => d !== day));
+                  } else {
+                    setSelectedDays([...selectedDays, day]);
+                  }
+                }}
+                style={[
+                  styles.dayButton,
+                  { 
+                    backgroundColor: '#0D1B2A',
+                    borderColor: selectedDays.includes(day) ? '#E74C3C' : '#fff',
+                    borderWidth: 1,
+                  }
+                ]}
+                textColor="#fff"
+              >
+                {getDayDisplayName(day)}
+              </Button>
+            ))}
           </View>
         </View>
 
@@ -230,7 +295,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
             <TextInput
               label="Время начала *"
               value={startTime}
-              onChangeText={setStartTime}
+              onChangeText={(text) => handleTimeChange(text, setStartTime)}
               mode="outlined"
               style={styles.input}
               outlineColor="#fff"
@@ -243,6 +308,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
               }}
               placeholderTextColor="#fff"
               placeholder="HH:MM"
+              keyboardType="numeric"
               error={!!errors.startTime}
             />
             {errors.startTime && <HelperText type="error" visible={!!errors.startTime}>{errors.startTime}</HelperText>}
@@ -252,7 +318,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
             <TextInput
               label="Время окончания *"
               value={endTime}
-              onChangeText={setEndTime}
+              onChangeText={(text) => handleTimeChange(text, setEndTime)}
               mode="outlined"
               style={styles.input}
               outlineColor="#fff"
@@ -265,6 +331,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
               }}
               placeholderTextColor="#fff"
               placeholder="HH:MM"
+              keyboardType="numeric"
               error={!!errors.endTime}
             />
             {errors.endTime && <HelperText type="error" visible={!!errors.endTime}>{errors.endTime}</HelperText>}
@@ -384,7 +451,10 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
   );
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       {/* Global Header */}
       <View style={styles.globalHeader}>
         <Text style={styles.headerTitle}>AIGA Connect</Text>
@@ -421,7 +491,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
           </Button>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -481,10 +551,18 @@ const styles: any = {
     marginBottom: 12,
   },
   weekdayRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   weekdayButtons: {
     marginHorizontal: -4,
+  },
+  dayButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    marginVertical: 4,
+    minWidth: 60,
   },
   timeContainer: {
     flexDirection: 'row',

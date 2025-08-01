@@ -21,6 +21,16 @@ class ClassBase(BaseModel):
     @classmethod
     def validate_day_of_week(cls, v):
         valid_days = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
+        
+        # Handle multiple days separated by commas
+        if "," in v:
+            days = [day.strip().lower() for day in v.split(",")]
+            for day in days:
+                if day not in valid_days:
+                    raise ValueError(f"Неверный день недели: {day}. Допустимые дни: " + ", ".join(valid_days))
+            return v.lower()
+        
+        # Handle single day
         if v.lower() not in valid_days:
             raise ValueError("День недели должен быть одним из: " + ", ".join(valid_days))
         return v.lower()
@@ -48,6 +58,26 @@ class ClassUpdate(BaseModel):
     price_per_class: Optional[int] = None
     is_trial_available: Optional[bool] = None
     status: Optional[ClassStatus] = None
+
+    @field_validator("day_of_week")
+    @classmethod
+    def validate_day_of_week(cls, v):
+        if v is None:
+            return v
+        valid_days = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
+        
+        # Handle multiple days separated by commas
+        if "," in v:
+            days = [day.strip().lower() for day in v.split(",")]
+            for day in days:
+                if day not in valid_days:
+                    raise ValueError(f"Неверный день недели: {day}. Допустимые дни: " + ", ".join(valid_days))
+            return v.lower()
+        
+        # Handle single day
+        if v.lower() not in valid_days:
+            raise ValueError("День недели должен быть одним из: " + ", ".join(valid_days))
+        return v.lower()
 
 class CoachOut(BaseModel):
     id: int

@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 import { useAppContext } from '../context/AppContext';
 import Layout from '../components/Layout';
 import Sidebar from '../components/Sidebar';
@@ -48,10 +49,20 @@ const NotificationsPage: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
+      
+      // Debug: Check if we have a token
+      const token = await SecureStore.getItemAsync('authToken');
+      console.log('NotificationsPage: Token available:', !!token);
+      if (token) {
+        console.log('NotificationsPage: Token preview:', token.substring(0, 20) + '...');
+      }
+      
       const response = await api.get('/notifications/');
       setNotifications(response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching notifications:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       // Don't show alert, just set empty array
       setNotifications([]);
     } finally {
@@ -84,6 +95,8 @@ const NotificationsPage: React.FC = () => {
       console.error('Error marking all notifications as read:', error);
     }
   };
+
+
 
   const getNotificationIcon = (type: string) => {
     const icons: { [key: string]: string } = {
@@ -185,6 +198,8 @@ const NotificationsPage: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
+
+
 
       {/* Notifications List */}
       <View style={styles.section}>
@@ -300,6 +315,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 20,
     marginBottom: 20,
+    marginTop: 20,
     backgroundColor: '#1B263B',
     borderRadius: 12,
     padding: 4,
@@ -340,6 +356,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
+
   section: {
     padding: 20,
   },
@@ -412,6 +429,7 @@ const styles = StyleSheet.create({
     color: '#B0BEC5',
     marginTop: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   emptySubtext: {
     fontSize: 14,

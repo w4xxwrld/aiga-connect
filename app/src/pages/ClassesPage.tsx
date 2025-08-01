@@ -360,13 +360,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 8,
+    paddingTop: 10,
+    paddingRight: 10,
   },
 
   searchBar: {
     marginHorizontal: 16,
-    marginTop: 16,
+    marginTop: 10,
     marginBottom: 16,
     backgroundColor: '#1B263B',
   },
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 80, // Increased to account for bottom navbar
   },
   classCard: {
     backgroundColor: '#1B263B',

@@ -54,7 +54,7 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     switch (role) {
       case 'parent': return 'Родитель';
       case 'athlete': return 'Спортсмен';
-      case 'coach': return 'Тренер';
+      case 'coach': return user?.is_head_coach ? 'Главный тренер' : 'Тренер';
       default: return role;
     }
   };
@@ -63,10 +63,12 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     switch (role) {
       case 'parent': return 'account-child';
       case 'athlete': return 'account-group';
-      case 'coach': return 'account-tie';
+      case 'coach': return user?.is_head_coach ? 'crown' : 'account-tie';
       default: return 'account';
     }
   };
+
+
 
   const calculateAge = (birthDate: string) => {
     const today = new Date();
@@ -205,6 +207,19 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
                   <Text style={styles.infoValue}>{user.emergency_contact}</Text>
                 </View>
               )}
+
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons name="calendar-clock" size={20} color="#E74C3C" />
+                <Text style={styles.infoLabel}>Дата регистрации:</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <View style={styles.infoSpacer} />
+                <Text style={styles.infoValue}>
+                  {user?.created_at ? formatDate(user.created_at) : 'Не указана'}
+                </Text>
+              </View>
+
+
             </View>
           </Card.Content>
         </Card>
@@ -220,25 +235,16 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <Divider style={styles.divider} />
             
             <View style={styles.infoContainer}>
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="account" size={20} color="#E74C3C" />
-                <Text style={styles.infoLabel}>ID:</Text>
-                <Text style={styles.infoValue}>{user?.id || 'Не указан'}</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="calendar-clock" size={20} color="#E74C3C" />
-                <Text style={styles.infoLabel}>Дата регистрации:</Text>
-                <Text style={styles.infoValue}>
-                  {user?.created_at ? formatDate(user.created_at) : 'Не указана'}
-                </Text>
-              </View>
-
-              {user?.is_head_coach && (
+              {(userRole === 'coach' || userRole === 'parent') && (
                 <View style={styles.infoRow}>
                   <MaterialCommunityIcons name="crown" size={20} color="#E74C3C" />
                   <Text style={styles.infoLabel}>Статус:</Text>
-                  <Text style={styles.infoValue}>Главный тренер</Text>
+                  <Text style={styles.infoValue}>
+                    {userRole === 'coach' 
+                      ? (user?.is_head_coach ? 'Главный тренер' : 'Тренер')
+                      : 'Родитель'
+                    }
+                  </Text>
                 </View>
               )}
             </View>
@@ -274,18 +280,31 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               ) : (
                 <View style={styles.childrenContainer}>
                   {linkedChildren.map((child) => (
-                    <View key={child.id} style={styles.childItem}>
-                      <Avatar.Text 
-                        size={40} 
-                        label={child.full_name.charAt(0)} 
-                        style={styles.childAvatar}
-                        color="#fff"
-                      />
-                      <View style={styles.childInfo}>
-                        <Text style={styles.childName}>{child.full_name}</Text>
-                        <Text style={styles.childAge}>{calculateAge(child.birth_date)} лет</Text>
+                    <Button
+                      key={child.id}
+                      mode="text"
+                      onPress={() => navigation?.navigate('ChildProfile', { childId: child.id, childName: child.full_name })}
+                      style={styles.childItem}
+                      contentStyle={styles.childItemContent}
+                    >
+                      <View style={styles.childItemInner}>
+                        <Avatar.Text 
+                          size={40} 
+                          label={child.full_name.charAt(0)} 
+                          style={styles.childAvatar}
+                          color="#fff"
+                        />
+                        <View style={styles.childInfo}>
+                          <Text style={styles.childName}>{child.full_name}</Text>
+                          <Text style={styles.childAge}>{calculateAge(child.birth_date)} лет</Text>
+                        </View>
+                        <MaterialCommunityIcons 
+                          name="chevron-right" 
+                          size={24} 
+                          color="#E74C3C" 
+                        />
                       </View>
-                    </View>
+                    </Button>
                   ))}
                 </View>
               )}
@@ -459,6 +478,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
   },
+  infoSpacer: {
+    width: 44, // Same width as icon + margin
+  },
   actionsContainer: {
     gap: 12,
   },
@@ -504,6 +526,15 @@ const styles = StyleSheet.create({
   childAge: {
     color: '#B0BEC5',
     fontSize: 14,
+  },
+  childItemContent: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  childItemInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
   },
 });
 

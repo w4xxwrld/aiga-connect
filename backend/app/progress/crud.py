@@ -245,6 +245,24 @@ async def get_athlete_tournaments(db: AsyncSession, athlete_id: int) -> List[mod
     )
     return result.scalars().all()
 
+
+async def get_tournament_participation_by_athlete(db: AsyncSession, tournament_id: int, athlete_id: int) -> Optional[models.TournamentParticipation]:
+    """Получить регистрацию конкретного спортсмена на конкретный турнир"""
+    result = await db.execute(
+        select(models.TournamentParticipation)
+        .where(
+            and_(
+                models.TournamentParticipation.tournament_id == tournament_id,
+                models.TournamentParticipation.athlete_id == athlete_id
+            )
+        )
+        .options(
+            selectinload(models.TournamentParticipation.tournament),
+            selectinload(models.TournamentParticipation.athlete)
+        )
+    )
+    return result.scalar_one_or_none()
+
 async def update_tournament_result(db: AsyncSession, participation_id: int, result: models.ParticipationResult, final_position: Optional[int] = None) -> Optional[models.TournamentParticipation]:
     """Обновить результат участия в турнире"""
     result_obj = await db.execute(

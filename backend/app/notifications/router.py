@@ -83,6 +83,8 @@ async def deactivate_push_token(
         )
     return {"message": "Push token deactivated"}
 
+
+
 # Admin endpoints (только для тренеров/администраторов)
 @router.post("/send", response_model=schemas.NotificationOut)
 async def send_notification(

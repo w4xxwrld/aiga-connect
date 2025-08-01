@@ -47,7 +47,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'parent' | 'athlete' | 'coach'>('parent');
+  const [emergencyContact, setEmergencyContact] = useState('');
+  const [role, setRole] = useState<'parent' | 'athlete'>('parent');
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
@@ -167,6 +168,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       return;
     }
 
+    // Validate emergency contact for athletes
+    if (role === 'athlete' && !emergencyContact.trim()) {
+      Alert.alert('Ошибка', 'Для спортсменов обязательно указать экстренный контакт');
+      return;
+    }
+
     if (!validateIIN(iin)) {
       Alert.alert('Ошибка', 'ИИН должен содержать ровно 12 цифр и корректную дату рождения');
       return;
@@ -202,7 +209,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         primary_role: role,
         birth_date: birthDate.toISOString().split('T')[0],
         phone: undefined,
-        emergency_contact: undefined,
+        emergency_contact: role === 'athlete' ? emergencyContact.trim() : undefined,
         additional_roles: [],
         is_head_coach: false,
       };
@@ -328,7 +335,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       fullYear = 1900 + birthYear;
     }
     
-    const birthDate = new Date(fullYear, birthMonth - 1, birthDay);
+    // Create date in UTC to avoid timezone issues
+    const birthDate = new Date(Date.UTC(fullYear, birthMonth - 1, birthDay));
     
     if (isNaN(birthDate.getTime())) {
       return null;
@@ -463,7 +471,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                     buttons={[
                       { value: 'parent', label: 'Родитель', icon: 'account-child' },
                       { value: 'athlete', label: 'Спортсмен', icon: 'account-group' },
-                      { value: 'coach', label: 'Тренер', icon: 'account-tie' },
                     ]}
                     style={styles.roleButtons}
                     theme={{
@@ -475,6 +482,27 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                     }}
                   />
                 </View>
+
+                {role === 'athlete' && (
+                  <TextInput
+                    label="Экстренный контакт (телефон родителя) *"
+                    value={emergencyContact}
+                    onChangeText={setEmergencyContact}
+                    mode="outlined"
+                    keyboardType="phone-pad"
+                    style={styles.input}
+                    outlineColor="#fff"
+                    activeOutlineColor="#E74C3C"
+                    textColor="#fff"
+                    placeholderTextColor="#fff"
+                    theme={{
+                      colors: {
+                        onSurfaceVariant: '#fff',
+                      }
+                    }}
+                    left={<TextInput.Icon icon="phone" />}
+                  />
+                )}
               </>
             )}
 
