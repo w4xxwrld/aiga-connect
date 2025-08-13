@@ -24,7 +24,7 @@ async def seed_merchandise():
                 currency="KZT",
                 status=ProductStatus.active,
                 is_featured=True,
-                main_image_url="https://images.pexels.com/photos/8981919/pexels-photo-8981919.jpeg?auto=compress&cs=tinysrgb&w=600",
+                main_image_url="https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcRt6_ZoYS9c9csDPp_wDM39Hzsul0apqUIOhTv-lpOmrWVwsB0pFyIAQ3OZivOt7rD8zqTLfqOA_gg3QKtMNquUgeesvh6J7IKZ8U9WAqDUFbiET7xXF-9D",
                 sku="AIGA-GI-WHITE",
                 has_variants=True,
                 tags=["cotton", "competition", "bjj"]
@@ -38,7 +38,7 @@ async def seed_merchandise():
                 currency="KZT",
                 status=ProductStatus.active,
                 is_featured=True,
-                main_image_url="https://images.pexels.com/photos/4138635/pexels-photo-4138635.jpeg?auto=compress&cs=tinysrgb&w=600",
+                main_image_url="https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcTti1WE3CiKouREcvIRXV2El83WypZzMV9Ei4zV8qi7L32TVJaMD0fa4-_y2D9OkvtMCvbKaJFfqDnSWK7FUAeRFG1utUmY5uCSfJTXN9fwLwy1fBoc7ET56Q",
                 sku="AIGA-RASH-BLACK",
                 has_variants=True,
                 tags=["compression", "moisture-wicking"]
@@ -51,7 +51,7 @@ async def seed_merchandise():
                 price=6000,
                 currency="KZT",
                 status=ProductStatus.active,
-                main_image_url="https://images.pexels.com/photos/7675413/pexels-photo-7675413.jpeg?auto=compress&cs=tinysrgb&w=600",
+                main_image_url="https://s.alicdn.com/@sc04/kf/A1ab109b529624409ae448c785ee96fa8t.jpg",
                 sku="AIGA-SHORTS",
                 has_variants=True,
                 tags=["training", "flexible"]
