@@ -15,8 +15,8 @@ async def create_booking(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Создать бронирование (родители для детей или взрослые спортсмены для себя)"""
-    
+    """Создать бронирование (только спортсмены для себя)"""
+
     # Получить информацию о занятии для проверки возрастных ограничений
     from app.classes import crud as class_crud
     class_obj = await class_crud.get_class(db, booking_data.class_id)
@@ -25,7 +25,7 @@ async def create_booking(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Class not found"
         )
-    
+
     # Получить информацию о спортсмене для проверки возраста
     from app.users import crud as user_crud
     athlete = await user_crud.get_user(db, booking_data.athlete_id)
@@ -34,64 +34,44 @@ async def create_booking(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Athlete not found"
         )
-    
+
     # Проверить возраст спортсмена относительно возрастных ограничений занятия
     today = date.today()
     athlete_age = today.year - athlete.birth_date.year
     if today.month < athlete.birth_date.month or (today.month == athlete.birth_date.month and today.day < athlete.birth_date.day):
         athlete_age -= 1
-    
+
     if class_obj.age_group_min and athlete_age < class_obj.age_group_min:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Athlete is too young for this class (min age: {class_obj.age_group_min})"
         )
-    
+
     if class_obj.age_group_max and athlete_age > class_obj.age_group_max:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Athlete is too old for this class (max age: {class_obj.age_group_max})"
         )
-    
+
     # Проверить роли пользователя
     user_roles = [ur.role for ur in current_user.user_roles]
-    has_parent_role = UserRole.parent in user_roles
     has_athlete_role = UserRole.athlete in user_roles
-    
-    # Логика авторизации в зависимости от роли
-    if has_parent_role:
-        # Родители могут бронировать для своих детей
-        # TODO: добавить проверку parent-athlete relationship
-        new_booking = await crud.create_booking(db, booking_data, current_user.id)
-    elif has_athlete_role:
-        # Спортсмены могут бронировать только для себя
-        if booking_data.athlete_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Athletes can only book for themselves"
-            )
-        
-        # Проверить возраст спортсмена
-        today = date.today()
-        athlete_age = today.year - current_user.birth_date.year
-        if today.month < current_user.birth_date.month or (today.month == current_user.birth_date.month and today.day < current_user.birth_date.day):
-            athlete_age -= 1
-        
-        if athlete_age < 16:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Athletes under 16 can only be booked by their parents"
-            )
-        
-        # Для взрослых спортсменов: booked_by_parent_id = None (они бронируют сами)
-        new_booking = await crud.create_booking(db, booking_data, None)
-    else:
-        # Тренеры не могут создавать бронирования
+
+    # Спортсмены могут бронировать только для себя
+    if not has_athlete_role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only parents and adult athletes can create bookings"
+            detail="Only athletes can create bookings"
         )
-    
+
+    if booking_data.athlete_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Athletes can only book for themselves"
+        )
+
+    new_booking = await crud.create_booking(db, booking_data)
+
     return new_booking
 
 @router.get("/my-bookings", response_model=List[schemas.BookingOut])
@@ -101,13 +81,11 @@ async def get_my_bookings(
 ):
     """Получить мои бронирования"""
     user_roles = [ur.role for ur in current_user.user_roles]
-    if UserRole.parent in user_roles:
-        bookings = await crud.get_bookings_by_parent(db, current_user.id)
-    elif UserRole.athlete in user_roles:
+    if UserRole.athlete in user_roles:
         bookings = await crud.get_bookings_by_athlete(db, current_user.id)
     else:  # coach
         bookings = await crud.get_bookings_by_coach(db, current_user.id)
-    
+
     return bookings
 
 @router.put("/{booking_id}/cancel", response_model=schemas.BookingOut)
@@ -124,16 +102,15 @@ async def cancel_booking(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Booking not found"
         )
-    
+
     # Проверить права на отмену
     user_roles = [ur.role for ur in current_user.user_roles]
-    if (UserRole.parent in user_roles and booking.booked_by_parent_id != current_user.id) or \
-       (UserRole.athlete in user_roles and booking.athlete_id != current_user.id):
+    if UserRole.athlete in user_roles and booking.athlete_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only cancel your own bookings"
         )
-    
+
     cancelled_booking = await crud.cancel_booking(db, booking_id, cancellation_reason)
     return cancelled_booking
 
@@ -150,16 +127,15 @@ async def get_booking(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Booking not found"
         )
-    
+
     # Проверить права доступа
     user_roles = [ur.role for ur in current_user.user_roles]
-    if (UserRole.parent in user_roles and booking.booked_by_parent_id != current_user.id) or \
-       (UserRole.athlete in user_roles and booking.athlete_id != current_user.id):
+    if UserRole.athlete in user_roles and booking.athlete_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
         )
-    
+
     return booking
 
 @router.put("/{booking_id}/approve", response_model=schemas.BookingOut)
@@ -241,15 +217,14 @@ async def create_individual_training_request(
     """Создать запрос на индивидуальную тренировку"""
     # Проверить роли пользователя
     user_roles = [ur.role for ur in current_user.user_roles]
-    has_parent_role = UserRole.parent in user_roles
     has_athlete_role = UserRole.athlete in user_roles
-    
-    if not (has_parent_role or has_athlete_role):
+
+    if not has_athlete_role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only parents and athletes can request individual training"
+            detail="Only athletes can request individual training"
         )
-    
+
     # Проверить, что запрашиваемый тренер существует и является тренером
     from app.users import crud as user_crud
     coach = await user_crud.get_user(db, request_data.coach_id)
@@ -258,7 +233,7 @@ async def create_individual_training_request(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Coach not found"
         )
-    
+
     # Проверить лимит запросов для тренера (максимум 10 ожидающих)
     pending_count = await crud.count_pending_individual_training_requests_by_coach(db, request_data.coach_id)
     if pending_count >= 10:
@@ -266,23 +241,16 @@ async def create_individual_training_request(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Coach has reached the maximum number of pending requests (10)"
         )
-    
-    # Логика авторизации в зависимости от роли
-    if has_parent_role:
-        # Родители могут запрашивать для своих детей
-        # TODO: добавить проверку parent-athlete relationship
-        new_request = await crud.create_individual_training_request(db, request_data, current_user.id)
-    elif has_athlete_role:
-        # Спортсмены могут запрашивать только для себя
-        if request_data.athlete_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Athletes can only request individual training for themselves"
-            )
-        
-        # Для взрослых спортсменов: requested_by_parent_id = None
-        new_request = await crud.create_individual_training_request(db, request_data, None)
-    
+
+    # Спортсмены могут запрашивать только для себя
+    if request_data.athlete_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Athletes can only request individual training for themselves"
+        )
+
+    new_request = await crud.create_individual_training_request(db, request_data)
+
     return new_request
 
 @router.get("/individual-training/my-requests", response_model=List[schemas.IndividualTrainingRequestOut])
@@ -292,13 +260,11 @@ async def get_my_individual_training_requests(
 ):
     """Получить мои запросы на индивидуальные тренировки"""
     user_roles = [ur.role for ur in current_user.user_roles]
-    if UserRole.parent in user_roles:
-        requests = await crud.get_individual_training_requests_by_athlete(db, current_user.id)
-    elif UserRole.athlete in user_roles:
+    if UserRole.athlete in user_roles:
         requests = await crud.get_individual_training_requests_by_athlete(db, current_user.id)
     else:  # coach
         requests = await crud.get_individual_training_requests_by_coach(db, current_user.id)
-    
+
     return requests
 
 @router.get("/individual-training/pending", response_model=List[schemas.IndividualTrainingRequestOut])
@@ -330,17 +296,16 @@ async def get_individual_training_request(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Individual training request not found"
         )
-    
+
     # Проверить права доступа
     user_roles = [ur.role for ur in current_user.user_roles]
-    if (UserRole.parent in user_roles and request.requested_by_parent_id != current_user.id) or \
-       (UserRole.athlete in user_roles and request.athlete_id != current_user.id) or \
+    if (UserRole.athlete in user_roles and request.athlete_id != current_user.id) or \
        (UserRole.coach in user_roles and request.coach_id != current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
         )
-    
+
     return request
 
 @router.put("/individual-training/{request_id}/accept", response_model=schemas.IndividualTrainingRequestOut)

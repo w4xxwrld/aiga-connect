@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
-from datetime import date
 from app.deps import get_db, get_current_user
 from app.users import schemas, crud
 from app.users.models import User, UserRole, UserRoleAssignment
@@ -100,68 +99,6 @@ async def refresh_token(
         "token_type": "bearer"
     }
 
-# Parent-Athlete Relationship endpoints
-@router.post("/relationships", response_model=schemas.ParentAthleteRelationshipOut)
-async def create_parent_athlete_relationship(
-    relationship: schemas.ParentAthleteRelationshipCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Создать связь родитель-спортсмен (только родители)"""
-    # Проверить, что у пользователя есть роль родителя
-    user_roles = [ur.role for ur in current_user.user_roles]
-    if UserRole.parent not in user_roles:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only parents can create relationships"
-        )
-    
-    if relationship.parent_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only create relationships for yourself"
-        )
-    
-    # Проверить, что athlete действительно спортсмен
-    athlete = await crud.get_user(db, relationship.athlete_id)
-    if not athlete:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Athlete not found"
-        )
-    
-    athlete_roles = [ur.role for ur in athlete.user_roles]
-    if UserRole.athlete not in athlete_roles:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Target user is not an athlete"
-        )
-    
-    # Проверить возраст спортсмена и необходимость родительского контроля
-    today = date.today()
-    athlete_age = today.year - athlete.birth_date.year
-    if today.month < athlete.birth_date.month or (today.month == athlete.birth_date.month and today.day < athlete.birth_date.day):
-        athlete_age -= 1
-    
-    if athlete_age < 16 and not athlete.emergency_contact:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Для спортсменов младше 16 лет необходим контакт родителя/опекуна"
-        )
-    
-    # Проверить, что связь не существует
-    existing = await crud.get_parent_athlete_relationship(
-        db, relationship.parent_id, relationship.athlete_id
-    )
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Relationship already exists"
-        )
-    
-    new_relationship = await crud.create_parent_athlete_relationship(db, relationship)
-    return new_relationship
-
 @router.get("/me", response_model=schemas.UserOut)
 async def get_current_user_info(
     current_user: User = Depends(get_current_user)
@@ -169,57 +106,6 @@ async def get_current_user_info(
     """Получить информацию о текущем пользователе"""
     print(f"DEBUG: User {current_user.id} ({current_user.full_name}) - is_head_coach: {current_user.is_head_coach}")
     return current_user
-
-@router.get("/my-athletes", response_model=List[schemas.UserSimple])
-async def get_my_athletes(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Получить список моих детей-спортсменов (для родителей)"""
-    # Упрощенная проверка роли через primary_role
-    if current_user.primary_role != UserRole.parent:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only parents can access this endpoint"
-        )
-    
-    athletes = await crud.get_athletes_by_parent(db, current_user.id)
-    return athletes
-
-@router.get("/my-parents", response_model=List[schemas.UserOut])
-async def get_my_parents(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Получить список моих родителей (для спортсменов)"""
-    user_roles = [ur.role for ur in current_user.user_roles]
-    if UserRole.athlete not in user_roles:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only athletes can access this endpoint"
-        )
-    
-    parents = await crud.get_parents_by_athlete(db, current_user.id)
-    
-    # Преобразуем в схемы с корректными ролями
-    result = []
-    for parent in parents:
-        parent_dict = {
-            'id': parent.id,
-            'iin': parent.iin,
-            'full_name': parent.full_name,
-            'email': parent.email,
-            'phone': parent.phone,
-            'birth_date': parent.birth_date,
-            'emergency_contact': parent.emergency_contact,
-            'primary_role': parent.primary_role,
-            'is_head_coach': parent.is_head_coach,
-            'created_at': parent.created_at,
-            'roles': [ur.role for ur in parent.user_roles]
-        }
-        result.append(parent_dict)
-    
-    return result
 
 @router.post("/add-role", response_model=schemas.UserOut)
 async def add_role_to_current_user(
@@ -368,55 +254,3 @@ async def make_user_coach(
             detail=str(e)
         )
 
-@router.get("/by-iin/{iin}", response_model=schemas.UserSimple)
-async def get_user_by_iin(
-    iin: str,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Получить пользователя по ИИН (только для родителей)"""
-    if current_user.primary_role != UserRole.parent:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only parents can search for users by IIN"
-        )
-    
-    user = await crud.get_user_by_iin(db, iin)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found with this IIN"
-        )
-    
-    # Return only basic user info for security
-    return user
-
-@router.get("/{user_id}", response_model=schemas.UserSimple)
-async def get_user_by_id(
-    user_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Получить пользователя по ID (только для родителей для просмотра своих детей)"""
-    if current_user.primary_role != UserRole.parent:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only parents can view user details by ID"
-        )
-    
-    user = await crud.get_user(db, user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    # Check if the user is a child of the current parent
-    is_child = await crud.is_user_child_of_parent(db, user_id, current_user.id)
-    if not is_child:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only view your own children"
-        )
-    
-    return user

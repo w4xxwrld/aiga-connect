@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, field_validator, computed_field
 from typing import Optional, List
 from datetime import date, datetime
-from app.users.models import UserRole, RelationshipType
+from app.users.models import UserRole
 
 class UserBase(BaseModel):
     iin: str
@@ -9,7 +9,6 @@ class UserBase(BaseModel):
     email: EmailStr  # Обязательное поле
     phone: Optional[str] = None
     birth_date: date  # Обязательное поле
-    emergency_contact: Optional[str] = None
     primary_role: UserRole  # Основная роль
     is_head_coach: bool = False  # Флаг главного тренера
 
@@ -50,8 +49,8 @@ class UserCreate(UserBase):
                 age = today.year - birth_date.year
                 if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
                     age -= 1
-                
-                if v in [UserRole.parent, UserRole.coach] and age < 16:
+
+                if v == UserRole.coach and age < 16:
                     raise ValueError(f"Users under 16 cannot have {v.value} role")
         return v
 
@@ -66,48 +65,23 @@ class UserCreate(UserBase):
                 age = today.year - birth_date.year
                 if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
                     age -= 1
-                
-                restricted_roles = [UserRole.parent, UserRole.coach]
+
                 for role in v:
-                    if role in restricted_roles and age < 16:
+                    if role == UserRole.coach and age < 16:
                         raise ValueError(f"Users under 16 cannot have {role.value} role")
         return v
 
     @field_validator("is_head_coach")
-    @classmethod  
+    @classmethod
     def validate_head_coach(cls, v, info):
         """Только тренеры могут быть главными тренерами"""
         if v and hasattr(info, 'data') and info.data:
             primary_role = info.data.get('primary_role')
             additional_roles = info.data.get('additional_roles', [])
-            
+
             is_coach = primary_role == UserRole.coach or UserRole.coach in additional_roles
             if not is_coach:
                 raise ValueError("Only coaches can be head coaches")
-        return v
-
-    @field_validator("emergency_contact")
-    @classmethod
-    def validate_emergency_contact_for_minors(cls, v, info):
-        """Для спортсменов младше 16 лет emergency_contact обязателен"""
-        if hasattr(info, 'data') and info.data:
-            primary_role = info.data.get('primary_role')
-            additional_roles = info.data.get('additional_roles', [])
-            birth_date = info.data.get('birth_date')
-            
-            # Проверяем, есть ли роль athlete среди ролей
-            is_athlete = primary_role == UserRole.athlete or UserRole.athlete in additional_roles
-            
-            if is_athlete and birth_date:
-                # Вычисляем возраст
-                today = date.today()
-                age = today.year - birth_date.year
-                if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
-                    age -= 1
-                
-                if age < 16 and not v:
-                    raise ValueError("Для спортсменов младше 16 лет контакт родителя/опекуна обязателен")
-        
         return v
 
 class UserOut(UserBase):
@@ -138,23 +112,6 @@ class AddRoleRequest(BaseModel):
         """Валидация назначения ролей"""
         # Все роли можно назначать через API
         return v
-
-# Parent-Athlete Relationship schemas
-class ParentAthleteRelationshipBase(BaseModel):
-    parent_id: int
-    athlete_id: int
-    relationship_type: RelationshipType
-
-class ParentAthleteRelationshipCreate(ParentAthleteRelationshipBase):
-    pass
-
-class ParentAthleteRelationshipOut(ParentAthleteRelationshipBase):
-    id: int
-    created_at: datetime
-    parent: UserOut
-    athlete: UserOut
-
-    model_config = ConfigDict(from_attributes=True)
 
 # JWT token schemas
 class Token(BaseModel):

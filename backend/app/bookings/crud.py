@@ -7,23 +7,19 @@ from app.bookings.models import Booking, IndividualTrainingRequest, IndividualTr
 from app.bookings.schemas import BookingCreate, BookingUpdate, IndividualTrainingRequestCreate, IndividualTrainingRequestUpdate
 from app.classes.models import Class
 
-async def create_booking(db: AsyncSession, booking_data: BookingCreate, booked_by_parent_id: Optional[int]) -> Booking:
+async def create_booking(db: AsyncSession, booking_data: BookingCreate) -> Booking:
     """Создать новое бронирование"""
-    db_booking = Booking(
-        **booking_data.model_dump(),
-        booked_by_parent_id=booked_by_parent_id
-    )
+    db_booking = Booking(**booking_data.model_dump())
     db.add(db_booking)
     await db.commit()
     await db.refresh(db_booking)
-    
+
     # Load relationships for response serialization
     result = await db.execute(
         select(Booking)
         .where(Booking.id == db_booking.id)
         .options(
             selectinload(Booking.athlete),
-            selectinload(Booking.booked_by_parent),
             selectinload(Booking.class_obj).selectinload(Class.coach)
         )
     )
@@ -36,24 +32,10 @@ async def get_booking(db: AsyncSession, booking_id: int) -> Optional[Booking]:
         .where(Booking.id == booking_id)
         .options(
             selectinload(Booking.athlete),
-            selectinload(Booking.booked_by_parent),
             selectinload(Booking.class_obj).selectinload(Class.coach)
         )
     )
     return result.scalar_one_or_none()
-
-async def get_bookings_by_parent(db: AsyncSession, parent_id: int) -> List[Booking]:
-    """Получить бронирования родителя"""
-    result = await db.execute(
-        select(Booking)
-        .where(Booking.booked_by_parent_id == parent_id)
-        .options(
-            selectinload(Booking.athlete),
-            selectinload(Booking.class_obj).selectinload(Class.coach)
-        )
-        .order_by(Booking.class_date.desc())
-    )
-    return result.scalars().all()
 
 async def get_bookings_by_athlete(db: AsyncSession, athlete_id: int) -> List[Booking]:
     """Получить бронирования спортсмена"""
@@ -61,7 +43,6 @@ async def get_bookings_by_athlete(db: AsyncSession, athlete_id: int) -> List[Boo
         select(Booking)
         .where(Booking.athlete_id == athlete_id)
         .options(
-            selectinload(Booking.booked_by_parent),
             selectinload(Booking.class_obj).selectinload(Class.coach)
         )
         .order_by(Booking.class_date.desc())
@@ -76,7 +57,6 @@ async def get_bookings_by_coach(db: AsyncSession, coach_id: int) -> List[Booking
         .where(Class.coach_id == coach_id)
         .options(
             selectinload(Booking.athlete),
-            selectinload(Booking.booked_by_parent),
             selectinload(Booking.class_obj).selectinload(Class.coach)
         )
         .order_by(Booking.class_date.desc())
@@ -135,7 +115,6 @@ async def approve_booking(db: AsyncSession, booking_id: int) -> Optional[Booking
         .where(Booking.id == booking_id)
         .options(
             selectinload(Booking.athlete),
-            selectinload(Booking.booked_by_parent),
             selectinload(Booking.class_obj).selectinload(Class.coach)
         )
     )
@@ -162,30 +141,25 @@ async def decline_booking(db: AsyncSession, booking_id: int, decline_reason: str
         .where(Booking.id == booking_id)
         .options(
             selectinload(Booking.athlete),
-            selectinload(Booking.booked_by_parent),
             selectinload(Booking.class_obj).selectinload(Class.coach)
         )
     )
     return result.scalar_one()
 
-async def create_individual_training_request(db: AsyncSession, request_data: IndividualTrainingRequestCreate, requested_by_parent_id: Optional[int]) -> IndividualTrainingRequest:
+async def create_individual_training_request(db: AsyncSession, request_data: IndividualTrainingRequestCreate) -> IndividualTrainingRequest:
     """Создать запрос на индивидуальную тренировку"""
-    db_request = IndividualTrainingRequest(
-        **request_data.model_dump(),
-        requested_by_parent_id=requested_by_parent_id
-    )
+    db_request = IndividualTrainingRequest(**request_data.model_dump())
     db.add(db_request)
     await db.commit()
     await db.refresh(db_request)
-    
+
     # Load relationships for response serialization
     result = await db.execute(
         select(IndividualTrainingRequest)
         .where(IndividualTrainingRequest.id == db_request.id)
         .options(
             selectinload(IndividualTrainingRequest.athlete),
-            selectinload(IndividualTrainingRequest.coach),
-            selectinload(IndividualTrainingRequest.requested_by_parent)
+            selectinload(IndividualTrainingRequest.coach)
         )
     )
     return result.scalar_one()
@@ -198,7 +172,6 @@ async def get_individual_training_request(db: AsyncSession, request_id: int) -> 
         .options(
             selectinload(IndividualTrainingRequest.athlete),
             selectinload(IndividualTrainingRequest.coach),
-            selectinload(IndividualTrainingRequest.requested_by_parent)
         )
     )
     return result.scalar_one_or_none()
@@ -210,7 +183,6 @@ async def get_individual_training_requests_by_athlete(db: AsyncSession, athlete_
         .where(IndividualTrainingRequest.athlete_id == athlete_id)
         .options(
             selectinload(IndividualTrainingRequest.coach),
-            selectinload(IndividualTrainingRequest.requested_by_parent)
         )
         .order_by(IndividualTrainingRequest.requested_date.desc())
     )
@@ -223,7 +195,6 @@ async def get_individual_training_requests_by_coach(db: AsyncSession, coach_id: 
         .where(IndividualTrainingRequest.coach_id == coach_id)
         .options(
             selectinload(IndividualTrainingRequest.athlete),
-            selectinload(IndividualTrainingRequest.requested_by_parent)
         )
         .order_by(IndividualTrainingRequest.requested_date.desc())
     )
@@ -239,7 +210,6 @@ async def get_pending_individual_training_requests_by_coach(db: AsyncSession, co
         )
         .options(
             selectinload(IndividualTrainingRequest.athlete),
-            selectinload(IndividualTrainingRequest.requested_by_parent)
         )
         .order_by(IndividualTrainingRequest.requested_date.asc())
         .limit(10)
@@ -283,7 +253,6 @@ async def accept_individual_training_request(db: AsyncSession, request_id: int, 
         .options(
             selectinload(IndividualTrainingRequest.athlete),
             selectinload(IndividualTrainingRequest.coach),
-            selectinload(IndividualTrainingRequest.requested_by_parent)
         )
     )
     return result.scalar_one()
@@ -310,7 +279,6 @@ async def decline_individual_training_request(db: AsyncSession, request_id: int,
         .options(
             selectinload(IndividualTrainingRequest.athlete),
             selectinload(IndividualTrainingRequest.coach),
-            selectinload(IndividualTrainingRequest.requested_by_parent)
         )
     )
     return result.scalar_one()
@@ -336,7 +304,6 @@ async def complete_individual_training_request(db: AsyncSession, request_id: int
         .options(
             selectinload(IndividualTrainingRequest.athlete),
             selectinload(IndividualTrainingRequest.coach),
-            selectinload(IndividualTrainingRequest.requested_by_parent)
         )
     )
     return result.scalar_one()
