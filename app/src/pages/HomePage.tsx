@@ -222,15 +222,7 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               <MaterialCommunityIcons name="star" size={24} color="#E74C3C" />
               <Text style={styles.actionText}>Рейтинг тренеров</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => navigation?.navigate('Progress')}
-            >
-              <MaterialCommunityIcons name="trophy" size={24} color="#E74C3C" />
-              <Text style={styles.actionText}>Прогресс</Text>
-            </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => navigation?.navigate('Store')}

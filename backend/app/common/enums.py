@@ -11,14 +11,6 @@ class WeekDay(str, Enum):
     saturday = "saturday"
     sunday = "sunday"
 
-class NotificationType(str, Enum):
-    booking_reminder = "booking_reminder"
-    booking_confirmed = "booking_confirmed"
-    booking_cancelled = "booking_cancelled"
-    class_cancelled = "class_cancelled"
-    payment_due = "payment_due"
-    payment_confirmed = "payment_confirmed"
-
 class PaymentStatus(str, Enum):
     pending = "pending"
     completed = "completed"

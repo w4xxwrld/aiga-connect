@@ -21,15 +21,11 @@ type RootStackParamList = {
   ChildProfile: { childId: number; childName: string };
   RequestIndividualTraining: undefined;
   IndividualTrainingRequests: undefined;
-  Progress: undefined;
   Tournaments: undefined;
   TournamentDetail: { tournamentId: number };
   CreateTournament: undefined;
-  Chat: undefined;
-  Forum: undefined;
   Store: undefined;
   ProductDetail: { productId: number };
-  Notifications: undefined;
   CoachRating: undefined;
   UsersManagement: undefined;
 };
@@ -58,15 +54,11 @@ import BookingDetailPage from '../pages/BookingDetailPage';
 import RequestIndividualTrainingPage from '../pages/RequestIndividualTrainingPage';
 import IndividualTrainingRequestsPage from '../pages/IndividualTrainingRequestsPage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import ProgressPage from '../pages/ProgressPage';
 import TournamentsPage from '../pages/TournamentsPage';
 import TournamentDetailPage from '../pages/TournamentDetailPage';
 import CreateTournamentPage from '../pages/CreateTournamentPage';
-import ChatPage from '../pages/ChatPage';
-import ForumPage from '../pages/ForumPage';
 import StorePage from '../pages/StorePage';
 import ProductDetailPage from '../pages/ProductDetailPage';
-import NotificationsPage from '../pages/NotificationsPage';
 import CoachRatingPage from '../pages/CoachRatingPage';
 import UsersManagementPage from '../pages/UsersManagementPage';
 import ChildProfilePage from '../pages/ChildProfilePage';
@@ -261,15 +253,11 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="CreateClass" component={CreateClassPage} />
         <Stack.Screen name="EditClass" component={EditClassPage} />
         <Stack.Screen name="ClassParticipants" component={ClassParticipantsPage} />
-        <Stack.Screen name="Progress" component={ProgressPage} />
         <Stack.Screen name="Tournaments" component={TournamentsPage} />
         <Stack.Screen name="TournamentDetail" component={TournamentDetailPage} />
         <Stack.Screen name="CreateTournament" component={CreateTournamentPage} />
-        <Stack.Screen name="Chat" component={ChatPage} />
-        <Stack.Screen name="Forum" component={ForumPage} />
         <Stack.Screen name="Store" component={StorePage} />
         <Stack.Screen name="ProductDetail" component={ProductDetailPage} />
-        <Stack.Screen name="Notifications" component={NotificationsPage} />
         <Stack.Screen name="CoachRating" component={CoachRatingPage} />
         <Stack.Screen name="UsersManagement" component={UsersManagementPage} />
 
