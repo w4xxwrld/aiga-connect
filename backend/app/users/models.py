@@ -8,14 +8,8 @@ from datetime import datetime
 from app.classes.models import Class
 
 class UserRole(str, Enum):
-    parent = "parent"
     athlete = "athlete"
     coach = "coach"
-
-class RelationshipType(str, Enum):
-    father = "father"
-    mother = "mother"
-    guardian = "guardian"
 
 class User(Base):
     __tablename__ = "users"
@@ -26,7 +20,6 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)  # Обязательное поле
     phone = Column(String, nullable=True)
     birth_date = Column(Date, nullable=False)  # Обязательное поле
-    emergency_contact = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
     primary_role = Column(SqlEnum(UserRole), nullable=False)  # Основная роль
     is_head_coach = Column(Boolean, default=False)  # Флаг главного тренера
@@ -34,8 +27,6 @@ class User(Base):
 
     # Relationships
     user_roles = relationship("UserRoleAssignment", back_populates="user", cascade="all, delete-orphan")
-    parent_relationships = relationship("ParentAthleteRelationship", foreign_keys="ParentAthleteRelationship.parent_id", back_populates="parent")
-    athlete_relationships = relationship("ParentAthleteRelationship", foreign_keys="ParentAthleteRelationship.athlete_id", back_populates="athlete")
     coached_classes = relationship("Class", foreign_keys="Class.coach_id", back_populates="coach")
     
     def has_role(self, role: UserRole) -> bool:
@@ -56,16 +47,3 @@ class UserRoleAssignment(Base):
 
     # Relationships
     user = relationship("User", back_populates="user_roles")
-
-class ParentAthleteRelationship(Base):
-    __tablename__ = "parent_athlete_relationships"
-
-    id = Column(Integer, primary_key=True, index=True)
-    parent_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    athlete_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    relationship_type = Column(SqlEnum(RelationshipType), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    # Relationships
-    parent = relationship("User", foreign_keys=[parent_id], back_populates="parent_relationships")
-    athlete = relationship("User", foreign_keys=[athlete_id], back_populates="athlete_relationships")

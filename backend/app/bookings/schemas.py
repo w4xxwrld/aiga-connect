@@ -37,7 +37,6 @@ class ClassSimple(BaseModel):
 
 class BookingOut(BookingBase):
     id: int
-    booked_by_parent_id: Optional[int] = None  # Nullable для взрослых спортсменов
     status: BookingStatus
     booking_date: datetime
     is_paid: bool
@@ -45,11 +44,10 @@ class BookingOut(BookingBase):
     cancellation_reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    
+
     # Related objects
     athlete: Optional[UserSimple] = None
     class_obj: Optional[ClassSimple] = None
-    booked_by_parent: Optional[UserSimple] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -90,7 +88,6 @@ class IndividualTrainingRequestUpdate(BaseModel):
 class IndividualTrainingRequestOut(IndividualTrainingRequestBase):
     id: int
     athlete_id: int
-    requested_by_parent_id: Optional[int] = None
     status: IndividualTrainingStatus
     request_date: datetime
     scheduled_date: Optional[datetime] = None
@@ -103,11 +100,10 @@ class IndividualTrainingRequestOut(IndividualTrainingRequestBase):
     decline_reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    
+
     # Related objects
     athlete: Optional[UserSimple] = None
     coach: Optional[UserSimple] = None
-    requested_by_parent: Optional[UserSimple] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -116,4 +112,3 @@ class BookingWithDetails(BookingOut):
     athlete_name: str
     class_name: str
     coach_name: str
-    parent_name: str

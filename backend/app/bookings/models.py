@@ -27,8 +27,7 @@ class Booking(Base):
     id = Column(Integer, primary_key=True, index=True)
     athlete_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
-    booked_by_parent_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable для взрослых спортсменов
-    
+
     booking_type = Column(SqlEnum(BookingType), default=BookingType.regular)
     status = Column(SqlEnum(BookingStatus), default=BookingStatus.pending)
     
@@ -49,7 +48,6 @@ class Booking(Base):
 
     # Relationships
     athlete = relationship("User", foreign_keys=[athlete_id])
-    booked_by_parent = relationship("User", foreign_keys=[booked_by_parent_id])
     class_obj = relationship("Class", back_populates="bookings")
 
 class IndividualTrainingRequest(Base):
@@ -58,8 +56,7 @@ class IndividualTrainingRequest(Base):
     id = Column(Integer, primary_key=True, index=True)
     athlete_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     coach_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    requested_by_parent_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable для взрослых спортсменов
-    
+
     # Training details
     requested_date = Column(DateTime, nullable=False)  # желаемая дата индивидуальной тренировки
     preferred_time_start = Column(String, nullable=True)  # предпочтительное время начала (HH:MM)
@@ -89,4 +86,3 @@ class IndividualTrainingRequest(Base):
     # Relationships
     athlete = relationship("User", foreign_keys=[athlete_id])
     coach = relationship("User", foreign_keys=[coach_id])
-    requested_by_parent = relationship("User", foreign_keys=[requested_by_parent_id])
