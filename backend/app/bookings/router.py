@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from datetime import date
 from app.deps import get_db, get_current_user
 from app.users.models import User, UserRole
 from app.bookings import schemas, crud
 from app.bookings.models import IndividualTrainingStatus
+from app.core.utils import calculate_age
 
 router = APIRouter()
 
@@ -36,10 +36,7 @@ async def create_booking(
         )
 
     # Проверить возраст спортсмена относительно возрастных ограничений занятия
-    today = date.today()
-    athlete_age = today.year - athlete.birth_date.year
-    if today.month < athlete.birth_date.month or (today.month == athlete.birth_date.month and today.day < athlete.birth_date.day):
-        athlete_age -= 1
+    athlete_age = calculate_age(athlete.birth_date)
 
     if class_obj.age_group_min and athlete_age < class_obj.age_group_min:
         raise HTTPException(

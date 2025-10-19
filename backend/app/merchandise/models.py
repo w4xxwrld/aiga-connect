@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Enum as SqlEnum, ForeignKey, DateTime, Boolean, Text, Numeric, JSON
 from sqlalchemy.orm import relationship
 from app.database import Base
+from app.core.utils import get_utc_now
 from enum import Enum
-from datetime import datetime
 from decimal import Decimal
 
 class ProductCategory(str, Enum):
@@ -33,17 +33,17 @@ class Product(Base):
     short_description = Column(String, nullable=True)  # Краткое описание для списка
     
     # Категория и теги
-    category = Column(SqlEnum(ProductCategory), nullable=False)
+    category = Column(SqlEnum(ProductCategory), nullable=False, index=True)
     tags = Column(JSON, nullable=True)  # ["cotton", "competition", "premium"]
-    
+
     # Цена и наличие
     price = Column(Numeric(10, 2), nullable=False)  # Цена в тенге
     original_price = Column(Numeric(10, 2), nullable=True)  # Оригинальная цена (для скидок)
     currency = Column(String, default="KZT")
-    
+
     # Статус и наличие
-    status = Column(SqlEnum(ProductStatus), default=ProductStatus.active)
-    is_featured = Column(Boolean, default=False)  # Рекомендуемый товар
+    status = Column(SqlEnum(ProductStatus), default=ProductStatus.active, index=True)
+    is_featured = Column(Boolean, default=False, index=True)  # Рекомендуемый товар
     
     # Изображения и медиа
     main_image_url = Column(String, nullable=True)
@@ -60,9 +60,9 @@ class Product(Base):
     # Данные для заказа
     external_url = Column(String, nullable=True)  # Ссылка на внешний магазин
     sku = Column(String, nullable=True)  # Артикул
-    
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_at = Column(DateTime, default=get_utc_now)
+    updated_at = Column(DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     # Relationships
     variants = relationship("ProductVariant", back_populates="product", cascade="all, delete-orphan")
@@ -86,9 +86,9 @@ class ProductVariant(Base):
     
     # Изображения варианта
     image_url = Column(String, nullable=True)
-    
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_at = Column(DateTime, default=get_utc_now)
+    updated_at = Column(DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     # Relationships
     product = relationship("Product", back_populates="variants")
@@ -112,9 +112,9 @@ class ProductCollection(Base):
     is_active = Column(Boolean, default=True)
     is_featured = Column(Boolean, default=False)
     sort_order = Column(Integer, default=0)
-    
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_at = Column(DateTime, default=get_utc_now)
+    updated_at = Column(DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     # Relationships
     products = relationship("Product", secondary="collection_products", back_populates="collections")

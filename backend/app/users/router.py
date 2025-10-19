@@ -6,6 +6,7 @@ from app.deps import get_db, get_current_user
 from app.users import schemas, crud
 from app.users.models import User, UserRole, UserRoleAssignment
 from app.core.security import create_access_token, create_refresh_token, decode_refresh_token
+from app.core.rate_limit import rate_limit_auth
 
 router = APIRouter()
 
@@ -13,6 +14,7 @@ router = APIRouter()
 async def register_user(
     user: schemas.UserCreate,
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(rate_limit_auth),
 ):
     if await crud.get_user_by_email(db, user.email):
         raise HTTPException(
@@ -32,6 +34,7 @@ async def register_user(
 async def login_user(
     login_data: schemas.UserLogin,
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(rate_limit_auth),
 ):
     user = await crud.authenticate_user(db, login_data.iin, login_data.password)
     if not user:
@@ -56,6 +59,7 @@ async def login_user(
 async def refresh_token(
     refresh_data: schemas.RefreshTokenRequest,
     db: AsyncSession = Depends(get_db),
+    _: None = Depends(rate_limit_auth),
 ):
     """Обновить access токен используя refresh токен"""
     payload = decode_refresh_token(refresh_data.refresh_token)

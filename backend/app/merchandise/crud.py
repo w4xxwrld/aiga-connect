@@ -3,7 +3,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import and_, or_, desc, func, asc
 from typing import List, Optional
-from datetime import datetime
+from app.core.utils import get_utc_now
 import re
 
 from app.merchandise.models import Product, ProductVariant, ProductCollection, ProductStatus
@@ -149,7 +149,7 @@ async def update_product(db: AsyncSession, product_id: int, product_data: Produc
     for field, value in update_data.items():
         setattr(product, field, value)
     
-    product.updated_at = datetime.utcnow()
+    product.updated_at = get_utc_now()
     await db.commit()
     await db.refresh(product)
     return product

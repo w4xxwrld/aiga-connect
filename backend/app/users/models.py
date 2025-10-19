@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Enum as SqlEnum, Date, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
+from app.core.utils import get_utc_now
 from enum import Enum
-from datetime import datetime
 
 # Import Class model to fix relationship
 from app.classes.models import Class
@@ -21,9 +21,9 @@ class User(Base):
     phone = Column(String, nullable=True)
     birth_date = Column(Date, nullable=False)  # Обязательное поле
     hashed_password = Column(String, nullable=False)
-    primary_role = Column(SqlEnum(UserRole), nullable=False)  # Основная роль
-    is_head_coach = Column(Boolean, default=False)  # Флаг главного тренера
-    created_at = Column(DateTime, default=datetime.utcnow)
+    primary_role = Column(SqlEnum(UserRole), nullable=False, index=True)  # Основная роль
+    is_head_coach = Column(Boolean, default=False, index=True)  # Флаг главного тренера
+    created_at = Column(DateTime, default=get_utc_now)
 
     # Relationships
     user_roles = relationship("UserRoleAssignment", back_populates="user", cascade="all, delete-orphan")
@@ -43,7 +43,7 @@ class UserRoleAssignment(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     role = Column(SqlEnum(UserRole), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=get_utc_now)
 
     # Relationships
     user = relationship("User", back_populates="user_roles")

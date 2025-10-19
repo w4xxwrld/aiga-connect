@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Enum as SqlEnum, ForeignKey, DateTime, Text, Boolean, Time
 from sqlalchemy.orm import relationship
 from app.database import Base
+from app.core.utils import get_utc_now
 from enum import Enum
-from datetime import datetime
 
 # Import Booking model to fix relationship
 from app.bookings.models import Booking
@@ -24,10 +24,10 @@ class Class(Base):
     name = Column(String, nullable=False)  # например: "Грэпплинг для начинающих", "Грэпплинг детская группа"
     description = Column(Text, nullable=True)
     difficulty_level = Column(SqlEnum(DifficultyLevel), default=DifficultyLevel.beginner)
-    coach_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    
+    coach_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
     # Расписание
-    day_of_week = Column(String, nullable=False)  # "понедельник", "вторник", etc.
+    day_of_week = Column(String, nullable=False, index=True)  # "понедельник", "вторник", etc.
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     
@@ -38,11 +38,11 @@ class Class(Base):
     price_per_class = Column(Integer, nullable=False)  # цена в тенге за занятие
     
     # Статус
-    status = Column(SqlEnum(ClassStatus), default=ClassStatus.active)
+    status = Column(SqlEnum(ClassStatus), default=ClassStatus.active, index=True)
     is_trial_available = Column(Boolean, default=True)  # пробные занятия
-    
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_at = Column(DateTime, default=get_utc_now)
+    updated_at = Column(DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     # Relationships
     coach = relationship("User", foreign_keys=[coach_id], back_populates="coached_classes")

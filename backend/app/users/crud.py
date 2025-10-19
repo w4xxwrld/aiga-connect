@@ -2,10 +2,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select
 from typing import Optional, List
-from datetime import date
 
 from app.users import models, schemas
 from app.core.security import get_password_hash, verify_password
+from app.core.utils import calculate_age
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[models.User]:
@@ -88,12 +88,9 @@ async def add_role_to_user(db: AsyncSession, user_id: int, role: schemas.UserRol
     user = await get_user(db, user_id)
     if not user:
         raise ValueError("User not found")
-    
+
     # Вычислить возраст пользователя
-    today = date.today()
-    user_age = today.year - user.birth_date.year
-    if today.month < user.birth_date.month or (today.month == user.birth_date.month and today.day < user.birth_date.day):
-        user_age -= 1
+    user_age = calculate_age(user.birth_date)
 
     # Проверки возраста для определенных ролей
     if role == schemas.UserRole.coach and user_age < 16:
@@ -238,10 +235,7 @@ async def make_user_coach(db: AsyncSession, user_id: int, requesting_user_id: in
         raise ValueError("User is already a coach")
 
     # Вычислить возраст пользователя
-    today = date.today()
-    user_age = today.year - user.birth_date.year
-    if today.month < user.birth_date.month or (today.month == user.birth_date.month and today.day < user.birth_date.day):
-        user_age -= 1
+    user_age = calculate_age(user.birth_date)
 
     # Проверка возраста для роли тренера
     if user_age < 16:
