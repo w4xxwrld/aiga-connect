@@ -97,12 +97,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       showFor: ['athlete', 'parent'],
     },
     {
-      title: 'Прогресс',
-      icon: 'trophy',
-      route: 'Progress',
-      showFor: ['athlete', 'parent'],
-    },
-    {
       title: 'Турниры',
       icon: 'medal',
       route: 'Tournaments',
@@ -121,24 +115,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       headCoachOnly: true,
     },
     {
-      title: 'Чат',
-      icon: 'chat',
-      route: 'Chat',
-    },
-    // {
-    //   title: 'Форум',
-    //   icon: 'forum',
-    //   route: 'Forum',
-    // },
-    {
       title: 'Магазин',
       icon: 'shopping',
       route: 'Store',
-    },
-    {
-      title: 'Уведомления',
-      icon: 'bell',
-      route: 'Notifications',
     },
   ];
 
