@@ -2,32 +2,35 @@ from pydantic import BaseModel, EmailStr, ConfigDict, field_validator, computed_
 from typing import Optional, List
 from datetime import date, datetime
 from app.users.models import UserRole
+from app.core.utils import validate_password_strength
 
 class UserBase(BaseModel):
-    iin: str
-    full_name: str  # Обязательное поле
-    email: EmailStr  # Обязательное поле
-    phone: Optional[str] = None
-    birth_date: date  # Обязательное поле
-    primary_role: UserRole  # Основная роль
-    is_head_coach: bool = False  # Флаг главного тренера
+    phone: str
+    first_name: str
+    last_name: str
+    photo_url: Optional[str] = None
+    email: Optional[EmailStr] = None
+    birth_date: date
+    primary_role: UserRole
 
-    @field_validator("iin")
+    @field_validator("phone")
     @classmethod
-    def validate_iin(cls, v):
-        if len(v) != 12 or not v.isdigit():
-            raise ValueError("IIN must be exactly 12 digits")
+    def validate_phone(cls, v):
+        # Basic phone validation - should be non-empty
+        # You can add more sophisticated validation for phone format
+        if not v or len(v) < 10:
+            raise ValueError("Phone number must be at least 10 characters")
         return v
-    
+
     @field_validator("birth_date")
     @classmethod
     def validate_birth_date(cls, v):
         if v > date.today():
             raise ValueError("Birth date cannot be in the future")
         return v
-    
+
     def get_age(self) -> int:
-        """Вычислить возраст в годах"""
+        """Calculate age in years"""
         today = date.today()
         age = today.year - self.birth_date.year
         if today.month < self.birth_date.month or (today.month == self.birth_date.month and today.day < self.birth_date.day):
@@ -35,13 +38,22 @@ class UserBase(BaseModel):
         return age
 
 class UserCreate(UserBase):
-    password: str
-    additional_roles: Optional[List[UserRole]] = []  # Дополнительные роли при регистрации
+    password: Optional[str] = None  # Optional for SMS-based auth
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v):
+        """Validate password strength if provided"""
+        if v:  # Only validate if password is provided
+            is_valid, error_message = validate_password_strength(v)
+            if not is_valid:
+                raise ValueError(error_message)
+        return v
 
     @field_validator("primary_role")
     @classmethod
     def validate_primary_role_age(cls, v, info):
-        """Проверить возрастные ограничения для основной роли"""
+        """Check age restrictions for coach role"""
         if hasattr(info, 'data') and info.data:
             birth_date = info.data.get('birth_date')
             if birth_date:
@@ -51,67 +63,32 @@ class UserCreate(UserBase):
                     age -= 1
 
                 if v == UserRole.coach and age < 16:
-                    raise ValueError(f"Users under 16 cannot have {v.value} role")
-        return v
-
-    @field_validator("additional_roles")
-    @classmethod
-    def validate_additional_roles_age(cls, v, info):
-        """Проверить возрастные ограничения для дополнительных ролей"""
-        if hasattr(info, 'data') and info.data and v:
-            birth_date = info.data.get('birth_date')
-            if birth_date:
-                today = date.today()
-                age = today.year - birth_date.year
-                if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
-                    age -= 1
-
-                for role in v:
-                    if role == UserRole.coach and age < 16:
-                        raise ValueError(f"Users under 16 cannot have {role.value} role")
-        return v
-
-    @field_validator("is_head_coach")
-    @classmethod
-    def validate_head_coach(cls, v, info):
-        """Только тренеры могут быть главными тренерами"""
-        if v and hasattr(info, 'data') and info.data:
-            primary_role = info.data.get('primary_role')
-            additional_roles = info.data.get('additional_roles', [])
-
-            is_coach = primary_role == UserRole.coach or UserRole.coach in additional_roles
-            if not is_coach:
-                raise ValueError("Only coaches can be head coaches")
+                    raise ValueError(f"Users under 16 cannot be coaches")
         return v
 
 class UserOut(UserBase):
     id: int
-    roles: Optional[List[UserRole]] = []  # Делаем опциональным
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 class UserSimple(UserBase):
-    """Упрощенная схема пользователя без ролей для избежания lazy loading"""
+    """Simplified user schema"""
     id: int
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 class UserLogin(BaseModel):
-    iin: str
-    password: str
+    phone: str
+    password: Optional[str] = None  # Optional for SMS-based auth
 
-class AddRoleRequest(BaseModel):
-    role: UserRole
-    target_user_id: Optional[int] = None  # Для админов, чтобы назначать роли другим пользователям
+class SMSVerificationRequest(BaseModel):
+    phone: str
 
-    @field_validator("role")
-    @classmethod
-    def validate_role_assignment(cls, v):
-        """Валидация назначения ролей"""
-        # Все роли можно назначать через API
-        return v
+class SMSVerificationConfirm(BaseModel):
+    phone: str
+    code: str
 
 # JWT token schemas
 class Token(BaseModel):
@@ -123,5 +100,5 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 class TokenData(BaseModel):
-    iin: Optional[str] = None
+    phone: Optional[str] = None
     role: Optional[str] = None

@@ -1,8 +1,7 @@
 # Import all models to ensure they are registered with SQLAlchemy
-from app.users.models import User, UserRole, UserRoleAssignment
+from app.users.models import User, UserRole
 from app.classes.models import Class
 from app.bookings.models import Booking, IndividualTrainingRequest, IndividualTrainingStatus
-from app.merchandise.models import Product, ProductVariant, ProductCollection
-from app.feedback.models import Feedback
+from app.attendance.models import Attendance
 
 # This file ensures all models are imported and registered with SQLAlchemy

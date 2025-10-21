@@ -104,7 +104,6 @@ async def get_current_user_info(
     current_user: User = Depends(get_current_user)
 ):
     """Получить информацию о текущем пользователе"""
-    print(f"DEBUG: User {current_user.id} ({current_user.full_name}) - is_head_coach: {current_user.is_head_coach}")
     return current_user
 
 @router.post("/add-role", response_model=schemas.UserOut)

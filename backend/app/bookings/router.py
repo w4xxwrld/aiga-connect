@@ -6,6 +6,7 @@ from app.deps import get_db, get_current_user
 from app.users.models import User, UserRole
 from app.bookings import schemas, crud
 from app.bookings.models import IndividualTrainingStatus
+from app.config import settings
 
 router = APIRouter()
 
@@ -234,12 +235,13 @@ async def create_individual_training_request(
             detail="Coach not found"
         )
 
-    # Проверить лимит запросов для тренера (максимум 10 ожидающих)
+    # Проверить лимит запросов для тренера
     pending_count = await crud.count_pending_individual_training_requests_by_coach(db, request_data.coach_id)
-    if pending_count >= 10:
+    max_pending = settings.MAX_PENDING_TRAINING_REQUESTS
+    if pending_count >= max_pending:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Coach has reached the maximum number of pending requests (10)"
+            detail=f"Coach has reached the maximum number of pending requests ({max_pending})"
         )
 
     # Спортсмены могут запрашивать только для себя

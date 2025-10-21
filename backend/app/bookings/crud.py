@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
-from datetime import datetime
+from app.core.utils import get_utc_now
 from app.bookings.models import Booking, IndividualTrainingRequest, IndividualTrainingStatus
 from app.bookings.schemas import BookingCreate, BookingUpdate, IndividualTrainingRequestCreate, IndividualTrainingRequestUpdate
 from app.classes.models import Class
@@ -73,8 +73,8 @@ async def cancel_booking(db: AsyncSession, booking_id: int, cancellation_reason:
     
     db_booking.status = "cancelled"
     db_booking.cancellation_reason = cancellation_reason
-    db_booking.updated_at = datetime.utcnow()
-    
+    db_booking.updated_at = get_utc_now()
+
     await db.commit()
     await db.refresh(db_booking)
     return db_booking
@@ -104,8 +104,8 @@ async def approve_booking(db: AsyncSession, booking_id: int) -> Optional[Booking
         return None
     
     db_booking.status = "confirmed"
-    db_booking.updated_at = datetime.utcnow()
-    
+    db_booking.updated_at = get_utc_now()
+
     await db.commit()
     await db.refresh(db_booking)
     
@@ -130,8 +130,8 @@ async def decline_booking(db: AsyncSession, booking_id: int, decline_reason: str
     
     db_booking.status = "cancelled"
     db_booking.cancellation_reason = decline_reason
-    db_booking.updated_at = datetime.utcnow()
-    
+    db_booking.updated_at = get_utc_now()
+
     await db.commit()
     await db.refresh(db_booking)
     
@@ -241,8 +241,8 @@ async def accept_individual_training_request(db: AsyncSession, request_id: int, 
         setattr(db_request, field, value)
     
     db_request.status = IndividualTrainingStatus.accepted
-    db_request.updated_at = datetime.utcnow()
-    
+    db_request.updated_at = get_utc_now()
+
     await db.commit()
     await db.refresh(db_request)
     
@@ -267,8 +267,8 @@ async def decline_individual_training_request(db: AsyncSession, request_id: int,
     
     db_request.status = IndividualTrainingStatus.declined
     db_request.decline_reason = decline_reason
-    db_request.updated_at = datetime.utcnow()
-    
+    db_request.updated_at = get_utc_now()
+
     await db.commit()
     await db.refresh(db_request)
     
@@ -292,8 +292,8 @@ async def complete_individual_training_request(db: AsyncSession, request_id: int
         return None
     
     db_request.status = IndividualTrainingStatus.completed
-    db_request.updated_at = datetime.utcnow()
-    
+    db_request.updated_at = get_utc_now()
+
     await db.commit()
     await db.refresh(db_request)
     

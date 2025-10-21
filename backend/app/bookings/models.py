@@ -1,19 +1,14 @@
-from sqlalchemy import Column, Integer, String, Enum as SqlEnum, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Enum as SqlEnum, ForeignKey, DateTime, Boolean, Numeric
 from sqlalchemy.orm import relationship
 from app.database import Base
+from app.core.utils import get_utc_now
 from enum import Enum
-from datetime import datetime
 
 class BookingStatus(str, Enum):
     pending = "pending"
     confirmed = "confirmed"
     cancelled = "cancelled"
     completed = "completed"
-
-class BookingType(str, Enum):
-    regular = "regular"
-    trial = "trial"
-    makeup = "makeup"  # компенсационное занятие
 
 class IndividualTrainingStatus(str, Enum):
     pending = "pending"
@@ -28,23 +23,22 @@ class Booking(Base):
     athlete_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
 
-    booking_type = Column(SqlEnum(BookingType), default=BookingType.regular)
     status = Column(SqlEnum(BookingStatus), default=BookingStatus.pending)
-    
+
     # Booking details
-    booking_date = Column(DateTime, default=datetime.utcnow)
-    class_date = Column(DateTime, nullable=False)  # дата конкретного занятия
-    
+    booking_date = Column(DateTime, default=get_utc_now)
+    class_date = Column(DateTime, nullable=False)  # Date of specific training session
+
     # Payment info
     is_paid = Column(Boolean, default=False)
-    payment_amount = Column(Integer, nullable=True)
-    
+    payment_amount = Column(Numeric(10, 2), nullable=True)
+
     # Notes
     notes = Column(String, nullable=True)
     cancellation_reason = Column(String, nullable=True)
-    
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_at = Column(DateTime, default=get_utc_now)
+    updated_at = Column(DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     # Relationships
     athlete = relationship("User", foreign_keys=[athlete_id])
@@ -64,24 +58,24 @@ class IndividualTrainingRequest(Base):
     
     # Request details
     status = Column(SqlEnum(IndividualTrainingStatus), default=IndividualTrainingStatus.pending)
-    request_date = Column(DateTime, default=datetime.utcnow)
-    
+    request_date = Column(DateTime, default=get_utc_now)
+
     # Training details (filled by coach when accepted)
     scheduled_date = Column(DateTime, nullable=True)  # назначенная дата
     scheduled_time_start = Column(String, nullable=True)  # назначенное время начала
     scheduled_time_end = Column(String, nullable=True)  # назначенное время окончания
-    
+
     # Payment info
     is_paid = Column(Boolean, default=False)
-    payment_amount = Column(Integer, nullable=True)
-    
+    payment_amount = Column(Numeric(10, 2), nullable=True)
+
     # Notes and reasons
     athlete_notes = Column(String, nullable=True)  # заметки от спортсмена/родителя
     coach_notes = Column(String, nullable=True)  # заметки от тренера
     decline_reason = Column(String, nullable=True)  # причина отклонения
-    
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_at = Column(DateTime, default=get_utc_now)
+    updated_at = Column(DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     # Relationships
     athlete = relationship("User", foreign_keys=[athlete_id])

@@ -204,37 +204,6 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     </Card>
   );
 
-  const renderQuickActions = () => {
-    if (userRole !== 'parent' && userRole !== 'athlete') return null;
-
-    return (
-      <Card style={styles.sectionCard}>
-        <Card.Content>
-          <View style={styles.sectionHeader}>
-            <Title style={styles.sectionTitle}>Быстрые действия</Title>
-          </View>
-          
-          <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => navigation?.navigate('CoachRating')}
-            >
-              <MaterialCommunityIcons name="star" size={24} color="#E74C3C" />
-              <Text style={styles.actionText}>Рейтинг тренеров</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => navigation?.navigate('Store')}
-            >
-              <MaterialCommunityIcons name="shopping" size={24} color="#E74C3C" />
-              <Text style={styles.actionText}>Магазин</Text>
-            </TouchableOpacity>
-          </View>
-        </Card.Content>
-      </Card>
-    );
-  };
 
   const renderRecentBookings = () => {
     if (userRole !== 'parent' && userRole !== 'athlete') return null;
@@ -308,7 +277,6 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
       >
         {renderWelcomeSection()}
         {renderQuickStats()}
-        {renderQuickActions()}
         {renderIncomingTournaments()}
         {renderRecentClasses()}
         {renderRecentBookings()}

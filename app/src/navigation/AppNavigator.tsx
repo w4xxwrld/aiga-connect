@@ -24,9 +24,6 @@ type RootStackParamList = {
   Tournaments: undefined;
   TournamentDetail: { tournamentId: number };
   CreateTournament: undefined;
-  Store: undefined;
-  ProductDetail: { productId: number };
-  CoachRating: undefined;
   UsersManagement: undefined;
 };
 
@@ -57,9 +54,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import TournamentsPage from '../pages/TournamentsPage';
 import TournamentDetailPage from '../pages/TournamentDetailPage';
 import CreateTournamentPage from '../pages/CreateTournamentPage';
-import StorePage from '../pages/StorePage';
-import ProductDetailPage from '../pages/ProductDetailPage';
-import CoachRatingPage from '../pages/CoachRatingPage';
 import UsersManagementPage from '../pages/UsersManagementPage';
 import ChildProfilePage from '../pages/ChildProfilePage';
 
@@ -256,9 +250,6 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Tournaments" component={TournamentsPage} />
         <Stack.Screen name="TournamentDetail" component={TournamentDetailPage} />
         <Stack.Screen name="CreateTournament" component={CreateTournamentPage} />
-        <Stack.Screen name="Store" component={StorePage} />
-        <Stack.Screen name="ProductDetail" component={ProductDetailPage} />
-        <Stack.Screen name="CoachRating" component={CoachRatingPage} />
         <Stack.Screen name="UsersManagement" component={UsersManagementPage} />
 
       </Stack.Navigator>
