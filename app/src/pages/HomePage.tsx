@@ -21,6 +21,8 @@ import Sidebar from '../components/Sidebar';
 import Layout from '../components/Layout';
 import api from '../services/api';
 import tournamentsService, { Tournament } from '../services/tournaments';
+import StatCard from '../components/StatCard';
+import EmptyState from '../components/EmptyState';
 
 const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
@@ -98,30 +100,24 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
 
   const renderQuickStats = () => (
     <View style={styles.statsContainer}>
-      <Card style={styles.statCard}>
-        <Card.Content style={styles.statContent}>
-          <MaterialCommunityIcons name="calendar" size={24} color="#E74C3C" />
-          <Text style={styles.statNumber}>{stats.totalClasses}</Text>
-          <Text style={styles.statLabel}>Занятий</Text>
-        </Card.Content>
-      </Card>
-      
-      <Card style={styles.statCard}>
-        <Card.Content style={styles.statContent}>
-          <MaterialCommunityIcons name="bookmark" size={24} color="#E74C3C" />
-          <Text style={styles.statNumber}>{stats.totalBookings}</Text>
-          <Text style={styles.statLabel}>Записей</Text>
-        </Card.Content>
-      </Card>
-      
+      <StatCard
+        icon="calendar"
+        value={stats.totalClasses}
+        label="Занятий"
+      />
+
+      <StatCard
+        icon="bookmark"
+        value={stats.totalBookings}
+        label="Записей"
+      />
+
       {(userRole === 'parent' || userRole === 'athlete') && (
-        <Card style={styles.statCard}>
-          <Card.Content style={styles.statContent}>
-            <MaterialCommunityIcons name="clock" size={24} color="#E74C3C" />
-            <Text style={styles.statNumber}>{stats.pendingBookings}</Text>
-            <Text style={styles.statLabel}>Ожидает</Text>
-          </Card.Content>
-        </Card>
+        <StatCard
+          icon="clock"
+          value={stats.pendingBookings}
+          label="Ожидает"
+        />
       )}
     </View>
   );
@@ -154,10 +150,11 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             </TouchableOpacity>
           ))
         ) : (
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="medal" size={48} color="#666" />
-            <Text style={styles.emptyStateText}>Нет предстоящих турниров</Text>
-          </View>
+          <EmptyState
+            icon="medal"
+            message="Нет предстоящих турниров"
+            iconColor="#666"
+          />
         )}
       </Card.Content>
     </Card>
@@ -341,28 +338,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 16,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#1B263B',
-    borderRadius: 12,
-    marginHorizontal: 4,
-  },
-  statContent: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  statNumber: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  statLabel: {
-    color: '#B0BEC5',
-    fontSize: 12,
-    textAlign: 'center',
-  },
   sectionCard: {
     backgroundColor: '#1B263B',
     marginBottom: 16,
@@ -456,16 +431,6 @@ const styles = StyleSheet.create({
   tournamentLocation: {
     color: '#B0BEC5',
     fontSize: 14,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  emptyStateText: {
-    color: '#B0BEC5',
-    fontSize: 16,
-    marginTop: 12,
-    textAlign: 'center',
   },
 
 

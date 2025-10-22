@@ -1,5 +1,4 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select
 from typing import Optional, List
 from datetime import date
@@ -8,255 +7,104 @@ from app.users import models, schemas
 from app.core.security import get_password_hash, verify_password
 
 
-async def get_user_by_email(db: AsyncSession, email: str) -> Optional[models.User]:
+async def get_user_by_phone(db: AsyncSession, phone: str) -> Optional[models.User]:
+    """Get user by phone number"""
     result = await db.execute(
-        select(models.User).where(models.User.email == email)
+        select(models.User).where(models.User.phone == phone)
     )
     return result.scalars().first()
 
 
-async def get_user_by_iin(db: AsyncSession, iin: str) -> Optional[models.User]:
+async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[models.User]:
+    """Get user by ID"""
     result = await db.execute(
-        select(models.User).where(models.User.iin == iin)
-    )
-    return result.scalars().first()
-
-
-async def get_user(db: AsyncSession, user_id: int) -> Optional[models.User]:
-    result = await db.execute(
-        select(models.User)
-        .where(models.User.id == user_id)
-        .options(selectinload(models.User.user_roles))
+        select(models.User).where(models.User.id == user_id)
     )
     return result.scalars().first()
 
 
 async def create_user(db: AsyncSession, user: schemas.UserCreate) -> models.User:
-    hashed_password = get_password_hash(user.password)
+    """Create a new user"""
+    hashed_password = None
+    if user.password:
+        hashed_password = get_password_hash(user.password)
+
     db_user = models.User(
-        iin=user.iin,
-        full_name=user.full_name,
-        email=user.email,
         phone=user.phone,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        photo_url=user.photo_url,
+        email=user.email,
         birth_date=user.birth_date,
         hashed_password=hashed_password,
         primary_role=user.primary_role,
-        is_head_coach=user.is_head_coach,
     )
     db.add(db_user)
-    await db.commit()
-    await db.refresh(db_user)
-    
-    # Добавить основную роль в таблицу ролей
-    primary_role_assignment = models.UserRoleAssignment(
-        user_id=db_user.id,
-        role=user.primary_role
-    )
-    db.add(primary_role_assignment)
-    
-    # Добавить дополнительные роли, если есть
-    for role in user.additional_roles:
-        if role != user.primary_role:  # Избежать дублирования основной роли
-            role_assignment = models.UserRoleAssignment(
-                user_id=db_user.id,
-                role=role
-            )
-            db.add(role_assignment)
-    
     await db.commit()
     await db.refresh(db_user)
     return db_user
 
 
-async def authenticate_user(db: AsyncSession, iin: str, password: str) -> Optional[models.User]:
-    result = await db.execute(
-        select(models.User)
-        .where(models.User.iin == iin)
-        .options(selectinload(models.User.user_roles))
-    )
-    user = result.scalars().first()
+async def update_user(
+    db: AsyncSession,
+    user_id: int,
+    user_update: schemas.UserCreate
+) -> Optional[models.User]:
+    """Update user information"""
+    user = await get_user_by_id(db, user_id)
     if not user:
+        return None
+
+    user.first_name = user_update.first_name
+    user.last_name = user_update.last_name
+    user.photo_url = user_update.photo_url
+    user.email = user_update.email
+    user.birth_date = user_update.birth_date
+    user.primary_role = user_update.primary_role
+
+    if user_update.password:
+        user.hashed_password = get_password_hash(user_update.password)
+
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def authenticate_user(
+    db: AsyncSession,
+    phone: str,
+    password: str
+) -> Optional[models.User]:
+    """Authenticate user by phone and password"""
+    user = await get_user_by_phone(db, phone)
+    if not user:
+        return None
+    if not user.hashed_password:
         return None
     if not verify_password(password, user.hashed_password):
         return None
     return user
 
 
-async def add_role_to_user(db: AsyncSession, user_id: int, role: schemas.UserRole, requesting_user_id: int = None) -> models.User:
-    """Добавить роль к существующему пользователю с проверками"""
-    # Проверить, что пользователь существует
-    user = await get_user(db, user_id)
-    if not user:
-        raise ValueError("User not found")
-    
-    # Вычислить возраст пользователя
-    today = date.today()
-    user_age = today.year - user.birth_date.year
-    if today.month < user.birth_date.month or (today.month == user.birth_date.month and today.day < user.birth_date.day):
-        user_age -= 1
-
-    # Проверки возраста для определенных ролей
-    if role == schemas.UserRole.coach and user_age < 16:
-        raise ValueError(f"Users under 16 cannot have {role.value} role")
-    
-    # Проверка прав для назначения роли тренера
-    if role == schemas.UserRole.coach:
-        if not requesting_user_id:
-            raise ValueError("Coach role can only be assigned by head coach")
-        
-        requesting_user = await get_user(db, requesting_user_id)
-        if not requesting_user or not requesting_user.is_head_coach:
-            raise ValueError("Only head coach can assign coach role")
-    
-    # Проверить, что роль еще не добавлена
-    existing_role = await db.execute(
-        select(models.UserRoleAssignment)
-        .where(
-            models.UserRoleAssignment.user_id == user_id,
-            models.UserRoleAssignment.role == role
-        )
-    )
-    if existing_role.scalars().first():
-        raise ValueError("User already has this role")
-    
-    # Добавить роль
-    role_assignment = models.UserRoleAssignment(
-        user_id=user_id,
-        role=role
-    )
-    db.add(role_assignment)
-    await db.commit()
-    await db.refresh(user)
-    return user
-
-
-async def get_user_by_iin_for_login(db: AsyncSession, iin: str) -> Optional[models.User]:
-    """Получить пользователя по IIN для входа (с загрузкой ролей)"""
-    import logging
-    logger = logging.getLogger(__name__)
-    
+async def get_all_coaches(db: AsyncSession) -> List[models.User]:
+    """Get all users with coach role"""
     result = await db.execute(
-        select(models.User)
-        .where(models.User.iin == iin)
-        .options(selectinload(models.User.user_roles))
-    )
-    user = result.scalars().first()
-    
-    if user:
-        logger.info(f"User {user.id} ({user.full_name}) loaded with roles: {[ur.role for ur in user.user_roles]}")
-        logger.info(f"User primary_role: {user.primary_role}")
-    
-    return user
-
-
-async def user_has_role(db: AsyncSession, user_id: int, role: schemas.UserRole) -> bool:
-    """Проверить, есть ли у пользователя указанная роль"""
-    result = await db.execute(
-        select(models.UserRoleAssignment)
-        .where(
-            models.UserRoleAssignment.user_id == user_id,
-            models.UserRoleAssignment.role == role
-        )
-    )
-    return result.scalars().first() is not None
-
-
-async def make_head_coach(db: AsyncSession, user_id: int, requesting_user_id: int = None) -> models.User:
-    """Назначить пользователя главным тренером"""
-    user = await get_user(db, user_id)
-    if not user:
-        raise ValueError("User not found")
-    
-    # Проверить, что пользователь является тренером
-    if not await user_has_role(db, user_id, schemas.UserRole.coach):
-        raise ValueError("User must be a coach to become head coach")
-    
-    # Проверить права на назначение (может быть текущий главный тренер или первый тренер)
-    if requesting_user_id:
-        requesting_user = await get_user(db, requesting_user_id)
-        if not requesting_user or not requesting_user.is_head_coach:
-            raise ValueError("Only current head coach can assign new head coach")
-    else:
-        # Проверить, есть ли уже главный тренер в системе
-        existing_head = await db.execute(
-            select(models.User).where(models.User.is_head_coach == True)
-        )
-        if existing_head.scalars().first():
-            raise ValueError("Head coach already exists. Current head coach must assign new one.")
-    
-    # Назначить главным тренером
-    user.is_head_coach = True
-    await db.commit()
-    await db.refresh(user)
-    return user
-
-
-async def get_head_coach(db: AsyncSession) -> Optional[models.User]:
-    """Получить главного тренера"""
-    result = await db.execute(
-        select(models.User)
-        .where(models.User.is_head_coach == True)
-        .options(selectinload(models.User.user_roles))
-    )
-    return result.scalars().first()
-
-
-async def get_coaches(db: AsyncSession) -> List[models.User]:
-    """Получить список всех тренеров"""
-    result = await db.execute(
-        select(models.User)
-        .join(models.UserRoleAssignment, models.User.id == models.UserRoleAssignment.user_id)
-        .where(models.UserRoleAssignment.role == models.UserRole.coach)
-        .options(selectinload(models.User.user_roles))
+        select(models.User).where(models.User.primary_role == models.UserRole.coach)
     )
     return result.scalars().all()
+
+
+async def get_all_athletes(db: AsyncSession) -> List[models.User]:
+    """Get all users with athlete role"""
+    result = await db.execute(
+        select(models.User).where(models.User.primary_role == models.UserRole.athlete)
+    )
+    return result.scalars().all()
+
 
 async def get_all_users(db: AsyncSession) -> List[models.User]:
-    """Получить всех пользователей (только для главных тренеров)"""
+    """Get all users"""
     result = await db.execute(
-        select(models.User)
-        .options(selectinload(models.User.user_roles))
-        .order_by(models.User.created_at.desc())
+        select(models.User).order_by(models.User.created_at.desc())
     )
     return result.scalars().all()
-
-
-async def make_user_coach(db: AsyncSession, user_id: int, requesting_user_id: int) -> models.User:
-    """Назначить пользователя тренером (обновляет primary_role и добавляет роль в user_role_assignments)"""
-    # Проверить, что пользователь существует
-    user = await get_user(db, user_id)
-    if not user:
-        raise ValueError("User not found")
-
-    # Проверить права на назначение (только главный тренер может назначать тренеров)
-    requesting_user = await get_user(db, requesting_user_id)
-    if not requesting_user or not requesting_user.is_head_coach:
-        raise ValueError("Only head coach can assign coach role")
-
-    # Проверить, что пользователь еще не является тренером
-    if await user_has_role(db, user_id, schemas.UserRole.coach):
-        raise ValueError("User is already a coach")
-
-    # Вычислить возраст пользователя
-    today = date.today()
-    user_age = today.year - user.birth_date.year
-    if today.month < user.birth_date.month or (today.month == user.birth_date.month and today.day < user.birth_date.day):
-        user_age -= 1
-
-    # Проверка возраста для роли тренера
-    if user_age < 16:
-        raise ValueError("Users under 16 cannot have coach role")
-
-    # Обновить primary_role в таблице users
-    user.primary_role = models.UserRole.coach
-
-    # Добавить роль в таблицу user_role_assignments
-    role_assignment = models.UserRoleAssignment(
-        user_id=user_id,
-        role=schemas.UserRole.coach
-    )
-    db.add(role_assignment)
-
-    await db.commit()
-    await db.refresh(user)
-    return user

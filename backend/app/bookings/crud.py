@@ -2,13 +2,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
+
 from app.core.utils import get_utc_now
-from app.bookings.models import Booking, IndividualTrainingRequest, IndividualTrainingStatus
+from app.bookings.models import Booking, BookingStatus, IndividualTrainingRequest, IndividualTrainingStatus
 from app.bookings.schemas import BookingCreate, BookingUpdate, IndividualTrainingRequestCreate, IndividualTrainingRequestUpdate
 from app.classes.models import Class
 
+
 async def create_booking(db: AsyncSession, booking_data: BookingCreate) -> Booking:
-    """Создать новое бронирование"""
+    """Create new booking"""
     db_booking = Booking(**booking_data.model_dump())
     db.add(db_booking)
     await db.commit()
@@ -25,8 +27,9 @@ async def create_booking(db: AsyncSession, booking_data: BookingCreate) -> Booki
     )
     return result.scalar_one()
 
+
 async def get_booking(db: AsyncSession, booking_id: int) -> Optional[Booking]:
-    """Получить бронирование по ID"""
+    """Get booking by ID"""
     result = await db.execute(
         select(Booking)
         .where(Booking.id == booking_id)
@@ -37,8 +40,9 @@ async def get_booking(db: AsyncSession, booking_id: int) -> Optional[Booking]:
     )
     return result.scalar_one_or_none()
 
+
 async def get_bookings_by_athlete(db: AsyncSession, athlete_id: int) -> List[Booking]:
-    """Получить бронирования спортсмена"""
+    """Get athlete's bookings"""
     result = await db.execute(
         select(Booking)
         .where(Booking.athlete_id == athlete_id)
@@ -49,8 +53,9 @@ async def get_bookings_by_athlete(db: AsyncSession, athlete_id: int) -> List[Boo
     )
     return result.scalars().all()
 
+
 async def get_bookings_by_coach(db: AsyncSession, coach_id: int) -> List[Booking]:
-    """Получить бронирования для занятий тренера"""
+    """Get bookings for coach's classes"""
     result = await db.execute(
         select(Booking)
         .join(Class, Booking.class_id == Class.id)
@@ -63,15 +68,33 @@ async def get_bookings_by_coach(db: AsyncSession, coach_id: int) -> List[Booking
     )
     return result.scalars().all()
 
-async def cancel_booking(db: AsyncSession, booking_id: int, cancellation_reason: str) -> Optional[Booking]:
-    """Отменить бронирование"""
+
+async def update_booking(db: AsyncSession, booking_id: int, booking_update: BookingUpdate) -> Optional[Booking]:
+    """Update booking"""
     result = await db.execute(select(Booking).where(Booking.id == booking_id))
     db_booking = result.scalar_one_or_none()
-    
+
     if not db_booking:
         return None
-    
-    db_booking.status = "cancelled"
+
+    update_data = booking_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_booking, field, value)
+
+    await db.commit()
+    await db.refresh(db_booking)
+    return db_booking
+
+
+async def cancel_booking(db: AsyncSession, booking_id: int, cancellation_reason: str) -> Optional[Booking]:
+    """Cancel booking"""
+    result = await db.execute(select(Booking).where(Booking.id == booking_id))
+    db_booking = result.scalar_one_or_none()
+
+    if not db_booking:
+        return None
+
+    db_booking.status = BookingStatus.cancelled
     db_booking.cancellation_reason = cancellation_reason
     db_booking.updated_at = get_utc_now()
 
@@ -79,36 +102,21 @@ async def cancel_booking(db: AsyncSession, booking_id: int, cancellation_reason:
     await db.refresh(db_booking)
     return db_booking
 
-async def update_booking(db: AsyncSession, booking_id: int, booking_update: BookingUpdate) -> Optional[Booking]:
-    """Обновить бронирование"""
-    result = await db.execute(select(Booking).where(Booking.id == booking_id))
-    db_booking = result.scalar_one_or_none()
-    
-    if not db_booking:
-        return None
-    
-    update_data = booking_update.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_booking, field, value)
-    
-    await db.commit()
-    await db.refresh(db_booking)
-    return db_booking
 
 async def approve_booking(db: AsyncSession, booking_id: int) -> Optional[Booking]:
-    """Подтвердить бронирование"""
+    """Approve booking"""
     result = await db.execute(select(Booking).where(Booking.id == booking_id))
     db_booking = result.scalar_one_or_none()
-    
+
     if not db_booking:
         return None
-    
-    db_booking.status = "confirmed"
+
+    db_booking.status = BookingStatus.confirmed
     db_booking.updated_at = get_utc_now()
 
     await db.commit()
     await db.refresh(db_booking)
-    
+
     # Load relationships for response serialization
     result = await db.execute(
         select(Booking)
@@ -120,21 +128,22 @@ async def approve_booking(db: AsyncSession, booking_id: int) -> Optional[Booking
     )
     return result.scalar_one()
 
+
 async def decline_booking(db: AsyncSession, booking_id: int, decline_reason: str) -> Optional[Booking]:
-    """Отклонить бронирование"""
+    """Decline booking"""
     result = await db.execute(select(Booking).where(Booking.id == booking_id))
     db_booking = result.scalar_one_or_none()
-    
+
     if not db_booking:
         return None
-    
-    db_booking.status = "cancelled"
+
+    db_booking.status = BookingStatus.cancelled
     db_booking.cancellation_reason = decline_reason
     db_booking.updated_at = get_utc_now()
 
     await db.commit()
     await db.refresh(db_booking)
-    
+
     # Load relationships for response serialization
     result = await db.execute(
         select(Booking)
@@ -146,9 +155,20 @@ async def decline_booking(db: AsyncSession, booking_id: int, decline_reason: str
     )
     return result.scalar_one()
 
-async def create_individual_training_request(db: AsyncSession, request_data: IndividualTrainingRequestCreate) -> IndividualTrainingRequest:
-    """Создать запрос на индивидуальную тренировку"""
-    db_request = IndividualTrainingRequest(**request_data.model_dump())
+
+# Individual Training Request Functions
+
+
+async def create_individual_training_request(
+    db: AsyncSession,
+    athlete_id: int,
+    request_data: IndividualTrainingRequestCreate
+) -> IndividualTrainingRequest:
+    """Create individual training request"""
+    db_request = IndividualTrainingRequest(
+        athlete_id=athlete_id,
+        **request_data.model_dump()
+    )
     db.add(db_request)
     await db.commit()
     await db.refresh(db_request)
@@ -164,8 +184,9 @@ async def create_individual_training_request(db: AsyncSession, request_data: Ind
     )
     return result.scalar_one()
 
+
 async def get_individual_training_request(db: AsyncSession, request_id: int) -> Optional[IndividualTrainingRequest]:
-    """Получить запрос на индивидуальную тренировку по ID"""
+    """Get individual training request by ID"""
     result = await db.execute(
         select(IndividualTrainingRequest)
         .where(IndividualTrainingRequest.id == request_id)
@@ -176,8 +197,9 @@ async def get_individual_training_request(db: AsyncSession, request_id: int) -> 
     )
     return result.scalar_one_or_none()
 
+
 async def get_individual_training_requests_by_athlete(db: AsyncSession, athlete_id: int) -> List[IndividualTrainingRequest]:
-    """Получить запросы на индивидуальные тренировки спортсмена"""
+    """Get athlete's individual training requests"""
     result = await db.execute(
         select(IndividualTrainingRequest)
         .where(IndividualTrainingRequest.athlete_id == athlete_id)
@@ -188,8 +210,9 @@ async def get_individual_training_requests_by_athlete(db: AsyncSession, athlete_
     )
     return result.scalars().all()
 
+
 async def get_individual_training_requests_by_coach(db: AsyncSession, coach_id: int) -> List[IndividualTrainingRequest]:
-    """Получить запросы на индивидуальные тренировки для тренера"""
+    """Get individual training requests for coach"""
     result = await db.execute(
         select(IndividualTrainingRequest)
         .where(IndividualTrainingRequest.coach_id == coach_id)
@@ -200,8 +223,9 @@ async def get_individual_training_requests_by_coach(db: AsyncSession, coach_id: 
     )
     return result.scalars().all()
 
+
 async def get_pending_individual_training_requests_by_coach(db: AsyncSession, coach_id: int) -> List[IndividualTrainingRequest]:
-    """Получить ожидающие запросы на индивидуальные тренировки для тренера (максимум 10)"""
+    """Get pending individual training requests for coach (max 10)"""
     result = await db.execute(
         select(IndividualTrainingRequest)
         .where(
@@ -216,36 +240,42 @@ async def get_pending_individual_training_requests_by_coach(db: AsyncSession, co
     )
     return result.scalars().all()
 
-async def count_pending_individual_training_requests_by_coach(db: AsyncSession, coach_id: int) -> int:
-    """Подсчитать количество ожидающих запросов на индивидуальные тренировки для тренера"""
+
+async def count_pending_individual_training_requests_by_athlete(db: AsyncSession, athlete_id: int) -> int:
+    """Count pending individual training requests by athlete"""
     result = await db.execute(
         select(func.count(IndividualTrainingRequest.id))
         .where(
-            IndividualTrainingRequest.coach_id == coach_id,
+            IndividualTrainingRequest.athlete_id == athlete_id,
             IndividualTrainingRequest.status == IndividualTrainingStatus.pending
         )
     )
     return result.scalar()
 
-async def accept_individual_training_request(db: AsyncSession, request_id: int, update_data: IndividualTrainingRequestUpdate) -> Optional[IndividualTrainingRequest]:
-    """Принять запрос на индивидуальную тренировку"""
+
+async def accept_individual_training_request(
+    db: AsyncSession,
+    request_id: int,
+    update_data: IndividualTrainingRequestUpdate
+) -> Optional[IndividualTrainingRequest]:
+    """Accept individual training request"""
     result = await db.execute(select(IndividualTrainingRequest).where(IndividualTrainingRequest.id == request_id))
     db_request = result.scalar_one_or_none()
-    
+
     if not db_request:
         return None
-    
+
     # Update the request with scheduled details
     update_dict = update_data.model_dump(exclude_unset=True)
     for field, value in update_dict.items():
         setattr(db_request, field, value)
-    
+
     db_request.status = IndividualTrainingStatus.accepted
     db_request.updated_at = get_utc_now()
 
     await db.commit()
     await db.refresh(db_request)
-    
+
     # Load relationships for response serialization
     result = await db.execute(
         select(IndividualTrainingRequest)
@@ -257,21 +287,22 @@ async def accept_individual_training_request(db: AsyncSession, request_id: int, 
     )
     return result.scalar_one()
 
+
 async def decline_individual_training_request(db: AsyncSession, request_id: int, decline_reason: str) -> Optional[IndividualTrainingRequest]:
-    """Отклонить запрос на индивидуальную тренировку"""
+    """Decline individual training request"""
     result = await db.execute(select(IndividualTrainingRequest).where(IndividualTrainingRequest.id == request_id))
     db_request = result.scalar_one_or_none()
-    
+
     if not db_request:
         return None
-    
+
     db_request.status = IndividualTrainingStatus.declined
     db_request.decline_reason = decline_reason
     db_request.updated_at = get_utc_now()
 
     await db.commit()
     await db.refresh(db_request)
-    
+
     # Load relationships for response serialization
     result = await db.execute(
         select(IndividualTrainingRequest)
@@ -283,20 +314,21 @@ async def decline_individual_training_request(db: AsyncSession, request_id: int,
     )
     return result.scalar_one()
 
+
 async def complete_individual_training_request(db: AsyncSession, request_id: int) -> Optional[IndividualTrainingRequest]:
-    """Завершить индивидуальную тренировку"""
+    """Complete individual training"""
     result = await db.execute(select(IndividualTrainingRequest).where(IndividualTrainingRequest.id == request_id))
     db_request = result.scalar_one_or_none()
-    
+
     if not db_request:
         return None
-    
+
     db_request.status = IndividualTrainingStatus.completed
     db_request.updated_at = get_utc_now()
 
     await db.commit()
     await db.refresh(db_request)
-    
+
     # Load relationships for response serialization
     result = await db.execute(
         select(IndividualTrainingRequest)

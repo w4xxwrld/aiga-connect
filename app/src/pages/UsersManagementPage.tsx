@@ -23,6 +23,7 @@ import Layout from '../components/Layout';
 import Sidebar from '../components/Sidebar';
 import authService from '../services/auth';
 import { setBackendUrl, getBackendUrl } from '../config/backend';
+import EmptyState from '../components/EmptyState';
 
 interface User {
   id: number;
@@ -284,15 +285,14 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
             </Card>
           ))
         ) : (
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="account-group" size={48} color="#B0BEC5" />
-            <Text style={styles.emptyStateText}>
-              {searchQuery || selectedRole !== 'all' 
-                ? 'Пользователи не найдены' 
+          <EmptyState
+            icon="account-group"
+            message={
+              searchQuery || selectedRole !== 'all'
+                ? 'Пользователи не найдены'
                 : 'Нет пользователей'
-              }
-            </Text>
-          </View>
+            }
+          />
         )}
       </ScrollView>
 
@@ -391,18 +391,6 @@ const styles = StyleSheet.create({
   },
   makeCoachButton: {
     borderRadius: 8,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
-  },
-  emptyStateText: {
-    marginTop: 16,
-    color: '#B0BEC5',
-    fontSize: 16,
-    textAlign: 'center',
   },
   accessDenied: {
     flex: 1,

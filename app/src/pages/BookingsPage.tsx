@@ -20,6 +20,8 @@ import bookingsService, { Booking } from '../services/bookings';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Layout from '../components/Layout';
 import Sidebar from '../components/Sidebar';
+import StatCard from '../components/StatCard';
+import EmptyState from '../components/EmptyState';
 
 const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
@@ -363,18 +365,18 @@ if (loading) {
     </View>
 
     <View style={styles.statsContainer}>
-      <View style={styles.statCard}>
-        <Text style={styles.statNumber}>{bookings.length}</Text>
-        <Text style={styles.statLabel}>{userRole === 'coach' ? 'Всего записей' : 'Всего'}</Text>
-      </View>
-      <View style={styles.statCard}>
-        <Text style={styles.statNumber}>{getStatusCount('confirmed')}</Text>
-        <Text style={styles.statLabel}>Подтверждено</Text>
-      </View>
-      <View style={styles.statCard}>
-        <Text style={styles.statNumber}>{getStatusCount('pending')}</Text>
-        <Text style={styles.statLabel}>{userRole === 'coach' ? 'Ожидает решения' : 'Ожидает'}</Text>
-      </View>
+      <StatCard
+        value={bookings.length}
+        label={userRole === 'coach' ? 'Всего записей' : 'Всего'}
+      />
+      <StatCard
+        value={getStatusCount('confirmed')}
+        label="Подтверждено"
+      />
+      <StatCard
+        value={getStatusCount('pending')}
+        label={userRole === 'coach' ? 'Ожидает решения' : 'Ожидает'}
+      />
     </View>
 
     <View style={styles.filterContainer}>
@@ -432,24 +434,18 @@ if (loading) {
       {filteredBookings.length > 0 ? (
         filteredBookings.map(renderBookingCard)
       ) : (
-        <View style={styles.emptyState}>
-          <MaterialCommunityIcons name="calendar-remove" size={48} color="#B0BEC5" />
-          <Text style={styles.emptyStateText}>
-            {selectedStatus !== 'all' 
-              ? 'Записи не найдены' 
-              : userRole === 'coach' 
+        <EmptyState
+          icon="calendar-remove"
+          message={
+            selectedStatus !== 'all'
+              ? 'Записи не найдены'
+              : userRole === 'coach'
                 ? 'У вас пока нет записей на ваши занятия'
-                : 'У вас пока нет записей на занятия'}
-          </Text>
-          <Button
-            mode="contained"
-            onPress={() => navigation?.navigate('Classes')}
-            style={styles.emptyStateButton}
-            buttonColor="#E74C3C"
-          >
-            Записаться на занятие
-          </Button>
-        </View>
+                : 'У вас пока нет записей на занятия'
+          }
+          buttonText="Записаться на занятие"
+          onButtonPress={() => navigation?.navigate('Classes')}
+        />
       )}
     </ScrollView>
 
@@ -494,24 +490,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 16,
     marginBottom: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#1B263B',
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 4,
-    alignItems: 'center',
-  },
-  statNumber: {
-    color: '#E74C3C',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    color: '#B0BEC5',
-    fontSize: 12,
-    marginTop: 4,
   },
   filterContainer: {
     paddingHorizontal: 16,
@@ -598,20 +576,6 @@ const styles = StyleSheet.create({
   quickDeclineButton: {
     marginLeft: 4,
     minWidth: 40,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  emptyStateText: {
-    color: '#B0BEC5',
-    fontSize: 16,
-    marginTop: 16,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  emptyStateButton: {
-    marginTop: 8,
   },
 });
 

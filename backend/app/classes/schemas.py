@@ -1,109 +1,100 @@
 from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional, List
 from datetime import datetime, time
-from app.classes.models import DifficultyLevel, ClassStatus
+from app.classes.models import DifficultyLevel
+
 
 class ClassBase(BaseModel):
     name: str
     description: Optional[str] = None
     difficulty_level: DifficultyLevel = DifficultyLevel.beginner
     coach_id: int
-    day_of_week: str
+    days_of_week: List[str]  # Array of days like ["monday", "wednesday", "friday"]
     start_time: time
     end_time: time
-    age_group_min: Optional[int] = None
-    age_group_max: Optional[int] = None
     max_capacity: int = 20
-    price_per_class: int  # цена в тенге
-    is_trial_available: bool = True
+    price: int  # Price in tenge
 
-    @field_validator("day_of_week")
+    @field_validator("days_of_week")
     @classmethod
-    def validate_day_of_week(cls, v):
-        valid_days = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
-        
-        # Handle multiple days separated by commas
-        if "," in v:
-            days = [day.strip().lower() for day in v.split(",")]
-            for day in days:
-                if day not in valid_days:
-                    raise ValueError(f"Неверный день недели: {day}. Допустимые дни: " + ", ".join(valid_days))
-            return v.lower()
-        
-        # Handle single day
-        if v.lower() not in valid_days:
-            raise ValueError("День недели должен быть одним из: " + ", ".join(valid_days))
-        return v.lower()
+    def validate_days_of_week(cls, v):
+        valid_days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        if not v or len(v) == 0:
+            raise ValueError("At least one day of week is required")
 
-    @field_validator("price_per_class")
+        for day in v:
+            if day.lower() not in valid_days:
+                raise ValueError(f"Invalid day: {day}. Valid days: {', '.join(valid_days)}")
+
+        # Return lowercase normalized days
+        return [day.lower() for day in v]
+
+    @field_validator("price")
     @classmethod
     def validate_price(cls, v):
         if v < 0:
-            raise ValueError("Цена должна быть положительной")
+            raise ValueError("Price must be positive")
         return v
+
 
 class ClassCreate(ClassBase):
     pass
+
 
 class ClassUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     difficulty_level: Optional[DifficultyLevel] = None
-    day_of_week: Optional[str] = None
+    days_of_week: Optional[List[str]] = None
     start_time: Optional[time] = None
     end_time: Optional[time] = None
-    age_group_min: Optional[int] = None
-    age_group_max: Optional[int] = None
     max_capacity: Optional[int] = None
-    price_per_class: Optional[int] = None
-    is_trial_available: Optional[bool] = None
-    status: Optional[ClassStatus] = None
+    price: Optional[int] = None
 
-    @field_validator("day_of_week")
+    @field_validator("days_of_week")
     @classmethod
-    def validate_day_of_week(cls, v):
+    def validate_days_of_week(cls, v):
         if v is None:
             return v
-        valid_days = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
-        
-        # Handle multiple days separated by commas
-        if "," in v:
-            days = [day.strip().lower() for day in v.split(",")]
-            for day in days:
-                if day not in valid_days:
-                    raise ValueError(f"Неверный день недели: {day}. Допустимые дни: " + ", ".join(valid_days))
-            return v.lower()
-        
-        # Handle single day
-        if v.lower() not in valid_days:
-            raise ValueError("День недели должен быть одним из: " + ", ".join(valid_days))
-        return v.lower()
+
+        valid_days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        if len(v) == 0:
+            raise ValueError("At least one day of week is required")
+
+        for day in v:
+            if day.lower() not in valid_days:
+                raise ValueError(f"Invalid day: {day}. Valid days: {', '.join(valid_days)}")
+
+        return [day.lower() for day in v]
+
 
 class CoachOut(BaseModel):
     id: int
-    full_name: str
+    first_name: str
+    last_name: str
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ClassOut(ClassBase):
     id: int
-    status: ClassStatus
     created_at: datetime
     updated_at: datetime
     coach: Optional[CoachOut] = None
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ClassParticipantOut(BaseModel):
+    """Athlete who booked a class"""
     id: int
-    full_name: str
-    birth_date: datetime
-    booking_type: str
+    first_name: str
+    last_name: str
+    phone: str
     booking_status: str
     class_date: datetime
     is_paid: bool
-    payment_amount: Optional[int] = None
+    payment_amount: Optional[float] = None
     notes: Optional[str] = None
-    booked_by_parent: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

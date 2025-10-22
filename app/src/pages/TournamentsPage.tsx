@@ -13,6 +13,7 @@ import { useAppContext } from '../context/AppContext';
 import Layout from '../components/Layout';
 import Sidebar from '../components/Sidebar';
 import tournamentsService, { Tournament } from '../services/tournaments';
+import EmptyState from '../components/EmptyState';
 
 interface TournamentParticipation {
   id: number;
@@ -256,21 +257,14 @@ const TournamentsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             );
           })
         ) : (
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="trophy-outline" size={48} color="#B0BEC5" />
-            <Text style={styles.emptyText}>
-              {activeTab === 'upcoming' ? 'Нет предстоящих турниров' : 'Нет прошедших турниров'}
-            </Text>
-            <Text style={styles.emptySubtext}>
-              {activeTab === 'upcoming' 
-                ? 'Следите за обновлениями для новых турниров' 
-                : 'Участвуйте в турнирах для пополнения истории'
-              }
-            </Text>
-            <Text style={[styles.emptySubtext, { fontSize: 12, marginTop: 8, opacity: 0.7 }]}>
-              Демо данные - функционал турниров в разработке
-            </Text>
-          </View>
+          <EmptyState
+            icon="trophy-outline"
+            message={activeTab === 'upcoming' ? 'Нет предстоящих турниров' : 'Нет прошедших турниров'}
+            subtitle={activeTab === 'upcoming'
+              ? 'Следите за обновлениями для новых турниров. Демо данные - функционал турниров в разработке'
+              : 'Участвуйте в турнирах для пополнения истории. Демо данные - функционал турниров в разработке'
+            }
+          />
         )}
       </View>
       </ScrollView>
@@ -419,22 +413,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#fff',
     fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: '#B0BEC5',
-    marginTop: 16,
-    fontWeight: 'bold',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    textAlign: 'center',
-    marginTop: 8,
   },
   clickableCard: {
     elevation: 2,

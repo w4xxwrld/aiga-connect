@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.users.router import router as users_router
 from app.classes.router import router as classes_router
 from app.bookings.router import router as bookings_router
+from app.attendance.router import router as attendance_router
 from app import models  # Import models to ensure they are registered
 from app.core.middleware import error_handler_middleware, logging_middleware
 from app.config import settings
@@ -29,6 +30,7 @@ app.middleware("http")(logging_middleware)
 app.include_router(users_router, prefix="/users", tags=["users"])
 app.include_router(classes_router, prefix="/classes", tags=["classes"])
 app.include_router(bookings_router, prefix="/bookings", tags=["bookings"])
+app.include_router(attendance_router, prefix="/attendance", tags=["attendance"])
 
 @app.get("/")
 def read_root():

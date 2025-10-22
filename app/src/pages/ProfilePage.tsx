@@ -19,6 +19,7 @@ import childrenService, { Child } from '../services/children';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Layout from '../components/Layout';
 import Sidebar from '../components/Sidebar';
+import EmptyState from '../components/EmptyState';
 
 const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const { user, userRole, logout, isSidebarOpen, setIsSidebarOpen } = useAppContext();
@@ -265,18 +266,11 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               {loadingChildren ? (
                 <ActivityIndicator size="small" color="#E74C3C" />
               ) : linkedChildren.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>У вас пока нет связанных детей</Text>
-                  <Button
-                    mode="outlined"
-                    onPress={() => navigation?.navigate('LinkChild')}
-                    style={styles.emptyStateButton}
-                    textColor="#E74C3C"
-                    icon="plus"
-                  >
-                    Связать ребенка
-                  </Button>
-                </View>
+                <EmptyState
+                  message="У вас пока нет связанных детей"
+                  buttonText="Связать ребенка"
+                  onButtonPress={() => navigation?.navigate('LinkChild')}
+                />
               ) : (
                 <View style={styles.childrenContainer}>
                   {linkedChildren.map((child) => (
@@ -488,19 +482,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   logoutButton: {
-    marginTop: 8,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  emptyStateText: {
-    color: '#B0BEC5',
-    fontSize: 16,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  emptyStateButton: {
     marginTop: 8,
   },
   childrenContainer: {

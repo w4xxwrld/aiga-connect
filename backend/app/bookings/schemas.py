@@ -1,46 +1,54 @@
 from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional
 from datetime import datetime
-from app.bookings.models import BookingStatus, BookingType, IndividualTrainingStatus
+
+from app.bookings.models import BookingStatus, IndividualTrainingStatus
+
 
 class BookingBase(BaseModel):
     athlete_id: int
     class_id: int
-    booking_type: BookingType = BookingType.regular
     class_date: datetime
     notes: Optional[str] = None
 
+
 class BookingCreate(BookingBase):
     pass
+
 
 class BookingUpdate(BaseModel):
     status: Optional[BookingStatus] = None
     notes: Optional[str] = None
     cancellation_reason: Optional[str] = None
     is_paid: Optional[bool] = None
-    payment_amount: Optional[int] = None
+    payment_amount: Optional[float] = None
+
 
 # User schemas for related objects
 class UserSimple(BaseModel):
     id: int
-    full_name: str
-    
+    first_name: str
+    last_name: str
+    phone: str
+
     model_config = ConfigDict(from_attributes=True)
+
 
 # Class schema for related object
 class ClassSimple(BaseModel):
     id: int
     name: str
     coach: Optional[UserSimple] = None
-    
+
     model_config = ConfigDict(from_attributes=True)
+
 
 class BookingOut(BookingBase):
     id: int
     status: BookingStatus
     booking_date: datetime
     is_paid: bool
-    payment_amount: Optional[int] = None
+    payment_amount: Optional[float] = None
     cancellation_reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
@@ -50,6 +58,7 @@ class BookingOut(BookingBase):
     class_obj: Optional[ClassSimple] = None
 
     model_config = ConfigDict(from_attributes=True)
+
 
 # Individual Training Request Schemas
 class IndividualTrainingRequestBase(BaseModel):
@@ -74,16 +83,19 @@ class IndividualTrainingRequestBase(BaseModel):
                 raise ValueError(f"Invalid time format: {e}")
         return v
 
+
 class IndividualTrainingRequestCreate(IndividualTrainingRequestBase):
     pass
+
 
 class IndividualTrainingRequestUpdate(BaseModel):
     scheduled_date: Optional[datetime] = None
     scheduled_time_start: Optional[str] = None
     scheduled_time_end: Optional[str] = None
     coach_notes: Optional[str] = None
-    payment_amount: Optional[int] = None
+    payment_amount: Optional[float] = None
     is_paid: Optional[bool] = None
+
 
 class IndividualTrainingRequestOut(IndividualTrainingRequestBase):
     id: int
@@ -94,7 +106,7 @@ class IndividualTrainingRequestOut(IndividualTrainingRequestBase):
     scheduled_time_start: Optional[str] = None
     scheduled_time_end: Optional[str] = None
     is_paid: bool
-    payment_amount: Optional[int] = None
+    payment_amount: Optional[float] = None
     athlete_notes: Optional[str] = None
     coach_notes: Optional[str] = None
     decline_reason: Optional[str] = None
@@ -106,9 +118,3 @@ class IndividualTrainingRequestOut(IndividualTrainingRequestBase):
     coach: Optional[UserSimple] = None
 
     model_config = ConfigDict(from_attributes=True)
-
-# Специальная схема для отображения с деталями
-class BookingWithDetails(BookingOut):
-    athlete_name: str
-    class_name: str
-    coach_name: str
