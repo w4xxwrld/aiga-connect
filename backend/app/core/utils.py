@@ -6,8 +6,12 @@ import re
 
 
 def get_utc_now() -> datetime:
-    """Get current UTC datetime with timezone information."""
-    return datetime.now(timezone.utc)
+    """Get current UTC datetime as naive (timezone-unaware) datetime.
+    
+    PostgreSQL TIMESTAMP WITHOUT TIME ZONE columns require naive datetimes.
+    The timezone info is stripped but the time is still in UTC.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def calculate_age(birth_date: date, reference_date: Optional[date] = None) -> int:
