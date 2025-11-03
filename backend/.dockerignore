@@ -1,0 +1,31 @@
+# Python cache files
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+
+# environment files
+.env
+.env.local
+.venv
+venv
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+
+# Test coverage
+.pytest_cache
+.coverage
+htmlcov
+
+# other
+.DS_Store
+*.swp
+node_modules
+dist
+build
