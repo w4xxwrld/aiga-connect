@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     # Rate limiting settings
     MAX_PENDING_TRAINING_REQUESTS: int = 10
 
+    # SMS settings
+    TWILIO_ACCOUNT_SID: str
+    TWILIO_AUTH_TOKEN: str
+    TWILIO_VERIFY_SERVICE_SID: str
+
     # CORS settings
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 

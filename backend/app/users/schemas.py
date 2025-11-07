@@ -3,6 +3,17 @@ from typing import Optional, List
 from datetime import date, datetime
 from app.users.models import UserRole
 from app.core.utils import validate_password_strength
+import re
+
+
+# Reusable validators
+def validate_e164_phone(phone: str) -> str:
+    """Validate phone number is in E.164 format"""
+    pattern = r'^\+[1-9]\d{6,14}$'
+    if not re.match(pattern, phone):
+        raise ValueError("Phone number must be in E.164 format (e.g., +1234567890)")
+    return phone
+
 
 class UserBase(BaseModel):
     phone: str
@@ -16,11 +27,7 @@ class UserBase(BaseModel):
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v):
-        # Basic phone validation - should be non-empty
-        # You can add more sophisticated validation for phone format
-        if not v or len(v) < 10:
-            raise ValueError("Phone number must be at least 10 characters")
-        return v
+       return validate_e164_phone(v)
 
     @field_validator("birth_date")
     @classmethod
@@ -102,3 +109,21 @@ class RefreshTokenRequest(BaseModel):
 class TokenData(BaseModel):
     phone: Optional[str] = None
     role: Optional[str] = None
+
+
+# OTP schemas
+class SendOTPRequest(BaseModel):
+    """Request schema for sending OTP"""
+    phone_number: str
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, v):
+        return validate_e164_phone(v)
+
+
+class SendOTPResponse(BaseModel):
+    """Response schema for OTP sending"""
+    success: bool
+    message: str
+    phone_number: str
