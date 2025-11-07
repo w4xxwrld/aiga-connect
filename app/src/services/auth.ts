@@ -16,21 +16,19 @@ export interface User {
 }
 
 export interface LoginData {
-  iin: string;
+  phone: string;
   password: string;
 }
 
 export interface RegisterData {
-  iin: string;
-  full_name: string;
-  email: string;
-  password: string;
-  phone?: string;
+  phone: string;
+  first_name: string;
+  last_name: string;
+  photo_url?: string;
+  email?: string;
   birth_date: string;
-  emergency_contact?: string;
-  primary_role: 'parent' | 'athlete' | 'coach';
-  additional_roles?: ('parent' | 'athlete' | 'coach')[];
-  is_head_coach?: boolean;
+  primary_role: 'athlete' | 'coach';
+  password?: string;
 }
 
 export interface AuthResponse {
@@ -58,18 +56,18 @@ class AuthService {
     try {
       const response = await api.post('/users/login', loginData);
       const { access_token, refresh_token } = response.data;
-      
+
       // Store tokens securely
       await Promise.all([
         SecureStore.setItemAsync('authToken', access_token),
         SecureStore.setItemAsync('refreshToken', refresh_token),
       ]);
-      
+
       return response.data;
     } catch (error: any) {
       console.error('Login error:', error);
       console.error('Error response:', error.response?.data);
-      
+
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
       }
@@ -85,9 +83,9 @@ class AuthService {
 
   async register(registerData: RegisterData): Promise<User> {
     try {
-      console.log('AuthService: Sending registration request to:', '/users/');
+      console.log('AuthService: Sending registration request to:', '/users/register');
       console.log('AuthService: Registration data:', registerData);
-      
+
       const response = await api.post('/users/', registerData);
       console.log('AuthService: Registration response:', response.data);
       return response.data;
@@ -95,7 +93,7 @@ class AuthService {
       console.error('AuthService: Registration error:', error);
       console.error('AuthService: Error response:', error.response?.data);
       console.error('AuthService: Error status:', error.response?.status);
-      
+
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
       }
@@ -118,13 +116,13 @@ class AuthService {
 
       const response = await api.post('/users/refresh', { refresh_token });
       const { access_token, refresh_token: new_refresh_token } = response.data;
-      
+
       // Store new tokens
       await Promise.all([
         SecureStore.setItemAsync('authToken', access_token),
         SecureStore.setItemAsync('refreshToken', new_refresh_token),
       ]);
-      
+
       return response.data;
     } catch (error: any) {
       // Clear tokens if refresh fails
@@ -136,10 +134,10 @@ class AuthService {
   async logout(): Promise<void> {
     try {
       console.log('Logging out user...');
-      
+
       // Clear all stored authentication data
       await this.clearTokens();
-      
+
       console.log('Logout successful - all data cleared');
     } catch (error) {
       console.error('Logout error:', error);
@@ -197,7 +195,7 @@ class AuthService {
       console.error('Error fetching current user:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
-      
+
       // If token is invalid, clear stored data
       if (error.response?.status === 401) {
         await this.clearTokens();
@@ -229,7 +227,7 @@ class AuthService {
 
       // Store updated user data locally
       await this.storeUserData(updatedUser);
-      
+
       console.log('Profile updated locally:', updatedUser);
       return updatedUser;
     } catch (error: any) {
@@ -357,4 +355,4 @@ class AuthService {
   }
 }
 
-export default new AuthService(); 
+export default new AuthService();

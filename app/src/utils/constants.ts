@@ -9,7 +9,7 @@ export const NAVIGATION = {
 export const API_ENDPOINTS = {
   // Auth
   LOGIN: '/users/login',
-  REGISTER: '/users/',
+  REGISTER: '/users/register',
   REFRESH_TOKEN: '/users/refresh',
   
   // Users

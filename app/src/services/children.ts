@@ -103,7 +103,7 @@ class ChildrenService {
 
   async createChildAccount(childData: ChildCreate): Promise<Child> {
     try {
-      const response = await api.post('/users/', childData);
+      const response = await api.post('/users/register', childData);
       return response.data;
     } catch (error: any) {
       if (error.response?.data?.detail) {

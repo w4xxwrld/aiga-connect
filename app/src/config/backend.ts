@@ -30,7 +30,7 @@ export const getBackendUrlWithOverride = (): string => {
 export const API_ENDPOINTS = {
   // Auth
   LOGIN: '/users/login',
-  REGISTER: '/users/',
+  REGISTER: '/users/register',
   REFRESH_TOKEN: '/users/refresh',
   
   // Users
