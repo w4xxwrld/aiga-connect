@@ -140,3 +140,8 @@ async def rate_limit_auth(request: Request):
 async def rate_limit_api(request: Request):
     """Rate limiter for general API endpoints."""
     await check_rate_limit(request, max_requests=100, window_seconds=60, identifier_prefix="api:")
+
+
+async def rate_limit_otp(request: Request):
+    """Rate limiter for OTP sending (3 requests per 10 minutes)."""
+    await check_rate_limit(request, max_requests=3, window_seconds=600, identifier_prefix="otp:")
