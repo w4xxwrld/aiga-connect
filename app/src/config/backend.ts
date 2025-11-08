@@ -1,12 +1,12 @@
 // Backend API configuration
-// You can change this URL to match your current ngrok URL or local IP
-export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://15fe51d4942a.ngrok-free.app';
+// Set EXPO_PUBLIC_BACKEND_URL in your .env file or use the defaults below
+// For physical devices, use your computer's local IP address
+export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
 // Alternative URLs for different environments
 export const BACKEND_URLS = {
-  NGROK: 'https://15fe51d4942a.ngrok-free.app',
   LOCAL: 'http://localhost:8000',
-  LOCAL_IP: 'http://192.168.1.100:8000', // Change this to your computer's IP
+  LOCAL_IP: 'http://192.168.1.100:8000', // Change this to your computer's IP address
 };
 
 // Function to get the current backend URL
