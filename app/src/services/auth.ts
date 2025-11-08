@@ -37,10 +37,6 @@ export interface AuthResponse {
   token_type: string;
 }
 
-export interface RefreshTokenRequest {
-  refresh_token: string;
-}
-
 export interface ParentAthleteRelationship {
   id: number;
   parent_id: number;

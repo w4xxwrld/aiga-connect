@@ -169,11 +169,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   };
 
   const handleRegister = async () => {
+    // проверка на отсутсвие важных полей
     if (!phone || !firstName || !lastName || !birthDate || !primaryRole) {
       Alert.alert('Ошибка', 'Пожалуйста, заполните все обязательные поля');
       return;
     }
 
+    // проверка пароля
     if (password && password.length < 6) {
       Alert.alert('Ошибка', 'Пароль должен содержать минимум 6 символов');
       return;
