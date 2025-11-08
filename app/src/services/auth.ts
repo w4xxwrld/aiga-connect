@@ -86,7 +86,7 @@ class AuthService {
       console.log('AuthService: Sending registration request to:', '/users/register');
       console.log('AuthService: Registration data:', registerData);
 
-      const response = await api.post('/users/', registerData);
+      const response = await api.post('/users/register', registerData);
       console.log('AuthService: Registration response:', response.data);
       return response.data;
     } catch (error: any) {

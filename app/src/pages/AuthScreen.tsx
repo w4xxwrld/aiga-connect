@@ -48,7 +48,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [lastName, setLastName] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [email, setEmail] = useState('');
-  const [birthDate, setBirthDate] = useState('');
+  const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
+  const [birthDateString, setBirthDateString] = useState<string>('');
   const [password, setPassword] = useState('');
   const [primaryRole, setPrimaryRole] = useState<'athlete' | 'coach'>('coach');
   const [showPassword, setShowPassword] = useState(false);
@@ -194,7 +195,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         last_name: lastName,
         ...(photoUrl && { photoUrl: photoUrl }),
         ...(email && { email: email }),
-        birth_date: birthDate?.toString().split('T')[0],
+        birth_date: birthDateString,
         primary_role: primaryRole,
         ...(password && { password: password }),
       };
@@ -421,7 +422,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                       locale="en"
                       label="Дата"
                       value={birthDate}
-                      onChange={(d) => setBirthDate(d)}
+                      onChange={(d) => {
+                        setBirthDate(d);
+                        if (d) {
+                          const year = d.getFullYear();
+                          const month = String(d.getMonth() + 1).padStart(2, '0');
+                          const day = String(d.getDate()).padStart(2, '0');
+                          setBirthDateString(`${year}-${month}-${day}`);
+                        } else {
+                          setBirthDateString('');
+                        }
+                      }}
                       inputMode="start"
                     />
                 </View>
