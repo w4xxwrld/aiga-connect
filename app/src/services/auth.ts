@@ -47,6 +47,16 @@ export interface ParentAthleteRelationship {
   athlete: User;
 }
 
+export interface SendOTPRequest {
+  phone_number: string;
+}
+
+export interface SendOTPResponse {
+  success: boolean;
+  message: string;
+  phone_number: string;
+}
+
 class AuthService {
   async login(loginData: LoginData): Promise<AuthResponse> {
     try {
@@ -100,6 +110,42 @@ class AuthService {
         throw new Error(error.message);
       }
       throw new Error('Registration failed. Please try again.');
+    }
+  }
+
+  async sendOTP(phoneNumber: string): Promise<SendOTPResponse> {
+    try{
+      console.log('🔵 [AUTH] SendOTP REQUEST:', {
+        timestamp: new Date().toISOString(),
+        endpoint: '/auth/send-otp',
+        method: 'POST',
+        phoneNumber: phoneNumber
+      });
+
+      const response = await api.post('/users/send-otp', {
+        phone_number: phoneNumber
+      });
+
+      console.log('🟢 [AUTH] SendOTP RESPONSE:', {
+        timestamp: new Date().toISOString(),
+        status: response.status,
+        data: response.data
+      });
+
+      return response.data;
+    }catch(error: any) {
+      console.error('🔴 [AUTH] SendOTP ERROR:', {
+        timestamp: new Date().toISOString(),
+        phoneNumber: phoneNumber,
+        errorMessage: error.message,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data
+      });
+
+      if (error.response?.status === 400) {
+        throw new Error('Неверный формат номера телефона.');
+      }
+      throw new Error('Не удалось отправить код. Попробуйте снова.');
     }
   }
 

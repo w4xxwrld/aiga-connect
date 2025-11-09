@@ -122,8 +122,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       return;
     }
 
-    //to-do: сделать валидацию номера телефона
-
     setLoading(true);
     try {
       const loginData: LoginData = { phone, password };
@@ -139,12 +137,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         setUser(userData);
         console.log('Login successful, user data set:', userData);
 
+        navigation.navigate('OTP');
+
         // Manual navigation to MainTabs
         console.log('Navigating to MainTabs screen...');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' as never }],
-        });
       } else {
         throw new Error('Failed to get user data after login');
       }
