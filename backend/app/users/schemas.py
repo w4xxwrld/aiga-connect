@@ -90,6 +90,12 @@ class UserLogin(BaseModel):
     phone: str
     password: Optional[str] = None  # Optional for SMS-based auth
 
+class LoginResponse(BaseModel):
+    """Response for login that requires OTP verification"""
+    requires_otp: bool
+    message: str
+    phone_number: str
+
 class SMSVerificationRequest(BaseModel):
     phone: str
 
@@ -124,6 +130,31 @@ class SendOTPRequest(BaseModel):
 
 class SendOTPResponse(BaseModel):
     """Response schema for OTP sending"""
+    success: bool
+    message: str
+    phone_number: str
+
+
+class VerifyOTPRequest(BaseModel):
+    """Request schema for verifying OTP"""
+    phone_number: str
+    code: str
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, v):
+        return validate_e164_phone(v)
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, v):
+        if not v or len(v) != 6 or not v.isdigit():
+            raise ValueError("Code must be a 6-digit number")
+        return v
+
+
+class VerifyOTPResponse(BaseModel):
+    """Response schema for OTP verification"""
     success: bool
     message: str
     phone_number: str

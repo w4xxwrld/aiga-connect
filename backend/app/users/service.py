@@ -138,3 +138,60 @@ class UsersService:
             )
         
         return await crud.get_all_athletes(self.db)
+    
+    async def validate_login_credentials(self, login_data: schemas.UserLogin) -> models.User:
+        """
+        Validate phone and password WITHOUT issuing tokens.
+        Used to verify credentials before sending OTP.
+        Returns user object if credentials are valid.
+        """
+        user = await crud.authenticate_user(
+            self.db, 
+            login_data.phone, 
+            login_data.password
+        )
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid phone number or password"
+            )
+        
+        return user
+    
+    async def authenticate_with_otp(self, phone_number: str) -> schemas.Token:
+        """
+        Authenticate user with OTP verification (passwordless login).
+        Creates a new user if doesn't exist.
+        This method should ONLY be called after OTP has been verified.
+        """
+        # Check if user exists
+        user = await crud.get_user_by_phone(self.db, phone_number)
+        
+        if not user:
+            # Create new user with verified phone
+            from datetime import date
+            user_data = schemas.UserCreate(
+                phone=phone_number,
+                first_name="User",  # User can update later
+                last_name="",
+                birth_date=date(2000, 1, 1),  # Placeholder - user should update
+                primary_role=models.UserRole.athlete,  # Default role
+                password=None  # No password for OTP-based auth
+            )
+            user = await crud.create_user(self.db, user_data)
+        
+        # Generate JWT tokens
+        token_data = {
+            "sub": user.phone,
+            "role": user.primary_role.value,
+            "user_id": user.id
+        }
+        access_token = create_access_token(data=token_data)
+        refresh_token = create_refresh_token(data=token_data)
+        
+        return schemas.Token(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer"
+        )

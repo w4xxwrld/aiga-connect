@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, ActivityIndicator, Animated, TouchableOpacity }
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Define navigation types
 type RootStackParamList = {
   Greeting: undefined;
   Auth: undefined;
-  OTP: undefined;
+  OTPVerification: { phoneNumber: string; isRegistration: boolean };
   MainTabs: undefined;
   ClassDetail: { classId: number };
   BookingDetail: { bookingId: number };
@@ -37,7 +38,7 @@ type MainTabParamList = {
 import { useAppContext } from '../context/AppContext';
 import GreetingPage from '../pages/GreetingPage';
 import AuthScreen from '../pages/AuthScreen';
-import { PhoneLoginPage } from '../pages/PhoneLoginPage';
+import OTPVerificationScreen from '../pages/OTPVerificationScreen';
 import HomePage from '../pages/HomePage';
 import ClassesPage from '../pages/ClassesPage';
 import BookingsPage from '../pages/BookingsPage';
@@ -52,7 +53,6 @@ import ClassParticipantsPage from '../pages/ClassParticipantsPage';
 import BookingDetailPage from '../pages/BookingDetailPage';
 import RequestIndividualTrainingPage from '../pages/RequestIndividualTrainingPage';
 import IndividualTrainingRequestsPage from '../pages/IndividualTrainingRequestsPage';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import TournamentsPage from '../pages/TournamentsPage';
 import TournamentDetailPage from '../pages/TournamentDetailPage';
 import CreateTournamentPage from '../pages/CreateTournamentPage';
@@ -235,7 +235,7 @@ const AppNavigator: React.FC = () => {
       >
         <Stack.Screen name="Greeting" component={GreetingPage} />
         <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="OTP" component={PhoneLoginPage} />
+        <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
         <Stack.Screen name="MainTabs" component={MainLayout} />
         <Stack.Screen name="ClassDetail" component={ClassDetailPage} />
         <Stack.Screen name="Profile" component={ProfilePage} />

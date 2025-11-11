@@ -57,7 +57,46 @@ export interface SendOTPResponse {
   phone_number: string;
 }
 
+export interface VerifyOTPRequest {
+  phone_number: string;
+  code: string;
+}
+
+export interface VerifyOTPResponse {
+  success: boolean;
+  message: string;
+  phone_number: string;
+}
+
+export interface LoginValidationResponse {
+  requires_otp: boolean;
+  message: string;
+  phone_number: string;
+}
+
 class AuthService {
+  async validateLogin(loginData: LoginData): Promise<LoginValidationResponse> {
+    try {
+      console.log('🔵 [AUTH] Validating login credentials');
+      const response = await api.post('/users/validate-login', loginData);
+      console.log('🟢 [AUTH] Credentials validated:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('🔴 [AUTH] Validation error:', error);
+
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      if (error.message) {
+        throw new Error(error.message);
+      }
+      throw new Error('Invalid phone number or password');
+    }
+  }
+
   async login(loginData: LoginData): Promise<AuthResponse> {
     try {
       const response = await api.post('/users/login', loginData);
@@ -117,7 +156,7 @@ class AuthService {
     try{
       console.log('🔵 [AUTH] SendOTP REQUEST:', {
         timestamp: new Date().toISOString(),
-        endpoint: '/auth/send-otp',
+        endpoint: '/users/send-otp',
         method: 'POST',
         phoneNumber: phoneNumber
       });
@@ -146,6 +185,107 @@ class AuthService {
         throw new Error('Неверный формат номера телефона.');
       }
       throw new Error('Не удалось отправить код. Попробуйте снова.');
+    }
+  }
+
+  async verifyOTP(phoneNumber: string, code: string): Promise<VerifyOTPResponse> {
+    try {
+      console.log('🔵 [AUTH] VerifyOTP REQUEST:', {
+        timestamp: new Date().toISOString(),
+        endpoint: '/users/verify-otp',
+        method: 'POST',
+        phoneNumber: phoneNumber,
+        codeLength: code.length
+      });
+
+      const response = await api.post('/users/verify-otp', {
+        phone_number: phoneNumber,
+        code: code
+      });
+
+      console.log('🟢 [AUTH] VerifyOTP RESPONSE:', {
+        timestamp: new Date().toISOString(),
+        status: response.status,
+        data: response.data
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('🔴 [AUTH] VerifyOTP ERROR:', {
+        timestamp: new Date().toISOString(),
+        phoneNumber: phoneNumber,
+        errorMessage: error.message,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data
+      });
+
+      if (error.response?.status === 400) {
+        const detail = error.response?.data?.detail;
+        if (detail) {
+          throw new Error(detail);
+        }
+        throw new Error('Неверный или истекший код верификации.');
+      } else if (error.response?.status === 429) {
+        throw new Error('Слишком много попыток. Попробуйте позже.');
+      }
+      throw new Error('Не удалось подтвердить код. Попробуйте снова.');
+    }
+  }
+
+  async verifyOTPAndLogin(phoneNumber: string, code: string): Promise<AuthResponse> {
+    try {
+      console.log('🔵 [AUTH] VerifyOTPAndLogin REQUEST:', {
+        timestamp: new Date().toISOString(),
+        endpoint: '/users/verify-otp-and-login',
+        method: 'POST',
+        phoneNumber: phoneNumber,
+        codeLength: code.length
+      });
+
+      const response = await api.post('/users/verify-otp-and-login', {
+        phone_number: phoneNumber,
+        code: code
+      });
+
+      console.log('🟢 [AUTH] VerifyOTPAndLogin RESPONSE:', {
+        timestamp: new Date().toISOString(),
+        status: response.status,
+        hasAccessToken: !!response.data.access_token,
+        hasRefreshToken: !!response.data.refresh_token
+      });
+
+      const { access_token, refresh_token } = response.data;
+
+      // Store tokens securely
+      await Promise.all([
+        SecureStore.setItemAsync('authToken', access_token),
+        SecureStore.setItemAsync('refreshToken', refresh_token),
+      ]);
+
+      console.log('✅ [AUTH] Tokens stored successfully');
+
+      return response.data;
+    } catch (error: any) {
+      console.error('🔴 [AUTH] VerifyOTPAndLogin ERROR:', {
+        timestamp: new Date().toISOString(),
+        phoneNumber: phoneNumber,
+        errorMessage: error.message,
+        responseStatus: error.response?.status,
+        responseData: error.response?.data
+      });
+
+      if (error.response?.status === 400) {
+        const detail = error.response?.data?.detail;
+        if (detail) {
+          throw new Error(detail);
+        }
+        throw new Error('Неверный или истекший код верификации.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Код верификации не подтвержден.');
+      } else if (error.response?.status === 429) {
+        throw new Error('Слишком много попыток. Попробуйте позже.');
+      }
+      throw new Error('Не удалось войти. Попробуйте снова.');
     }
   }
 
