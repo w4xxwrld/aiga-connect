@@ -30,9 +30,9 @@ export const getBackendUrlWithOverride = (): string => {
 export const API_ENDPOINTS = {
   // Auth
   LOGIN: '/users/login',
-  REGISTER: '/users/',
+  REGISTER: '/users/register',
   REFRESH_TOKEN: '/users/refresh',
-  
+
   // Users
   USERS: '/users/',
   USER_PROFILE: '/users/me',
@@ -43,13 +43,14 @@ export const API_ENDPOINTS = {
   MAKE_HEAD_COACH: '/users/make-head-coach',
   HEAD_COACH: '/users/head-coach',
   PARENT_ATHLETE_RELATIONSHIP: '/users/relationships',
-  
+  SEND_OTP: '/users/send-otp',
+
   // Classes
   CLASSES: '/classes/',
   CLASS_DETAIL: '/classes/{id}',
   CREATE_CLASS: '/classes/',
   UPDATE_CLASS: '/classes/{id}',
-  
+
   // Bookings
   BOOKINGS: '/bookings/',
   MY_BOOKINGS: '/bookings/my-bookings',
@@ -66,13 +67,13 @@ export const getBackendUrl = (): string => {
 // Helper function to get full URL for an endpoint with path parameters
 export const getEndpointUrl = (endpoint: string, params?: Record<string, string | number>): string => {
   let url = `${BACKEND_URL}${endpoint}`;
-  
+
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       url = url.replace(`{${key}}`, String(value));
     });
   }
-  
+
   return url;
 };
 
@@ -88,4 +89,4 @@ export interface PaginatedResponse<T = any> extends ApiResponse<T[]> {
   page: number;
   limit: number;
   totalPages: number;
-} 
+}

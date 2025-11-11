@@ -20,9 +20,9 @@ import {
   SegmentedButtons,
   HelperText,
 } from 'react-native-paper';
+import {DatePickerInput} from "react-native-paper-dates";
 import { useAppContext } from '../context/AppContext';
 import authService, { LoginData, RegisterData } from '../services/auth';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type AuthMode = 'login' | 'register';
 
@@ -36,19 +36,22 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const { setUser } = useAppContext();
   const [mode, setMode] = useState<AuthMode>('login');
   const [loading, setLoading] = useState(false);
-  
+
   // Animation values
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const logoScaleAnim = useRef(new Animated.Value(1)).current;
-  
+
   // Form fields
-  const [iin, setIin] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
   const [email, setEmail] = useState('');
-  const [emergencyContact, setEmergencyContact] = useState('');
-  const [role, setRole] = useState<'parent' | 'athlete'>('parent');
+  const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
+  const [birthDateString, setBirthDateString] = useState<string>('');
+  const [password, setPassword] = useState('');
+  const [primaryRole, setPrimaryRole] = useState<'athlete' | 'coach'>('coach');
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
@@ -68,6 +71,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     });
   }, []);
 
+  const validatePhone = (number: string) => {
+    // Validate E.164 format: +7 followed by 10 digits (Kazakhstan)
+    // This matches the backend validation
+    const phoneRegex = /^\+7\d{10}$/;
+    // Returns true if phone is VALID
+    return phoneRegex.test(number);
+  }
+
   const animateModeChange = (newMode: AuthMode) => {
     // Fade out current content
     Animated.parallel([
@@ -84,7 +95,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     ]).start(() => {
       // Change mode
       setMode(newMode);
-      
+
       // Fade in new content
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -108,79 +119,92 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   };
 
   const handleLogin = async () => {
-    if (!iin || !password) {
+    if (!phone || !password) {
       Alert.alert('Ошибка', 'Пожалуйста, заполните все поля');
-      return;
-    }
-
-    if (!validateIIN(iin)) {
-      Alert.alert('Ошибка', 'ИИН должен содержать ровно 12 цифр и корректную дату рождения');
       return;
     }
 
     setLoading(true);
     try {
-      const loginData: LoginData = { iin, password };
-      const response = await authService.login(loginData);
-      console.log('Login response:', response);
+      // Format phone number to E.164 format
+      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+
+      console.log('🔵 [AUTH] Step 1: Validating credentials for:', formattedPhone);
       
-      // Get current user data
-      const userData = await authService.getCurrentUser();
-      console.log('Current user data:', userData);
-      
-      if (userData) {
-        // Set user data which will trigger navigation
-        setUser(userData);
-        console.log('Login successful, user data set:', userData);
-        
-        // Manual navigation to MainTabs
-        console.log('Navigating to MainTabs screen...');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' as never }],
-        });
-      } else {
-        throw new Error('Failed to get user data after login');
-      }
+      // Step 1: Validate phone and password (without getting tokens)
+      await authService.validateLogin({ phone: formattedPhone, password });
+      console.log('✅ [AUTH] Step 1: Credentials validated successfully');
+
+      // Step 2: Send OTP after credentials are validated
+      console.log('🔵 [AUTH] Step 2: Sending OTP...');
+      const otpResponse = await authService.sendOTP(formattedPhone);
+      console.log('🟢 [AUTH] Step 2: OTP sent successfully:', otpResponse);
+
+      // Step 3: Navigate to OTP verification screen
+      // User will be logged in ONLY after OTP verification
+      console.log('🔵 [AUTH] Step 3: Navigating to OTP verification screen');
+      navigation.navigate('OTPVerification', {
+        phoneNumber: formattedPhone,
+        isRegistration: false,
+      });
     } catch (error: any) {
-      console.error('Login error details:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      
+      console.error('🔴 [AUTH] Login flow error:', error);
+      console.error('🔴 [AUTH] Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+
       let errorMessage = 'Не удалось войти в систему';
-      if (error.response?.data?.detail) {
+      let errorTitle = 'Ошибка входа';
+
+      // Check for rate limiting (429 error)
+      if (error.response?.status === 429) {
+        errorTitle = 'Слишком много попыток';
+        errorMessage = error.response?.data?.detail || 'Вы превысили лимит попыток. Пожалуйста, подождите несколько минут и попробуйте снова.';
+      } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
-      Alert.alert('Ошибка входа', errorMessage);
+
+      Alert.alert(errorTitle, errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleRegister = async () => {
-    if (!iin || !password || !fullName || !email) {
-      Alert.alert('Ошибка', 'Пожалуйста, заполните все обязательные поля');
+    // Validate all required fields
+    if (!phone) {
+      Alert.alert('Ошибка', 'Пожалуйста, введите номер телефона');
       return;
     }
-
-    // Validate emergency contact for athletes
-    if (role === 'athlete' && !emergencyContact.trim()) {
-      Alert.alert('Ошибка', 'Для спортсменов обязательно указать экстренный контакт');
+    
+    if (!firstName || firstName.trim().length === 0) {
+      Alert.alert('Ошибка', 'Пожалуйста, введите имя');
       return;
     }
-
-    if (!validateIIN(iin)) {
-      Alert.alert('Ошибка', 'ИИН должен содержать ровно 12 цифр и корректную дату рождения');
+    
+    if (!lastName || lastName.trim().length === 0) {
+      Alert.alert('Ошибка', 'Пожалуйста, введите фамилию');
       return;
     }
-
-    if (password.length < 6) {
-      Alert.alert('Ошибка', 'Пароль должен содержать минимум 6 символов');
+    
+    if (!email || email.trim().length === 0) {
+      Alert.alert('Ошибка', 'Пожалуйста, введите email');
+      return;
+    }
+    
+    if (!birthDate) {
+      Alert.alert('Ошибка', 'Пожалуйста, выберите дату рождения');
+      return;
+    }
+    
+    if (!primaryRole) {
+      Alert.alert('Ошибка', 'Пожалуйста, выберите роль');
       return;
     }
 
@@ -191,94 +215,89 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       return;
     }
 
+    // Validate phone format (should start with +)
+    if (!phone.startsWith('+')) {
+      Alert.alert('Ошибка', 'Номер телефона должен начинаться с + (например, +77071234567)');
+      return;
+    }
+
+    // Validate password if provided
+    if (password && password.length < 6) {
+      Alert.alert('Ошибка', 'Пароль должен содержать минимум 6 символов');
+      return;
+    }
+
+    // Validate birth date
+    const birthDateObj = new Date(birthDate);
+    const today = new Date();
+    const age = today.getFullYear() - birthDateObj.getFullYear();
+    
+    if (birthDateObj > today) {
+      Alert.alert('Ошибка', 'Дата рождения не может быть в будущем');
+      return;
+    }
+    
+    if (age < 5) {
+      Alert.alert('Ошибка', 'Возраст должен быть не менее 5 лет');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Extract birth date from IIN
-      const birthDate = extractBirthDateFromIIN(iin);
-      
-      if (!birthDate) {
-        Alert.alert('Ошибка', 'Неверный формат даты рождения в ИИН');
-        return;
-      }
-      
+      // Format phone number to E.164 format
+      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+
       const registerData: RegisterData = {
-        iin,
-        full_name: fullName,
-        email: email,
-        password,
-        primary_role: role,
-        birth_date: birthDate.toISOString().split('T')[0],
-        phone: undefined,
-        emergency_contact: role === 'athlete' ? emergencyContact.trim() : undefined,
-        additional_roles: [],
-        is_head_coach: false,
+        phone: formattedPhone,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        ...(photoUrl && { photoUrl: photoUrl }),
+        email: email.trim(),
+        birth_date: birthDateString,
+        primary_role: primaryRole,
+        ...(password && { password: password }),
       };
-      
-      console.log('Sending registration data:', registerData);
-      
+
+      console.log('🔵 [AUTH] Step 1: Sending registration data:', registerData);
+
       const userData = await authService.register(registerData);
-      console.log('Registration successful:', userData);
-      
-      // After successful registration, automatically log in the user
-      try {
-        const loginData: LoginData = { iin, password };
-        const authResponse = await authService.login(loginData);
-        console.log('Auto-login after registration successful:', authResponse);
-        
-        // Get current user data
-        const currentUserData = await authService.getCurrentUser();
-        if (currentUserData) {
-          // Set user data which will trigger navigation
-          setUser(currentUserData);
-          console.log('User authenticated after registration:', currentUserData);
-          
-          // Manual navigation to MainTabs
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'MainTabs' as never }],
-          });
-        } else {
-          throw new Error('Failed to get user data after auto-login');
-        }
-      } catch (loginError: any) {
-        console.error('Auto-login after registration failed:', loginError);
-        // If auto-login fails, still show success but ask user to login manually
-        Alert.alert(
-          'Регистрация завершена', 
-          'Регистрация прошла успешно! Пожалуйста, войдите в систему.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Switch to login mode
-                setMode('login');
-                setIin('');
-                setPassword('');
-                setFullName('');
-                setEmail('');
-                setRole('parent');
-              }
-            }
-          ]
-        );
-      }
-      
+      console.log('✅ [AUTH] Step 1: Registration successful:', userData);
+
+      // SECURITY: Do NOT auto-login after registration
+      // Send OTP and require verification before logging in
+      console.log('🔵 [AUTH] Step 2: Sending OTP for phone verification...');
+      const otpResponse = await authService.sendOTP(formattedPhone);
+      console.log('🟢 [AUTH] Step 2: OTP sent successfully:', otpResponse);
+
+      // Navigate to OTP verification screen
+      // User will be logged in ONLY after OTP verification
+      console.log('🔵 [AUTH] Step 3: Navigating to OTP verification screen');
+      navigation.navigate('OTPVerification', {
+        phoneNumber: formattedPhone,
+        isRegistration: true,
+      });
+
     } catch (error: any) {
-      console.error('Registration error details:', error);
+      console.error('🔴 [AUTH] Registration error:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
-      
+
       let errorMessage = 'Не удалось зарегистрироваться';
-      
-      if (error.response?.data?.detail) {
+      let errorTitle = 'Ошибка регистрации';
+
+      // Check for rate limiting (429 error)
+      if (error.response?.status === 429) {
+        errorTitle = 'Слишком много попыток';
+        errorMessage = error.response?.data?.detail || 'Вы превысили лимит попыток. Пожалуйста, подождите несколько минут и попробуйте снова.';
+      } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
-      Alert.alert('Ошибка регистрации', errorMessage);
+
+      Alert.alert(errorTitle, errorMessage);
     } finally {
       setLoading(false);
     }
@@ -292,71 +311,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'parent': return 'account-child';
-      case 'athlete': return 'account-group';
-      case 'coach': return 'account-tie';
-      default: return 'account';
-    }
-  };
-
-  const validateIIN = (iin: string): boolean => {
-    if (iin.length !== 12 || !/^\d+$/.test(iin)) {
-      return false;
-    }
-    
-    // Check if birth date is valid
-    const birthYear = parseInt(iin.substring(0, 2));
-    const birthMonth = parseInt(iin.substring(2, 4));
-    const birthDay = parseInt(iin.substring(4, 6));
-    
-    if (birthMonth < 1 || birthMonth > 12 || birthDay < 1 || birthDay > 31) {
-      return false;
-    }
-    
-    return true;
-  };
-
-  const extractBirthDateFromIIN = (iin: string): Date | null => {
-    if (!validateIIN(iin)) {
-      return null;
-    }
-    
-    const birthYear = parseInt(iin.substring(0, 2));
-    const birthMonth = parseInt(iin.substring(2, 4));
-    const birthDay = parseInt(iin.substring(4, 6));
-    
-    // Determine century based on birth year
-    let fullYear;
-    if (birthYear <= 23) {
-      fullYear = 2000 + birthYear;
-    } else {
-      fullYear = 1900 + birthYear;
-    }
-    
-    // Create date in UTC to avoid timezone issues
-    const birthDate = new Date(Date.UTC(fullYear, birthMonth - 1, birthDay));
-    
-    if (isNaN(birthDate.getTime())) {
-      return null;
-    }
-    
-    return birthDate;
-  };
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
           <Animated.View style={{ transform: [{ scale: logoScaleAnim }] }}>
-            <Image 
-              source={require('../../assets/image.png')} 
+            <Image
+              source={require('../../assets/image.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -393,42 +359,66 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             ]}
           >
             <TextInput
-              label="ИИН (12 цифр)"
-              value={iin}
-              onChangeText={setIin}
+              label="Телефон"
+              value={phone}
+              onChangeText={setPhone}
               mode="outlined"
-              keyboardType="numeric"
+              keyboardType="phone-pad"
               maxLength={12}
+              placeholder="+77001234567"
               style={styles.input}
-              outlineColor={iin.length === 12 ? (validateIIN(iin) ? '#27AE60' : '#E74C3C') : '#fff'}
+              outlineColor={phone.length === 12 ? (validatePhone(phone) ? '#27AE60' : '#E74C3C') : '#fff'}
               activeOutlineColor="#E74C3C"
               textColor="#fff"
-              placeholderTextColor="#fff"
+              placeholderTextColor="#666"
               theme={{
                 colors: {
                   onSurfaceVariant: '#fff',
                 }
               }}
-              left={<TextInput.Icon icon="card-account-details" />}
-              right={iin.length === 12 && (
-                <TextInput.Icon 
-                  icon={validateIIN(iin) ? "check-circle" : "alert-circle"} 
-                  color={validateIIN(iin) ? '#27AE60' : '#E74C3C'}
+              left={<TextInput.Icon icon="phone" />}
+              right={phone.length === 12 && (
+                <TextInput.Icon
+                  icon={validatePhone(phone) ? "check-circle" : "alert-circle"}
+                  color={validatePhone(phone) ? '#27AE60' : '#E74C3C'}
                 />
               )}
             />
-            {iin.length === 12 && !validateIIN(iin) && (
+            {phone.length > 0 && phone.length < 12 && (
+              <HelperText type="info" visible={true}>
+                Формат: +7 и 10 цифр (например, +77001234567)
+              </HelperText>
+            )}
+            {phone.length === 12 && validatePhone(phone) === false && (
               <HelperText type="error" visible={true}>
-                ИИН содержит неверную дату рождения
+                Неверный формат номера. Используйте +7XXXXXXXXXX
               </HelperText>
             )}
 
             {mode === 'register' && (
               <>
                 <TextInput
-                  label="Полное имя *"
-                  value={fullName}
-                  onChangeText={setFullName}
+                  label="Имя *"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  mode="outlined"
+                  style={styles.input}
+                  outlineColor="#fff"
+                  activeOutlineColor="#E74C3C"
+                  textColor="#fff"
+                  placeholderTextColor="#fff"
+                  theme={{
+                    colors: {
+                      onSurfaceVariant: '#fff',
+                    }
+                  }}
+                  left={<TextInput.Icon icon="account" />}
+                />
+
+                <TextInput
+                  label="Фамилия *"
+                  value={lastName}
+                  onChangeText={setLastName}
                   mode="outlined"
                   style={styles.input}
                   outlineColor="#fff"
@@ -463,13 +453,33 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                   left={<TextInput.Icon icon="email" />}
                 />
 
+                <View>
+                    <DatePickerInput
+                      locale="ru"
+                      label="Дата"
+                      value={birthDate}
+                      onChange={(d) => {
+                        setBirthDate(d);
+                        if (d) {
+                          const year = d.getFullYear();
+                          const month = String(d.getMonth() + 1).padStart(2, '0');
+                          const day = String(d.getDate()).padStart(2, '0');
+                          setBirthDateString(`${year}-${month}-${day}`);
+                        } else {
+                          setBirthDateString('');
+                        }
+                      }}
+                      inputMode="start"
+                    />
+                </View>
+
                 <View style={styles.roleContainer}>
                   <Text style={styles.roleLabel}>Выберите роль:</Text>
                   <SegmentedButtons
-                    value={role}
-                    onValueChange={(value) => setRole(value as any)}
+                    value={primaryRole}
+                    onValueChange={(value) => setPrimaryRole(value as any)}
                     buttons={[
-                      { value: 'parent', label: 'Родитель', icon: 'account-child' },
+                      { value: 'coach', label: 'Тренер', icon: 'account-child' },
                       { value: 'athlete', label: 'Спортсмен', icon: 'account-group' },
                     ]}
                     style={styles.roleButtons}
@@ -483,26 +493,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                   />
                 </View>
 
-                {role === 'athlete' && (
-                  <TextInput
-                    label="Экстренный контакт (телефон родителя) *"
-                    value={emergencyContact}
-                    onChangeText={setEmergencyContact}
-                    mode="outlined"
-                    keyboardType="phone-pad"
-                    style={styles.input}
-                    outlineColor="#fff"
-                    activeOutlineColor="#E74C3C"
-                    textColor="#fff"
-                    placeholderTextColor="#fff"
-                    theme={{
-                      colors: {
-                        onSurfaceVariant: '#fff',
-                      }
-                    }}
-                    left={<TextInput.Icon icon="phone" />}
-                  />
-                )}
               </>
             )}
 
@@ -530,7 +520,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               mode="contained"
               onPress={handleSubmit}
               loading={loading}
-              disabled={loading || (mode === 'register' && (!iin || !password || !fullName || !email))}
+              disabled={loading || (mode === 'register' && (!phone || !password || !firstName || !lastName || !email || !birthDate || !primaryRole || !password))}
               style={styles.button}
               buttonColor="#E74C3C"
               icon={mode === 'login' ? 'login' : 'account-plus'}
@@ -542,7 +532,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
         <View style={styles.footer}>
           <Paragraph style={styles.footerText}>
-            {mode === 'login' 
+            {mode === 'login'
               ? 'Нет аккаунта? Переключитесь на регистрацию'
               : 'Уже есть аккаунт? Переключитесь на вход'
             }
@@ -621,4 +611,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AuthScreen; 
+export default AuthScreen;

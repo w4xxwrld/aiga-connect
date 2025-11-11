@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, ActivityIndicator, Animated, TouchableOpacity }
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Define navigation types
 type RootStackParamList = {
   Greeting: undefined;
   Auth: undefined;
+  OTPVerification: { phoneNumber: string; isRegistration: boolean };
   MainTabs: undefined;
   ClassDetail: { classId: number };
   BookingDetail: { bookingId: number };
@@ -36,6 +38,7 @@ type MainTabParamList = {
 import { useAppContext } from '../context/AppContext';
 import GreetingPage from '../pages/GreetingPage';
 import AuthScreen from '../pages/AuthScreen';
+import OTPVerificationScreen from '../pages/OTPVerificationScreen';
 import HomePage from '../pages/HomePage';
 import ClassesPage from '../pages/ClassesPage';
 import BookingsPage from '../pages/BookingsPage';
@@ -50,7 +53,6 @@ import ClassParticipantsPage from '../pages/ClassParticipantsPage';
 import BookingDetailPage from '../pages/BookingDetailPage';
 import RequestIndividualTrainingPage from '../pages/RequestIndividualTrainingPage';
 import IndividualTrainingRequestsPage from '../pages/IndividualTrainingRequestsPage';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import TournamentsPage from '../pages/TournamentsPage';
 import TournamentDetailPage from '../pages/TournamentDetailPage';
 import CreateTournamentPage from '../pages/CreateTournamentPage';
@@ -168,7 +170,7 @@ const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
 // Tab Navigator
 const MainTabs: React.FC = () => {
   const { userRole } = useAppContext();
-  
+
   // Don't show Bookings tab for coaches
   const shouldShowBookings = userRole !== 'coach';
 
@@ -225,14 +227,15 @@ const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer ref={navigationRef}>
-      <Stack.Navigator 
+      <Stack.Navigator
         initialRouteName={getInitialRouteName()}
-        screenOptions={{ 
+        screenOptions={{
           headerShown: false
         }}
       >
         <Stack.Screen name="Greeting" component={GreetingPage} />
         <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
         <Stack.Screen name="MainTabs" component={MainLayout} />
         <Stack.Screen name="ClassDetail" component={ClassDetailPage} />
         <Stack.Screen name="Profile" component={ProfilePage} />
@@ -301,4 +304,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AppNavigator; 
+export default AppNavigator;

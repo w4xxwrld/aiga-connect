@@ -5,8 +5,8 @@ from datetime import date, datetime, timedelta
 
 from app.deps import get_db, get_current_user, require_coach
 from app.users.models import User, UserRole
-from app.attendance import schemas, crud
-from app.classes import crud as classes_crud
+from app.attendance import schemas
+from app.attendance.service import AttendanceService
 
 
 router = APIRouter()
@@ -19,27 +19,8 @@ async def generate_qr_code(
     current_user: User = Depends(require_coach)
 ):
     """Generate QR code for class attendance (coaches only)"""
-    # Verify class exists and belongs to this coach
-    class_obj = await classes_crud.get_class_by_id(db, request.class_id)
-    if not class_obj:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Class not found"
-        )
-
-    if class_obj.coach_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the class coach can generate QR codes"
-        )
-
-    qr_code = await crud.generate_qr_code_for_class(request.class_id)
-
-    return {
-        "qr_code": qr_code,
-        "class_id": request.class_id,
-        "expires_at": datetime.utcnow() + timedelta(hours=2)  # Code valid for 2 hours
-    }
+    service = AttendanceService(db)
+    return await service.generate_qr_code(request.class_id, current_user)
 
 
 @router.post("/mark", response_model=schemas.AttendanceOut, status_code=status.HTTP_201_CREATED)
@@ -49,35 +30,13 @@ async def mark_attendance(
     current_user: User = Depends(get_current_user)
 ):
     """Mark attendance for current user (athletes only)"""
-    # Only athletes can mark attendance
-    if current_user.primary_role != UserRole.athlete:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only athletes can mark attendance"
-        )
-
-    # Verify class exists
-    class_obj = await classes_crud.get_class_by_id(db, request.class_id)
-    if not class_obj:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Class not found"
-        )
-
-    try:
-        attendance = await crud.mark_attendance(
-            db,
-            athlete_id=current_user.id,
-            class_id=request.class_id,
-            qr_code=request.qr_code,
-            method=request.method
-        )
-        return attendance
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+    service = AttendanceService(db)
+    return await service.mark_attendance(
+        request.class_id,
+        request.qr_code,
+        request.method,
+        current_user
+    )
 
 
 @router.get("/my-attendance", response_model=List[schemas.AttendanceOut])
@@ -88,13 +47,8 @@ async def get_my_attendance(
     current_user: User = Depends(get_current_user)
 ):
     """Get attendance history for current user"""
-    attendances = await crud.get_attendance_by_athlete(
-        db,
-        athlete_id=current_user.id,
-        start_date=start_date,
-        end_date=end_date
-    )
-    return attendances
+    service = AttendanceService(db)
+    return await service.get_my_attendance(current_user, start_date, end_date)
 
 
 @router.get("/my-attendance/count")
@@ -103,8 +57,8 @@ async def get_my_attendance_count(
     current_user: User = Depends(get_current_user)
 ):
     """Get total attendance count for current user"""
-    count = await crud.count_attendance_by_athlete(db, current_user.id)
-    return {"attendance_count": count}
+    service = AttendanceService(db)
+    return await service.count_my_attendance(current_user)
 
 
 @router.get("/class/{class_id}", response_model=List[schemas.AttendanceOut])
@@ -115,22 +69,8 @@ async def get_class_attendance(
     current_user: User = Depends(require_coach)
 ):
     """Get attendance for a class (coaches only)"""
-    # Verify class exists and belongs to this coach
-    class_obj = await classes_crud.get_class_by_id(db, class_id)
-    if not class_obj:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Class not found"
-        )
-
-    if class_obj.coach_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the class coach can view attendance"
-        )
-
-    attendances = await crud.get_attendance_by_class(db, class_id, attendance_date)
-    return attendances
+    service = AttendanceService(db)
+    return await service.get_class_attendance(class_id, current_user, attendance_date)
 
 
 @router.get("/class/{class_id}/stats")
@@ -142,19 +82,10 @@ async def get_class_attendance_stats(
     current_user: User = Depends(require_coach)
 ):
     """Get attendance statistics for a class (coaches only)"""
-    # Verify class exists and belongs to this coach
-    class_obj = await classes_crud.get_class_by_id(db, class_id)
-    if not class_obj:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Class not found"
-        )
-
-    if class_obj.coach_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the class coach can view statistics"
-        )
-
-    stats = await crud.get_attendance_stats_by_class(db, class_id, start_date, end_date)
-    return stats
+    service = AttendanceService(db)
+    return await service.get_class_attendance_stats(
+        class_id,
+        current_user,
+        start_date,
+        end_date
+    )

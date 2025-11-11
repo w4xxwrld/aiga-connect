@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from app.deps import get_db
 from app.users.router import router as users_router
 from app.classes.router import router as classes_router
 from app.bookings.router import router as bookings_router
@@ -7,6 +8,7 @@ from app.attendance.router import router as attendance_router
 from app import models  # Import models to ensure they are registered
 from app.core.middleware import error_handler_middleware, logging_middleware
 from app.config import settings
+from sqlalchemy import select
 
 app = FastAPI(
     title="AIGA Connect API",
@@ -39,8 +41,6 @@ def read_root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
-    from sqlalchemy import select
-    from app.deps import get_db
 
     try:
         # Test database connection
@@ -53,7 +53,6 @@ async def health_check():
             "version": "1.0.0"
         }
     except Exception as e:
-        from fastapi import HTTPException, status
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Service unhealthy: {str(e)}"

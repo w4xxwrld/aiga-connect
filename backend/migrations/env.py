@@ -4,13 +4,13 @@ from alembic import context
 import sys
 from pathlib import Path
 
-# Добавляем backend в sys.path для импорта моделей
+# sys.path modification to allow imports from backend
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.config import settings
 from app.database import Base
 
-# Импортируем все модели (ОБЯЗАТЕЛЬНО для autogenerate)
+# import models to ensure they are registered for Alembic autogenerate
 from app.users.models import User, UserRole
 from app.classes.models import Class
 from app.bookings.models import Booking, IndividualTrainingRequest
@@ -21,7 +21,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Используем Base.metadata из наших моделей
+# set target metadata for 'autogenerate' support
 target_metadata = Base.metadata
 
 
