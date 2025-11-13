@@ -128,7 +128,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
 
       console.log('🔵 [AUTH] Step 1: Validating credentials for:', formattedPhone);
-      
+
       // Step 1: Validate phone and password (without getting tokens)
       await authService.validateLogin({ phone: formattedPhone, password });
       console.log('✅ [AUTH] Step 1: Credentials validated successfully');
@@ -178,65 +178,65 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     data: RegisterData
   ) => {
     // Validate all required fields
-    if (!phone) {
+    if (!data.phone) {
       Alert.alert('Ошибка', 'Пожалуйста, введите номер телефона');
       return;
     }
-    
-    if (!firstName || firstName.trim().length === 0) {
+
+    if (!data.first_name || data.first_name.trim().length === 0) {
       Alert.alert('Ошибка', 'Пожалуйста, введите имя');
       return;
     }
-    
-    if (!lastName || lastName.trim().length === 0) {
+
+    if (!data.last_name || data.last_name.trim().length === 0) {
       Alert.alert('Ошибка', 'Пожалуйста, введите фамилию');
       return;
     }
-    
-    if (!email || email.trim().length === 0) {
+
+    if (!data.email || data.email.trim().length === 0) {
       Alert.alert('Ошибка', 'Пожалуйста, введите email');
       return;
     }
-    
-    if (!birthDate) {
+
+    if (!data.birth_date) {
       Alert.alert('Ошибка', 'Пожалуйста, выберите дату рождения');
       return;
     }
-    
-    if (!primaryRole) {
+
+    if (!data.primary_role) {
       Alert.alert('Ошибка', 'Пожалуйста, выберите роль');
       return;
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(data.email)) {
       Alert.alert('Ошибка', 'Пожалуйста, введите корректный email адрес');
       return;
     }
 
     // Validate phone format (should start with +)
-    if (!phone.startsWith('+')) {
+    if (!data.phone.startsWith('+')) {
       Alert.alert('Ошибка', 'Номер телефона должен начинаться с + (например, +77071234567)');
       return;
     }
 
     // Validate password if provided
-    if (password && password.length < 6) {
+    if (data.password && data.password.length < 6) {
       Alert.alert('Ошибка', 'Пароль должен содержать минимум 6 символов');
       return;
     }
 
     // Validate birth date
-    const birthDateObj = new Date(birthDate);
+    const birthDateObj = new Date(data.birth_date);
     const today = new Date();
     const age = today.getFullYear() - birthDateObj.getFullYear();
-    
+
     if (birthDateObj > today) {
       Alert.alert('Ошибка', 'Дата рождения не может быть в будущем');
       return;
     }
-    
+
     if (age < 5) {
       Alert.alert('Ошибка', 'Возраст должен быть не менее 5 лет');
       return;
@@ -245,17 +245,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     setLoading(true);
     try {
       // Format phone number to E.164 format
-      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+      const formattedPhone = data.phone.startsWith('+') ? data.phone : `+${data.phone}`;
 
       const registerData: RegisterData = {
         phone: formattedPhone,
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        ...(photoUrl && { photoUrl: photoUrl }),
-        email: email.trim(),
-        birth_date: birthDateString,
-        primary_role: primaryRole,
-        ...(password && { password: password }),
+        first_name: data.first_name,
+        last_name: data.last_name,
+        ...(data.photo_url && { photoUrl: data.photo_url }),
+        email: data.email,
+        birth_date: data.birth_date,
+        primary_role: data.primary_role,
+        ...(data.password && { password: data.password }),
       };
 
       console.log('🔵 [AUTH] Step 1: Sending registration data:', registerData);
@@ -336,7 +336,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       primary_role: selectedRole,
     };
 
+    console.log("handleRegister begin");
     handleRegister(finalData);
+    console.log("handleRegister over");
   }, [route.params?.selectedRole, route.params?.formData]);
 
   return (

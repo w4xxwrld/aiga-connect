@@ -41,7 +41,6 @@ export const RoleSelectionPage: React.FC<RoleSelectionPageProps> = () => {
             params: { selectedRole: role, formData },
             merge: true,
          });
-         navigation.goBack();
       } catch (err) {
          setError(err instanceof Error ? err.message : 'Failed to set role');
       } finally {
