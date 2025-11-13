@@ -23,6 +23,7 @@ import {
 import {DatePickerInput} from "react-native-paper-dates";
 import { useAppContext } from '../context/AppContext';
 import authService, { LoginData, RegisterData } from '../services/auth';
+import { useRoute } from '@react-navigation/native';
 
 type AuthMode = 'login' | 'register';
 
@@ -34,6 +35,7 @@ interface AuthScreenProps {
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const { setUser } = useAppContext();
+  const route: any = useRoute();
   const [mode, setMode] = useState<AuthMode>('login');
   const [loading, setLoading] = useState(false);
 
@@ -55,7 +57,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Initial animation
     Animated.parallel([
       Animated.timing(logoScaleAnim, {
         toValue: 1.1,
@@ -72,10 +73,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   }, []);
 
   const validatePhone = (number: string) => {
-    // Validate E.164 format: +7 followed by 10 digits (Kazakhstan)
-    // This matches the backend validation
     const phoneRegex = /^\+7\d{10}$/;
-    // Returns true if phone is VALID
     return phoneRegex.test(number);
   }
 
@@ -176,7 +174,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleRegister = async () => {
+  const handleRegister = async (
+    data: RegisterData
+  ) => {
     // Validate all required fields
     if (!phone) {
       Alert.alert('Ошибка', 'Пожалуйста, введите номер телефона');
@@ -263,14 +263,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       const userData = await authService.register(registerData);
       console.log('✅ [AUTH] Step 1: Registration successful:', userData);
 
-      // SECURITY: Do NOT auto-login after registration
-      // Send OTP and require verification before logging in
       console.log('🔵 [AUTH] Step 2: Sending OTP for phone verification...');
       const otpResponse = await authService.sendOTP(formattedPhone);
       console.log('🟢 [AUTH] Step 2: OTP sent successfully:', otpResponse);
 
-      // Navigate to OTP verification screen
-      // User will be logged in ONLY after OTP verification
       console.log('🔵 [AUTH] Step 3: Navigating to OTP verification screen');
       navigation.navigate('OTPVerification', {
         phoneNumber: formattedPhone,
@@ -307,9 +303,41 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     if (mode === 'login') {
       handleLogin();
     } else {
-      handleRegister();
+      // instead of calling handleRegister directly, go to role selection step
+      onRegisterNext();
     }
   };
+
+  const onRegisterNext = () => {
+    const registerData = {
+      phone: phone.startsWith('+') ? phone : `+${phone}`,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      email: email.trim(),
+      birth_date: birthDateString,
+      password: password || undefined,
+    };
+    navigation.navigate('RoleSelection', { formData: registerData });
+  };
+
+  useEffect(() => {
+    const selectedRole = route.params?.selectedRole;
+    const formData = route.params?.formData;
+
+    if (!selectedRole || !formData) return;
+
+    try {
+      navigation.setParams({ selectedRole: undefined, formData: undefined });
+    } catch (e) {
+    }
+
+    const finalData: any = {
+      ...formData,
+      primary_role: selectedRole,
+    };
+
+    handleRegister(finalData);
+  }, [route.params?.selectedRole, route.params?.formData]);
 
   return (
     <KeyboardAvoidingView
@@ -472,27 +500,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                       inputMode="start"
                     />
                 </View>
-
-                <View style={styles.roleContainer}>
-                  <Text style={styles.roleLabel}>Выберите роль:</Text>
-                  <SegmentedButtons
-                    value={primaryRole}
-                    onValueChange={(value) => setPrimaryRole(value as any)}
-                    buttons={[
-                      { value: 'coach', label: 'Тренер', icon: 'account-child' },
-                      { value: 'athlete', label: 'Спортсмен', icon: 'account-group' },
-                    ]}
-                    style={styles.roleButtons}
-                    theme={{
-                      colors: {
-                        primary: '#E74C3C',
-                        onSurface: '#fff',
-                        onSurfaceVariant: '#fff',
-                      }
-                    }}
-                  />
-                </View>
-
               </>
             )}
 
@@ -520,12 +527,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               mode="contained"
               onPress={handleSubmit}
               loading={loading}
-              disabled={loading || (mode === 'register' && (!phone || !password || !firstName || !lastName || !email || !birthDate || !primaryRole || !password))}
+              disabled={loading || (mode === 'register' && (!phone || !firstName || !lastName || !email || !birthDate))}
               style={styles.button}
               buttonColor="#E74C3C"
               icon={mode === 'login' ? 'login' : 'account-plus'}
             >
-              {mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+              {mode === 'login' ? 'Войти' : 'Дальше'}
             </Button>
           </Animated.View>
         </View>
