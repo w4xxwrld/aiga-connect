@@ -19,7 +19,7 @@ class Class(Base):
     coach_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     # Schedule - supports multiple days per week
-    days_of_week = Column(JSON, nullable=False)  # Array of days: ["monday", "wednesday", "friday"]
+    days_of_week = Column(JSON, nullable=False)  # change
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
 
