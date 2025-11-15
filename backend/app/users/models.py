@@ -7,6 +7,14 @@ from enum import Enum
 class UserRole(str, Enum):
     athlete = "athlete"
     coach = "coach"
+    admin = "admin"
+
+
+class RoleStatus(str, Enum):
+    pending = "pending"
+    approved = "approved"
+    declined = "declined"
+
 
 class User(Base):
     __tablename__ = "users"
@@ -20,6 +28,7 @@ class User(Base):
     birth_date = Column(Date, nullable=False)
     hashed_password = Column(String, nullable=True)  # Will be optional for SMS auth
     primary_role = Column(SqlEnum(UserRole), nullable=False)
+    role_status = Column(SqlEnum(RoleStatus), nullable=True)
     created_at = Column(DateTime, default=get_utc_now)
 
     # Relationships

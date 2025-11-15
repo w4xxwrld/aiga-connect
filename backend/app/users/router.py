@@ -4,7 +4,7 @@ from typing import List
 
 from app.deps import get_db, get_current_user
 from app.users import schemas
-from app.users.models import User, UserRole
+from app.users.models import User
 from app.users.service import UsersService
 from app.users.twilio_service import TwilioService
 from app.core.rate_limit import rate_limit_otp
@@ -12,66 +12,31 @@ from app.core.rate_limit import rate_limit_otp
 router = APIRouter()
 
 
-@router.post("/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
-async def register_user(
-    user: schemas.UserCreate,
+@router.post("/register", response_model=schemas.RegistrationData)
+async def validate_registration(
+    registration_data: schemas.RegistrationData,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Register a new user - creates account but DOES NOT authenticate.
-    User must verify OTP to get authenticated.
-    All fields are required.
+    Validate registration data before sending OTP.
+    Does NOT create user - user is created after OTP verification and role selection.
+    Checks if phone number is already registered.
     """
     service = UsersService(db)
-    return await service.register_user(user)
+    return await service.validate_registration(registration_data)
 
 
-@router.post("/validate-login", response_model=schemas.LoginResponse)
-async def validate_login(
-    login_data: schemas.UserLogin,
+@router.post("/login", response_model=schemas.LoginResponse)
+async def login(
+    login_data: schemas.LoginRequest,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Validate phone and password WITHOUT issuing tokens.
-    Used before sending OTP to ensure credentials are correct.
-    Returns success message if credentials are valid.
+    Login existing user with phone number and password.
+    Returns JWT tokens.
     """
     service = UsersService(db)
-    user = await service.validate_login_credentials(login_data)
-    
-    return schemas.LoginResponse(
-        requires_otp=True,
-        message="Credentials validated. Please verify OTP to complete login.",
-        phone_number=user.phone
-    )
-
-
-@router.post(
-    "/login", 
-    response_model=schemas.Token,
-    deprecated=True,
-    description="⚠️ DEPRECATED: This endpoint is deprecated and will be removed in a future version. Use /validate-login followed by OTP verification instead."
-)
-async def login_user(
-    login_data: schemas.UserLogin,
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    DEPRECATED: Use /validate-login + OTP verification instead.
-    This endpoint still exists for backward compatibility but should not be used.
-    It bypasses OTP verification which is a security risk.
-    
-    Recommended flow:
-    1. POST /validate-login (validates credentials)
-    2. POST /send-otp (sends OTP code)
-    3. POST /verify-otp-and-login (verifies OTP and returns tokens)
-    """
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.warning(f"⚠️ DEPRECATED ENDPOINT USED: /login by phone {login_data.phone}")
-    
-    service = UsersService(db)
-    return await service.login_user(login_data)
+    return await service.login(login_data)
 
 
 @router.post("/refresh", response_model=schemas.Token)
@@ -144,45 +109,101 @@ async def send_otp(
 @router.post("/verify-otp", response_model=schemas.VerifyOTPResponse)
 async def verify_otp(
     verify_request: schemas.VerifyOTPRequest,
-    _: None = Depends(rate_limit_otp)
-):
-    """
-    Verify OTP code for the specified phone number.
-    Rate limit: 3 requests per 10 minutes per IP address.
-    """
-    twilio_service = TwilioService()
-    result = await twilio_service.verify_otp(
-        verify_request.phone_number,
-        verify_request.code
-    )
-    return result
-
-
-@router.post("/verify-otp-and-login", response_model=schemas.Token)
-async def verify_otp_and_login(
-    verify_request: schemas.VerifyOTPRequest,
     db: AsyncSession = Depends(get_db),
     _: None = Depends(rate_limit_otp)
 ):
     """
-    Verify OTP code and authenticate user (create account if doesn't exist).
-    This endpoint will ONLY authenticate if the OTP is valid.
+    Verify OTP code.
+    For new users: returns requires_role_selection=True
+    For existing users: returns tokens and user info
     Rate limit: 3 requests per 10 minutes per IP address.
     """
-    # Step 1: Verify OTP with Twilio - this will raise HTTPException if invalid
+    from app.users import crud
+    from app.core.security import create_access_token, create_refresh_token
+    
     twilio_service = TwilioService()
     verification_result = await twilio_service.verify_otp(
         verify_request.phone_number,
         verify_request.code
     )
     
-    # Step 2: Only proceed if OTP verification was successful
     if not verification_result.get("success"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="OTP verification failed"
         )
     
-    # Step 3: OTP is verified - now authenticate user
+    # Check if user exists
+    existing_user = await crud.get_user_by_phone(db, verify_request.phone_number)
+    
+    if existing_user:
+        # Existing user - return tokens
+        token_data = {
+            "sub": existing_user.phone,
+            "role": existing_user.primary_role.value,
+            "user_id": existing_user.id
+        }
+        access_token = create_access_token(data=token_data)
+        refresh_token = create_refresh_token(data=token_data)
+        
+        return schemas.VerifyOTPResponse(
+            success=True,
+            message="Login successful",
+            phone_number=verify_request.phone_number,
+            requires_role_selection=False,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            role=existing_user.primary_role.value,
+            role_status=existing_user.role_status.value if existing_user.role_status else None
+        )
+    
+    # New user - requires role selection
+    return schemas.VerifyOTPResponse(
+        success=True,
+        message="OTP verified successfully. Please select your role.",
+        phone_number=verify_request.phone_number,
+        requires_role_selection=True
+    )
+
+
+@router.post("/select-role", response_model=schemas.SelectRoleResponse)
+async def select_role(
+    role_data: schemas.SelectRoleRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Select role and create user account after OTP verification.
+    This endpoint should be called after /verify-otp succeeds.
+    Creates user with all registration data and selected role.
+    Coach role requires approval and sets status to pending.
+    """
     service = UsersService(db)
-    return await service.authenticate_with_otp(verify_request.phone_number)
+    return await service.select_role(role_data)
+
+
+@router.get("/admin/pending-coaches", response_model=List[schemas.UserSimple])
+async def get_pending_coaches(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Admin endpoint to get all coaches with pending status.
+    Only administrators can access this endpoint.
+    """
+    service = UsersService(db)
+    return await service.get_pending_coaches(current_user)
+
+
+@router.post("/admin/review-coach", response_model=schemas.ReviewCoachResponse)
+async def review_coach(
+    review_request: schemas.ReviewCoachRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Admin endpoint to approve or decline coach applications.
+    Only administrators can access this endpoint.
+    """
+    service = UsersService(db)
+    return await service.review_coach(current_user, review_request)
+

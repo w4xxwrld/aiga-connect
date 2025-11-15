@@ -13,33 +13,51 @@ class UsersService:
     def __init__(self, db: AsyncSession):
         self.db = db
     
-    async def register_user(self, user_data: schemas.UserCreate) -> models.User:
-        """Register a new user"""
-        # Check if phone number already exists
-        existing_user = await crud.get_user_by_phone(self.db, user_data.phone)
+    async def validate_registration(
+        self, 
+        registration_data: schemas.RegistrationData
+    ) -> schemas.RegistrationData:
+        """
+        Validate registration data before sending OTP.
+        Checks if phone number is already registered.
+        """
+        existing_user = await crud.get_user_by_phone(self.db, registration_data.phone_number)
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Phone number already registered"
             )
-        
-        return await crud.create_user(self.db, user_data)
+        return registration_data
     
-    async def login_user(self, login_data: schemas.UserLogin) -> schemas.Token:
-        """Authenticate user and issue JWT tokens"""
-        user = await crud.authenticate_user(
-            self.db, 
-            login_data.phone, 
-            login_data.password
-        )
+    async def login(self, login_data: schemas.LoginRequest) -> schemas.LoginResponse:
+        """
+        Login existing user with phone and password.
+        Returns JWT tokens.
+        """
+        from app.core.security import verify_password, create_access_token, create_refresh_token
         
+        # Get user by phone
+        user = await crud.get_user_by_phone(self.db, login_data.phone_number)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid phone number or password"
             )
         
-        # Create JWT tokens
+        # Verify password
+        if not user.hashed_password:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Password not set for this user"
+            )
+        
+        if not verify_password(login_data.password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid phone number or password"
+            )
+        
+        # Generate tokens
         token_data = {
             "sub": user.phone,
             "role": user.primary_role.value,
@@ -48,10 +66,19 @@ class UsersService:
         access_token = create_access_token(data=token_data)
         refresh_token = create_refresh_token(data=token_data)
         
-        return schemas.Token(
+        return schemas.LoginResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            token_type="bearer"
+            token_type="bearer",
+            role=user.primary_role,
+            role_status=user.role_status,
+            user={
+                "id": user.id,
+                "phone": user.phone,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email
+            }
         )
     
     async def refresh_token(self, refresh_token: str) -> schemas.Token:
@@ -129,6 +156,15 @@ class UsersService:
         """Get all coaches"""
         return await crud.get_all_coaches(self.db)
     
+    async def get_pending_coaches(self, requesting_user: models.User) -> List[models.User]:
+        """Get all pending coaches (admin only)"""
+        if requesting_user.primary_role != models.UserRole.admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only administrators can view pending coaches"
+            )
+        return await crud.get_pending_coaches(self.db)
+    
     async def get_athletes(self, requesting_user: models.User) -> List[models.User]:
         """Get all athletes (for coaches only)"""
         if requesting_user.primary_role != models.UserRole.coach:
@@ -139,49 +175,36 @@ class UsersService:
         
         return await crud.get_all_athletes(self.db)
     
-    async def validate_login_credentials(self, login_data: schemas.UserLogin) -> models.User:
+    async def select_role(
+        self,
+        role_data: schemas.SelectRoleRequest
+    ) -> schemas.SelectRoleResponse:
         """
-        Validate phone and password WITHOUT issuing tokens.
-        Used to verify credentials before sending OTP.
-        Returns user object if credentials are valid.
+        Create user account and select role after OTP verification.
+        This is called after user fills registration form and verifies OTP.
         """
-        user = await crud.authenticate_user(
-            self.db, 
-            login_data.phone, 
-            login_data.password
+        # Check if user already exists
+        existing_user = await crud.get_user_by_phone(self.db, role_data.phone_number)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User already registered. Please login instead."
+            )
+        
+        # Create user with provided data and selected role
+        user_data = schemas.UserCreate(
+            phone=role_data.phone_number,
+            first_name=role_data.first_name,
+            last_name=role_data.last_name,
+            email=role_data.email,
+            birth_date=role_data.birth_date,
+            primary_role=role_data.role,
+            password=role_data.password  # Now we have password from registration form
         )
         
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid phone number or password"
-            )
+        user = await crud.create_user(self.db, user_data)
         
-        return user
-    
-    async def authenticate_with_otp(self, phone_number: str) -> schemas.Token:
-        """
-        Authenticate user with OTP verification (passwordless login).
-        Creates a new user if doesn't exist.
-        This method should ONLY be called after OTP has been verified.
-        """
-        # Check if user exists
-        user = await crud.get_user_by_phone(self.db, phone_number)
-        
-        if not user:
-            # Create new user with verified phone
-            from datetime import date
-            user_data = schemas.UserCreate(
-                phone=phone_number,
-                first_name="User",  # User can update later
-                last_name="",
-                birth_date=date(2000, 1, 1),  # Placeholder - user should update
-                primary_role=models.UserRole.athlete,  # Default role
-                password=None  # No password for OTP-based auth
-            )
-            user = await crud.create_user(self.db, user_data)
-        
-        # Generate JWT tokens
+        # Generate tokens
         token_data = {
             "sub": user.phone,
             "role": user.primary_role.value,
@@ -190,8 +213,67 @@ class UsersService:
         access_token = create_access_token(data=token_data)
         refresh_token = create_refresh_token(data=token_data)
         
-        return schemas.Token(
+        # Prepare response message
+        message = None
+        if user.primary_role == models.UserRole.coach:
+            message = "Registration successful! Your coach application is pending approval. You can use the app as an athlete while waiting."
+        
+        return schemas.SelectRoleResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            token_type="bearer"
+            token_type="bearer",
+            role=user.primary_role,
+            role_status=user.role_status,
+            message=message
+        )
+    
+    async def review_coach(
+        self,
+        admin_user: models.User,
+        review_request: schemas.ReviewCoachRequest
+    ) -> schemas.ReviewCoachResponse:
+        """
+        Admin approves or declines a coach application.
+        Only admins can call this method.
+        """
+        # Verify admin permissions
+        if admin_user.primary_role != models.UserRole.admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only administrators can review coach applications"
+            )
+        
+        # Get the user to review
+        user = await crud.get_user_by_id(self.db, review_request.user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        # Verify user is a coach
+        if user.primary_role != models.UserRole.coach:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User is not a coach"
+            )
+        
+        # Verify coach is pending
+        if user.role_status != models.RoleStatus.pending:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Coach is already {user.role_status.value}"
+            )
+        
+        # Update status based on action
+        new_status = models.RoleStatus.approved if review_request.action == "approve" else models.RoleStatus.declined
+        updated_user = await crud.update_role_status(self.db, user.id, new_status)
+        
+        message = f"Coach application {review_request.action}d successfully"
+        
+        return schemas.ReviewCoachResponse(
+            success=True,
+            message=message,
+            user_id=updated_user.id,
+            new_status=updated_user.role_status
         )

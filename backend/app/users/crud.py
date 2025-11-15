@@ -29,6 +29,12 @@ async def create_user(db: AsyncSession, user: schemas.UserCreate) -> models.User
     if user.password:
         hashed_password = get_password_hash(user.password)
 
+    # Determine role_status based on role
+    role_status = None
+    if user.primary_role == models.UserRole.coach:
+        role_status = models.RoleStatus.pending  # Coaches need approval
+    # Athletes and admins don't need approval status
+
     db_user = models.User(
         phone=user.phone,
         first_name=user.first_name,
@@ -38,6 +44,7 @@ async def create_user(db: AsyncSession, user: schemas.UserCreate) -> models.User
         birth_date=user.birth_date,
         hashed_password=hashed_password,
         primary_role=user.primary_role,
+        role_status=role_status,
     )
     db.add(db_user)
     await db.commit()
@@ -70,26 +77,21 @@ async def update_user(
     return user
 
 
-async def authenticate_user(
-    db: AsyncSession,
-    phone: str,
-    password: str
-) -> Optional[models.User]:
-    """Authenticate user by phone and password"""
-    user = await get_user_by_phone(db, phone)
-    if not user:
-        return None
-    if not user.hashed_password:
-        return None
-    if not verify_password(password, user.hashed_password):
-        return None
-    return user
-
-
 async def get_all_coaches(db: AsyncSession) -> List[models.User]:
     """Get all users with coach role"""
     result = await db.execute(
         select(models.User).where(models.User.primary_role == models.UserRole.coach)
+    )
+    return result.scalars().all()
+
+
+async def get_pending_coaches(db: AsyncSession) -> List[models.User]:
+    """Get all coaches with pending status"""
+    result = await db.execute(
+        select(models.User).where(
+            models.User.primary_role == models.UserRole.coach,
+            models.User.role_status == models.RoleStatus.pending
+        )
     )
     return result.scalars().all()
 
@@ -106,5 +108,32 @@ async def get_all_users(db: AsyncSession) -> List[models.User]:
     """Get all users"""
     result = await db.execute(
         select(models.User).order_by(models.User.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+async def update_role_status(
+    db: AsyncSession,
+    user_id: int,
+    new_status: models.RoleStatus
+) -> Optional[models.User]:
+    """Update user's role status (for admin approval/decline)"""
+    user = await get_user_by_id(db, user_id)
+    if not user:
+        return None
+    
+    user.role_status = new_status
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def get_users_by_phones(
+    db: AsyncSession,
+    phone_numbers: List[str]
+) -> List[models.User]:
+    """Get multiple users by phone numbers"""
+    result = await db.execute(
+        select(models.User).where(models.User.phone.in_(phone_numbers))
     )
     return result.scalars().all()
