@@ -264,7 +264,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       console.log('✅ [AUTH] Step 1: Registration successful:', userData);
 
       console.log('🔵 [AUTH] Step 2: Sending OTP for phone verification...');
-      const otpResponse = await authService.sendOTP(formattedPhone);
+      const otpResponse = await authService.sendOTP(data.phone);
       console.log('🟢 [AUTH] Step 2: OTP sent successfully:', otpResponse);
 
       console.log('🔵 [AUTH] Step 3: Navigating to OTP verification screen');
@@ -303,7 +303,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     if (mode === 'login') {
       handleLogin();
     } else {
-      // instead of calling handleRegister directly, go to role selection step
+  
       onRegisterNext();
     }
   };
