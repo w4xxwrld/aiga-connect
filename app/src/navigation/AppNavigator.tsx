@@ -11,6 +11,8 @@ type RootStackParamList = {
   Auth: undefined;
   OTPVerification: { phoneNumber: string; isRegistration: boolean };
   MainTabs: undefined;
+  RoleSelection: undefined;
+  RoleSettings: undefined;
   ClassDetail: { classId: number };
   BookingDetail: { bookingId: number };
   BookClass: { classId: number };
@@ -58,6 +60,7 @@ import TournamentDetailPage from '../pages/TournamentDetailPage';
 import CreateTournamentPage from '../pages/CreateTournamentPage';
 import UsersManagementPage from '../pages/UsersManagementPage';
 import ChildProfilePage from '../pages/ChildProfilePage';
+import { RoleSelectionPage } from '../pages/RoleSelectionPage';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -235,6 +238,7 @@ const AppNavigator: React.FC = () => {
       >
         <Stack.Screen name="Greeting" component={GreetingPage} />
         <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="RoleSelection" component={RoleSelectionPage} />
         <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
         <Stack.Screen name="MainTabs" component={MainLayout} />
         <Stack.Screen name="ClassDetail" component={ClassDetailPage} />
