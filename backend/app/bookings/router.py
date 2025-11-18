@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional
 from datetime import date
 from app.deps import get_db, get_current_user
 from app.users.models import User, UserRole
@@ -21,12 +21,13 @@ async def create_booking(
 
 @router.get("/my-bookings", response_model=List[schemas.BookingOut])
 async def get_my_bookings(
+    payment_status: Optional[str] = Query(None, description="Filter by payment status: 'paid' or 'unpaid'"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Получить мои бронирования"""
+    """Получить мои бронирования с фильтром по статусу оплаты"""
     service = BookingsService(db)
-    return await service.get_my_bookings(current_user)
+    return await service.get_my_bookings(current_user, payment_status)
 
 @router.put("/{booking_id}/cancel", response_model=schemas.BookingOut)
 async def cancel_booking(

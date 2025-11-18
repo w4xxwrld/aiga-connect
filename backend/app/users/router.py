@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
@@ -36,6 +37,23 @@ async def login(
     Returns JWT tokens.
     """
     service = UsersService(db)
+    return await service.login(login_data)
+
+
+@router.post("/token", response_model=schemas.LoginResponse)
+async def login_for_swagger(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    OAuth2 compatible token login for Swagger UI.
+    Use phone number as username and your password.
+    """
+    service = UsersService(db)
+    login_data = schemas.LoginRequest(
+        phone_number=form_data.username,  # Phone number в поле username
+        password=form_data.password
+    )
     return await service.login(login_data)
 
 

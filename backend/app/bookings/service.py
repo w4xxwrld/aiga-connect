@@ -1,5 +1,5 @@
 """Business logic for bookings operations"""
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -8,6 +8,49 @@ from . import crud, schemas, models
 from .models import IndividualTrainingStatus
 from app.users.models import User, UserRole
 from app.config import settings
+
+
+def enhance_booking_with_payment(
+    booking: models.Booking,
+    class_price: int = 0
+) -> Dict[str, Any]:
+    """
+    Enhance booking with payment information
+    
+    Args:
+        booking: Booking object
+        class_price: Price of the class in tenge
+        
+    Returns:
+        Dict with enhanced booking data including payment fields
+    """
+    # Determine payment requirement
+    payment_required = class_price > 0
+    
+    # Initialize payment fields
+    payment_status = "not_required"
+    payment_url = None
+    
+    if payment_required:
+        if booking.is_paid:
+            payment_status = "completed"
+        else:
+            payment_status = "pending"
+            # TODO: When payment module is implemented, retrieve Stripe checkout URL here
+            # payment = get_payment_for_booking(booking.id)
+            # if payment and payment.stripe_session_id:
+            #     session = stripe.checkout.Session.retrieve(payment.stripe_session_id)
+            #     if session.status == 'open':
+            #         payment_url = session.url
+    
+    return {
+        **booking.__dict__,
+        "payment_required": payment_required,
+        "payment_status": payment_status,
+        "payment_url": payment_url,
+        "amount": class_price if class_price else None,
+        "currency": "kzt"
+    }
 
 
 class BookingsService:
@@ -55,12 +98,35 @@ class BookingsService:
         
         return await crud.create_booking(self.db, booking_data)
     
-    async def get_my_bookings(self, current_user: User) -> List[models.Booking]:
-        """Get my bookings"""
+    async def get_my_bookings(self, current_user: User, payment_status_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get my bookings with payment information"""
         if current_user.primary_role == UserRole.athlete:
-            return await crud.get_bookings_by_athlete(self.db, current_user.id)
+            bookings = await crud.get_bookings_by_athlete(self.db, current_user.id)
         else:  # coach
-            return await crud.get_bookings_by_coach(self.db, current_user.id)
+            bookings = await crud.get_bookings_by_coach(self.db, current_user.id)
+        
+        # Enhance each booking with payment info
+        from app.classes import crud as class_crud
+        result = []
+        
+        for booking in bookings:
+            # Get class price
+            class_obj = await class_crud.get_class_by_id(self.db, booking.class_id)
+            class_price = class_obj.price if class_obj else 0
+            
+            # Enhance with payment information
+            enhanced_booking = enhance_booking_with_payment(booking, class_price)
+            
+            # Apply payment status filter if provided
+            if payment_status_filter:
+                if payment_status_filter == "paid" and not enhanced_booking["is_paid"]:
+                    continue
+                elif payment_status_filter == "unpaid" and enhanced_booking["is_paid"]:
+                    continue
+            
+            result.append(enhanced_booking)
+        
+        return result
     
     async def cancel_booking(
         self,
@@ -89,8 +155,8 @@ class BookingsService:
         self,
         booking_id: int,
         current_user: User
-    ) -> models.Booking:
-        """Get booking by ID"""
+    ) -> Dict[str, Any]:
+        """Get booking by ID with payment information"""
         booking = await crud.get_booking(self.db, booking_id)
         if not booking:
             raise HTTPException(
@@ -105,7 +171,13 @@ class BookingsService:
                 detail="Access denied"
             )
         
-        return booking
+        # Get class price
+        from app.classes import crud as class_crud
+        class_obj = await class_crud.get_class_by_id(self.db, booking.class_id)
+        class_price = class_obj.price if class_obj else 0
+        
+        # Enhance with payment information
+        return enhance_booking_with_payment(booking, class_price)
     
     async def approve_booking(
         self,
