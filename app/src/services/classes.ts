@@ -4,53 +4,43 @@ export interface Class {
   id: number;
   name: string;
   description?: string;
-  difficulty_level: 'beginner' | 'intermediate' | 'advanced';
+  difficulty_level: 'beginner' | 'amateur' | 'professional';
   coach_id: number;
-  day_of_week: string;
+  days_of_week: string[]; // Array of days like ["monday", "wednesday"]
   start_time: string;
   end_time: string;
-  age_group_min?: number;
-  age_group_max?: number;
   max_capacity: number;
-  price_per_class: number;
-  is_trial_available: boolean;
-  status: 'active' | 'cancelled' | 'completed';
+  price: number; // Price in tenge
   created_at: string;
   updated_at: string;
   coach?: {
     id: number;
-    full_name: string;
+    first_name: string;
+    last_name: string;
   };
 }
 
 export interface ClassCreate {
   name: string;
   description?: string;
-  difficulty_level: 'beginner' | 'intermediate' | 'advanced';
+  difficulty_level: 'beginner' | 'amateur' | 'professional';
   coach_id: number;
-  day_of_week: string;
+  days_of_week: string[]; // Array of days
   start_time: string;
   end_time: string;
-  age_group_min?: number;
-  age_group_max?: number;
   max_capacity: number;
-  price_per_class: number;
-  is_trial_available?: boolean;
+  price: number; // Price in tenge
 }
 
 export interface ClassUpdate {
   name?: string;
   description?: string;
-  difficulty_level?: 'beginner' | 'intermediate' | 'advanced';
-  day_of_week?: string;
+  difficulty_level?: 'beginner' | 'amateur' | 'professional';
+  days_of_week?: string[];
   start_time?: string;
   end_time?: string;
-  age_group_min?: number;
-  age_group_max?: number;
   max_capacity?: number;
-  price_per_class?: number;
-  is_trial_available?: boolean;
-  status?: 'active' | 'cancelled' | 'completed';
+  price?: number;
 }
 
 class ClassesService {
@@ -138,18 +128,9 @@ class ClassesService {
   getDifficultyDisplayName(level: string): string {
     switch (level) {
       case 'beginner': return 'Начинающий';
-      case 'intermediate': return 'Средний';
-      case 'advanced': return 'Продвинутый';
+      case 'amateur': return 'Любитель';
+      case 'professional': return 'Профессионал';
       default: return level;
-    }
-  }
-
-  getStatusDisplayName(status: string): string {
-    switch (status) {
-      case 'active': return 'Активно';
-      case 'cancelled': return 'Отменено';
-      case 'completed': return 'Завершено';
-      default: return status;
     }
   }
 
@@ -158,6 +139,7 @@ class ClassesService {
   }
 
   formatDayOfWeek(day: string): string {
+    if (!day) return '';
     const days: { [key: string]: string } = {
       'понедельник': 'Понедельник',
       'вторник': 'Вторник',
@@ -176,6 +158,19 @@ class ClassesService {
       'sunday': 'Воскресенье'
     };
     return days[day.toLowerCase()] || day;
+  }
+
+  convertDayToEnglish(day: string): string {
+    const dayMapping: { [key: string]: string } = {
+      'понедельник': 'monday',
+      'вторник': 'tuesday',
+      'среда': 'wednesday',
+      'четверг': 'thursday',
+      'пятница': 'friday',
+      'суббота': 'saturday',
+      'воскресенье': 'sunday'
+    };
+    return dayMapping[day.toLowerCase()] || day.toLowerCase();
   }
 
   calculateDuration(startTime: string, endTime: string): string {

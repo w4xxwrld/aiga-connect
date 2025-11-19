@@ -14,7 +14,6 @@ import {
   TextInput,
   HelperText,
   SegmentedButtons,
-  Switch,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
@@ -68,15 +67,12 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
   // State
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [difficultyLevel, setDifficultyLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
+  const [difficultyLevel, setDifficultyLevel] = useState<'beginner' | 'amateur' | 'professional'>('beginner');
   const [selectedDays, setSelectedDays] = useState<string[]>(['понедельник']);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [ageGroupMin, setAgeGroupMin] = useState('');
-  const [ageGroupMax, setAgeGroupMax] = useState('');
   const [maxCapacity, setMaxCapacity] = useState('');
-  const [pricePerClass, setPricePerClass] = useState('');
-  const [isTrialAvailable, setIsTrialAvailable] = useState(false);
+  const [price, setPrice] = useState('');
   const [creating, setCreating] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -105,14 +101,10 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
       newErrors.maxCapacity = 'Количество участников должно быть больше 0';
     }
 
-    if (!pricePerClass.trim()) {
-      newErrors.pricePerClass = 'Стоимость занятия обязательна';
-    } else if (parseInt(pricePerClass) < 0) {
-      newErrors.pricePerClass = 'Стоимость не может быть отрицательной';
-    }
-
-    if (ageGroupMin && ageGroupMax && parseInt(ageGroupMin) >= parseInt(ageGroupMax)) {
-      newErrors.ageGroupMax = 'Максимальный возраст должен быть больше минимального';
+    if (!price.trim()) {
+      newErrors.price = 'Стоимость занятия обязательна';
+    } else if (parseInt(price) < 0) {
+      newErrors.price = 'Стоимость не может быть отрицательной';
     }
 
     setErrors(newErrors);
@@ -134,14 +126,11 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
         name: name.trim(),
         description: description.trim() || undefined,
         difficulty_level: difficultyLevel,
-        day_of_week: selectedDays.join(', '),
-        start_time: startTime,
-        end_time: endTime,
-        age_group_min: ageGroupMin ? parseInt(ageGroupMin) : undefined,
-        age_group_max: ageGroupMax ? parseInt(ageGroupMax) : undefined,
+        days_of_week: selectedDays.map(day => classesService.convertDayToEnglish(day)),
+        start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
+        end_time: endTime.length === 5 ? `${endTime}:00` : endTime,
         max_capacity: parseInt(maxCapacity),
-        price_per_class: parseInt(pricePerClass),
-        is_trial_available: isTrialAvailable,
+        price: parseInt(price),
         coach_id: user.id,
       };
 
@@ -219,8 +208,8 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
           onValueChange={(value) => setDifficultyLevel(value as any)}
           buttons={[
             { value: 'beginner', label: 'Нач' },
-            { value: 'intermediate', label: 'Сред' },
-            { value: 'advanced', label: 'Прод' },
+            { value: 'amateur', label: 'Люб' },
+            { value: 'professional', label: 'Проф' },
           ]}
           style={styles.segmentedButtons}
           density="small"
@@ -368,8 +357,8 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
 
         <TextInput
           label="Стоимость за занятие (₸) *"
-          value={pricePerClass}
-          onChangeText={setPricePerClass}
+          value={price}
+          onChangeText={setPrice}
           mode="outlined"
           style={styles.input}
           outlineColor="#fff"
@@ -382,70 +371,9 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
           }}
           placeholderTextColor="#fff"
           keyboardType="numeric"
-          error={!!errors.pricePerClass}
+          error={!!errors.price}
         />
-        {errors.pricePerClass && <HelperText type="error" visible={!!errors.pricePerClass}>{errors.pricePerClass}</HelperText>}
-
-        <View style={styles.switchContainer}>
-          <Text style={styles.switchLabel}>Доступны пробные занятия</Text>
-          <Switch
-            value={isTrialAvailable}
-            onValueChange={setIsTrialAvailable}
-            color="#E74C3C"
-          />
-        </View>
-      </Card.Content>
-    </Card>
-  );
-
-  const renderAgeGroupInfo = () => (
-    <Card style={styles.card}>
-      <Card.Content>
-        <Title style={styles.sectionTitle}>Возрастные ограничения (необязательно)</Title>
-        
-        <View style={styles.ageContainer}>
-          <View style={styles.ageInput}>
-            <TextInput
-              label="Минимальный возраст"
-              value={ageGroupMin}
-              onChangeText={setAgeGroupMin}
-              mode="outlined"
-              style={styles.input}
-              outlineColor="#fff"
-              activeOutlineColor="#E74C3C"
-              textColor="#fff"
-              theme={{
-                colors: {
-                  onSurfaceVariant: '#fff',
-                }
-              }}
-              placeholderTextColor="#fff"
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.ageInput}>
-            <TextInput
-              label="Максимальный возраст"
-              value={ageGroupMax}
-              onChangeText={setAgeGroupMax}
-              mode="outlined"
-              style={styles.input}
-              outlineColor="#fff"
-              activeOutlineColor="#E74C3C"
-              textColor="#fff"
-              theme={{
-                colors: {
-                  onSurfaceVariant: '#fff',
-                }
-              }}
-              placeholderTextColor="#fff"
-              keyboardType="numeric"
-              error={!!errors.ageGroupMax}
-            />
-            {errors.ageGroupMax && <HelperText type="error" visible={!!errors.ageGroupMax}>{errors.ageGroupMax}</HelperText>}
-          </View>
-        </View>
+        {errors.price && <HelperText type="error" visible={!!errors.price}>{errors.price}</HelperText>}
       </Card.Content>
     </Card>
   );
@@ -464,8 +392,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
         {renderBasicInfo()}
         {renderScheduleInfo()}
         {renderCapacityInfo()}
-        {renderAgeGroupInfo()}
-        
+
         <View style={styles.actionsContainer}>
           <Button
             mode="contained"
@@ -570,23 +497,6 @@ const styles: any = {
   },
   timeInput: {
     flex: 1,
-  },
-  ageContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  ageInput: {
-    flex: 1,
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  switchLabel: {
-    color: '#fff',
-    fontSize: 16,
   },
   actionsContainer: {
     gap: 8,

@@ -20,8 +20,8 @@ const ClassCard: React.FC<ClassCardProps> = ({
   const getDifficultyColor = (difficulty: string): string => {
     switch (difficulty) {
       case 'beginner': return '#4CAF50';
-      case 'intermediate': return '#FF9800';
-      case 'advanced': return '#F44336';
+      case 'amateur': return '#FF9800';
+      case 'professional': return '#F44336';
       default: return '#757575';
     }
   };
@@ -33,14 +33,14 @@ const ClassCard: React.FC<ClassCardProps> = ({
           <View style={styles.classInfo}>
             <Title style={styles.classTitle}>{classItem.name}</Title>
             <Text style={styles.classTime}>
-              {classesService.formatDayOfWeek(classItem.day_of_week)} • {classesService.formatTime(classItem.start_time)} - {classesService.formatTime(classItem.end_time)}
+              {classItem.days_of_week?.filter(day => day).map(day => classesService.formatDayOfWeek(day)).join(', ') || 'Не указано'} • {classesService.formatTime(classItem.start_time)} - {classesService.formatTime(classItem.end_time)}
             </Text>
             <Text style={styles.classDuration}>
               Длительность: {classesService.calculateDuration(classItem.start_time, classItem.end_time)}
             </Text>
           </View>
           <View style={styles.classMeta}>
-            <Text style={styles.priceText}>{classItem.price_per_class} ₸</Text>
+            <Text style={styles.priceText}>{classItem.price} ₸</Text>
           </View>
         </View>
 
@@ -54,7 +54,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="account-tie" size={16} color="#E74C3C" />
             <Text style={styles.detailText}>
-              Тренер: {classItem.coach?.full_name || `ID: ${classItem.coach_id}`}
+              Тренер: {classItem.coach ? `${classItem.coach.first_name} ${classItem.coach.last_name}` : `ID: ${classItem.coach_id}`}
             </Text>
           </View>
 
@@ -66,15 +66,6 @@ const ClassCard: React.FC<ClassCardProps> = ({
               </Text>
             </Text>
           </View>
-
-          {classItem.age_group_min && classItem.age_group_max && (
-            <View style={styles.detailRow}>
-              <MaterialCommunityIcons name="account-group" size={16} color="#E74C3C" />
-              <Text style={styles.detailText}>
-                Возраст: {classItem.age_group_min}-{classItem.age_group_max} лет
-              </Text>
-            </View>
-          )}
 
           <View style={styles.detailRow}>
             <MaterialCommunityIcons name="account-multiple" size={16} color="#E74C3C" />

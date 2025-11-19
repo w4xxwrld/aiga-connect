@@ -4,8 +4,6 @@ export interface Booking {
   id: number;
   athlete_id: number;
   class_id: number;
-  booked_by_parent_id?: number;
-  booking_type: 'regular' | 'trial' | 'makeup';
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   booking_date: string;
   class_date: string;
@@ -17,19 +15,18 @@ export interface Booking {
   updated_at: string;
   athlete?: {
     id: number;
-    full_name: string;
+    first_name: string;
+    last_name: string;
+    phone: string;
   };
   class_obj?: {
     id: number;
     name: string;
     coach?: {
       id: number;
-      full_name: string;
+      first_name: string;
+      last_name: string;
     };
-  };
-  booked_by_parent?: {
-    id: number;
-    full_name: string;
   };
 }
 
@@ -37,7 +34,6 @@ export interface IndividualTrainingRequest {
   id: number;
   athlete_id: number;
   coach_id: number;
-  requested_by_parent_id?: number;
   requested_date: string;
   preferred_time_start?: string;
   preferred_time_end?: string;
@@ -55,22 +51,19 @@ export interface IndividualTrainingRequest {
   updated_at: string;
   athlete?: {
     id: number;
-    full_name: string;
+    first_name: string;
+    last_name: string;
   };
   coach?: {
     id: number;
-    full_name: string;
-  };
-  requested_by_parent?: {
-    id: number;
-    full_name: string;
+    first_name: string;
+    last_name: string;
   };
 }
 
 export interface BookingCreate {
   athlete_id: number;
   class_id: number;
-  booking_type?: 'regular' | 'trial' | 'makeup';
   class_date: string;
   notes?: string;
 }
@@ -267,15 +260,6 @@ class BookingsService {
   }
 
   // Helper methods for display
-  getBookingTypeDisplayName(type: string): string {
-    switch (type) {
-      case 'regular': return 'Обычное';
-      case 'trial': return 'Пробное';
-      case 'makeup': return 'Компенсационное';
-      default: return type;
-    }
-  }
-
   getStatusDisplayName(status: string): string {
     const statusMap: { [key: string]: string } = {
       pending: 'Ожидает',

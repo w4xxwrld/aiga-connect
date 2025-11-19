@@ -13,7 +13,6 @@ import {
   TextInput,
   HelperText,
   SegmentedButtons,
-  Switch,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
@@ -31,21 +30,31 @@ interface EditClassPageProps {
 const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
   const { classId } = route.params;
   const { user } = useAppContext();
-  
+
+  // Helper function to get display name for weekdays
+  const getDayDisplayName = (day: string): string => {
+    const dayNames: { [key: string]: string } = {
+      'понедельник': 'Пн',
+      'вторник': 'Вт',
+      'среда': 'Ср',
+      'четверг': 'Чт',
+      'пятница': 'Пт',
+      'суббота': 'Сб',
+      'воскресенье': 'Вс'
+    };
+    return dayNames[day] || day;
+  };
+
   // State
   const [classData, setClassData] = useState<Class | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [difficultyLevel, setDifficultyLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
-  const [dayOfWeek, setDayOfWeek] = useState<'понедельник' | 'вторник' | 'среда' | 'четверг' | 'пятница' | 'суббота' | 'воскресенье'>('понедельник');
+  const [difficultyLevel, setDifficultyLevel] = useState<'beginner' | 'amateur' | 'professional'>('beginner');
+  const [selectedDays, setSelectedDays] = useState<string[]>(['понедельник']);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [ageGroupMin, setAgeGroupMin] = useState('');
-  const [ageGroupMax, setAgeGroupMax] = useState('');
   const [maxCapacity, setMaxCapacity] = useState('');
-  const [pricePerClass, setPricePerClass] = useState('');
-  const [isTrialAvailable, setIsTrialAvailable] = useState(false);
-  const [status, setStatus] = useState<'active' | 'cancelled' | 'completed'>('active');
+  const [price, setPrice] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -59,20 +68,16 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
       setLoading(true);
       const data = await classesService.getClass(classId);
       setClassData(data);
-      
+
       // Populate form fields
       setName(data.name);
       setDescription(data.description || '');
       setDifficultyLevel(data.difficulty_level);
-      setDayOfWeek(data.day_of_week as any);
+      setSelectedDays(data.days_of_week);
       setStartTime(data.start_time);
       setEndTime(data.end_time);
-      setAgeGroupMin(data.age_group_min?.toString() || '');
-      setAgeGroupMax(data.age_group_max?.toString() || '');
       setMaxCapacity(data.max_capacity.toString());
-      setPricePerClass(data.price_per_class.toString());
-      setIsTrialAvailable(data.is_trial_available);
-      setStatus(data.status);
+      setPrice(data.price.toString());
     } catch (error: any) {
       console.error('Error loading class data:', error);
       Alert.alert('Ошибка', error.message || 'Не удалось загрузить данные занятия');
@@ -106,14 +111,10 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
       newErrors.maxCapacity = 'Количество участников должно быть больше 0';
     }
 
-    if (!pricePerClass.trim()) {
-      newErrors.pricePerClass = 'Стоимость занятия обязательна';
-    } else if (parseInt(pricePerClass) < 0) {
-      newErrors.pricePerClass = 'Стоимость не может быть отрицательной';
-    }
-
-    if (ageGroupMin && ageGroupMax && parseInt(ageGroupMin) >= parseInt(ageGroupMax)) {
-      newErrors.ageGroupMax = 'Максимальный возраст должен быть больше минимального';
+    if (!price.trim()) {
+      newErrors.price = 'Стоимость занятия обязательна';
+    } else if (parseInt(price) < 0) {
+      newErrors.price = 'Стоимость не может быть отрицательной';
     }
 
     setErrors(newErrors);
@@ -129,15 +130,11 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
         name: name.trim(),
         description: description.trim() || undefined,
         difficulty_level: difficultyLevel,
-        day_of_week: dayOfWeek,
-        start_time: startTime,
-        end_time: endTime,
-        age_group_min: ageGroupMin ? parseInt(ageGroupMin) : undefined,
-        age_group_max: ageGroupMax ? parseInt(ageGroupMax) : undefined,
+        days_of_week: selectedDays.map(day => classesService.convertDayToEnglish(day)),
+        start_time: startTime.length === 5 ? `${startTime}:00` : startTime,
+        end_time: endTime.length === 5 ? `${endTime}:00` : endTime,
         max_capacity: parseInt(maxCapacity),
-        price_per_class: parseInt(pricePerClass),
-        is_trial_available: isTrialAvailable,
-        status: status,
+        price: parseInt(price),
       };
 
       await classesService.updateClass(classId, updateData);
@@ -209,29 +206,8 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
           onValueChange={(value) => setDifficultyLevel(value as any)}
           buttons={[
             { value: 'beginner', label: 'Нач' },
-            { value: 'intermediate', label: 'Сред' },
-            { value: 'advanced', label: 'Прод' },
-          ]}
-          style={styles.segmentedButtons}
-          density="small"
-          theme={{
-            colors: {
-              primary: '#E74C3C',
-              onSurface: '#fff',
-              onSurfaceVariant: '#fff',
-              outline: '#2C3E50',
-            }
-          }}
-        />
-
-        <Title style={styles.sectionTitle}>Статус занятия</Title>
-        <SegmentedButtons
-          value={status}
-          onValueChange={(value) => setStatus(value as any)}
-          buttons={[
-            { value: 'active', label: 'Актив' },
-            { value: 'cancelled', label: 'Отмен' },
-            { value: 'completed', label: 'Заверш' },
+            { value: 'amateur', label: 'Люб' },
+            { value: 'professional', label: 'Проф' },
           ]}
           style={styles.segmentedButtons}
           density="small"
@@ -252,51 +228,60 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
     <Card style={styles.card}>
       <Card.Content>
         <Title style={styles.sectionTitle}>Расписание</Title>
-        
-        <Title style={styles.subsectionTitle}>День недели</Title>
+
+        <Title style={styles.subsectionTitle}>Дни недели (выберите несколько)</Title>
         <View style={styles.weekdayContainer}>
           <View style={styles.weekdayRow}>
-            <SegmentedButtons
-              value={dayOfWeek}
-              onValueChange={(value) => setDayOfWeek(value as any)}
-              buttons={[
-                { value: 'понедельник', label: 'Пн' },
-                { value: 'вторник', label: 'Вт' },
-                { value: 'среда', label: 'Ср' },
-              ]}
-              style={styles.weekdayButtons}
-              density="small"
-              theme={{
-                colors: {
-                  primary: '#E74C3C',
-                  onSurface: '#fff',
-                  onSurfaceVariant: '#fff',
-                  outline: '#2C3E50',
-                }
-              }}
-            />
+            {['понедельник', 'вторник', 'среда', 'четверг'].map((day) => (
+              <Button
+                key={day}
+                mode="outlined"
+                onPress={() => {
+                  if (selectedDays.includes(day)) {
+                    setSelectedDays(selectedDays.filter(d => d !== day));
+                  } else {
+                    setSelectedDays([...selectedDays, day]);
+                  }
+                }}
+                style={[
+                  styles.dayButton,
+                  {
+                    backgroundColor: '#0D1B2A',
+                    borderColor: selectedDays.includes(day) ? '#E74C3C' : '#fff',
+                    borderWidth: 1,
+                  }
+                ]}
+                textColor="#fff"
+              >
+                {getDayDisplayName(day)}
+              </Button>
+            ))}
           </View>
           <View style={styles.weekdayRow}>
-            <SegmentedButtons
-              value={dayOfWeek}
-              onValueChange={(value) => setDayOfWeek(value as any)}
-              buttons={[
-                { value: 'четверг', label: 'Чт' },
-                { value: 'пятница', label: 'Пт' },
-                { value: 'суббота', label: 'Сб' },
-                { value: 'воскресенье', label: 'Вс' },
-              ]}
-              style={styles.weekdayButtons}
-              density="small"
-              theme={{
-                colors: {
-                  primary: '#E74C3C',
-                  onSurface: '#fff',
-                  onSurfaceVariant: '#fff',
-                  outline: '#2C3E50',
-                }
-              }}
-            />
+            {['пятница', 'суббота', 'воскресенье'].map((day) => (
+              <Button
+                key={day}
+                mode="outlined"
+                onPress={() => {
+                  if (selectedDays.includes(day)) {
+                    setSelectedDays(selectedDays.filter(d => d !== day));
+                  } else {
+                    setSelectedDays([...selectedDays, day]);
+                  }
+                }}
+                style={[
+                  styles.dayButton,
+                  {
+                    backgroundColor: '#0D1B2A',
+                    borderColor: selectedDays.includes(day) ? '#E74C3C' : '#fff',
+                    borderWidth: 1,
+                  }
+                ]}
+                textColor="#fff"
+              >
+                {getDayDisplayName(day)}
+              </Button>
+            ))}
           </View>
         </View>
 
@@ -376,8 +361,8 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
 
         <TextInput
           label="Стоимость за занятие (₸) *"
-          value={pricePerClass}
-          onChangeText={setPricePerClass}
+          value={price}
+          onChangeText={setPrice}
           mode="outlined"
           style={styles.input}
           outlineColor="#fff"
@@ -390,70 +375,9 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
           }}
           placeholderTextColor="#fff"
           keyboardType="numeric"
-          error={!!errors.pricePerClass}
+          error={!!errors.price}
         />
-        {errors.pricePerClass && <HelperText type="error" visible={!!errors.pricePerClass}>{errors.pricePerClass}</HelperText>}
-
-        <View style={styles.switchContainer}>
-          <Text style={styles.switchLabel}>Доступны пробные занятия</Text>
-          <Switch
-            value={isTrialAvailable}
-            onValueChange={setIsTrialAvailable}
-            color="#E74C3C"
-          />
-        </View>
-      </Card.Content>
-    </Card>
-  );
-
-  const renderAgeGroupInfo = () => (
-    <Card style={styles.card}>
-      <Card.Content>
-        <Title style={styles.sectionTitle}>Возрастные ограничения (необязательно)</Title>
-        
-        <View style={styles.ageContainer}>
-          <View style={styles.ageInput}>
-            <TextInput
-              label="Минимальный возраст"
-              value={ageGroupMin}
-              onChangeText={setAgeGroupMin}
-              mode="outlined"
-              style={styles.input}
-              outlineColor="#fff"
-              activeOutlineColor="#E74C3C"
-              textColor="#fff"
-              theme={{
-                colors: {
-                  onSurfaceVariant: '#fff',
-                }
-              }}
-              placeholderTextColor="#fff"
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.ageInput}>
-            <TextInput
-              label="Максимальный возраст"
-              value={ageGroupMax}
-              onChangeText={setAgeGroupMax}
-              mode="outlined"
-              style={styles.input}
-              outlineColor="#fff"
-              activeOutlineColor="#E74C3C"
-              textColor="#fff"
-              theme={{
-                colors: {
-                  onSurfaceVariant: '#fff',
-                }
-              }}
-              placeholderTextColor="#fff"
-              keyboardType="numeric"
-              error={!!errors.ageGroupMax}
-            />
-            {errors.ageGroupMax && <HelperText type="error" visible={!!errors.ageGroupMax}>{errors.ageGroupMax}</HelperText>}
-          </View>
-        </View>
+        {errors.price && <HelperText type="error" visible={!!errors.price}>{errors.price}</HelperText>}
       </Card.Content>
     </Card>
   );
@@ -478,8 +402,7 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
         {renderBasicInfo()}
         {renderScheduleInfo()}
         {renderCapacityInfo()}
-        {renderAgeGroupInfo()}
-        
+
         <View style={styles.actionsContainer}>
           <Button
             mode="contained"
@@ -576,10 +499,18 @@ const styles: any = {
     marginBottom: 12,
   },
   weekdayRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   weekdayButtons: {
     marginHorizontal: -4,
+  },
+  dayButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    marginVertical: 4,
+    minWidth: 60,
   },
   timeContainer: {
     flexDirection: 'row',
@@ -587,23 +518,6 @@ const styles: any = {
   },
   timeInput: {
     flex: 1,
-  },
-  ageContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  ageInput: {
-    flex: 1,
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  switchLabel: {
-    color: '#fff',
-    fontSize: 16,
   },
   actionsContainer: {
     gap: 12,

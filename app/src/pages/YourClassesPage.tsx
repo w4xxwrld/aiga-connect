@@ -130,12 +130,14 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderLeft}>
               <Text style={styles.className}>{classItem.name}</Text>
-              <View style={styles.difficultyBadge}>
+              <View
+                style={[
+                  styles.difficultyBadge,
+                  { backgroundColor: getDifficultyColor(classItem.difficulty_level) },
+                ]}
+              >
                 <Text style={styles.difficultyText}>
-                  {classItem.difficulty_level === 'beginner' && 'Начинающий'}
-                  {classItem.difficulty_level === 'intermediate' &&
-                    'Средний'}
-                  {classItem.difficulty_level === 'advanced' && 'Продвинутый'}
+                  {classesService.getDifficultyDisplayName(classItem.difficulty_level)}
                 </Text>
               </View>
             </View>
@@ -146,6 +148,12 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             />
           </View>
 
+          {classItem.description && (
+            <Text style={styles.classDescription} numberOfLines={2}>
+              {classItem.description}
+            </Text>
+          )}
+
           <View style={styles.classInfo}>
             <View style={styles.infoRow}>
               <MaterialCommunityIcons
@@ -154,7 +162,7 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
                 color="#B0BEC5"
               />
               <Text style={styles.infoText}>
-                {classesService.formatDayOfWeek(classItem.day_of_week)}
+                {classItem.days_of_week?.filter(day => day).map(day => classesService.formatDayOfWeek(day)).join(', ') || 'Не указано'}
               </Text>
             </View>
 
@@ -285,6 +293,19 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
         </Card.Content>
       </Card>
     ));
+  };
+
+  const getDifficultyColor = (difficulty: string): string => {
+    switch (difficulty) {
+      case 'beginner':
+        return '#4CAF50';
+      case 'amateur':
+        return '#FF9800';
+      case 'professional':
+        return '#F44336';
+      default:
+        return '#757575';
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -509,7 +530,6 @@ const styles = StyleSheet.create({
   },
   difficultyBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#3498DB',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -529,6 +549,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '500',
+  },
+  classDescription: {
+    color: '#B0BEC5',
+    fontSize: 14,
+    marginBottom: 12,
+    marginTop: 8,
   },
   classInfo: {
     gap: 8,

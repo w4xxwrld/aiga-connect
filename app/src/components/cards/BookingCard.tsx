@@ -32,9 +32,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <Text style={styles.bookingDate}>
               {bookingsService.formatDate(booking.class_date)}
             </Text>
-            <Text style={styles.bookingType}>
-              {bookingsService.getBookingTypeDisplayName(booking.booking_type)}
-            </Text>
           </View>
           <View style={styles.bookingMeta}>
             <Badge
@@ -58,7 +55,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-child" size={16} color="#E74C3C" />
               <Text style={[styles.detailText, { color: '#FFFFFF', fontWeight: '600' }]}>
-                Спортсмен: {booking.athlete.full_name}
+                Спортсмен: {booking.athlete.first_name} {booking.athlete.last_name}
               </Text>
             </View>
           )}
@@ -67,16 +64,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-child" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Спортсмен: {booking.athlete.full_name}
-              </Text>
-            </View>
-          )}
-
-          {userRole === 'coach' && booking.booked_by_parent && (
-            <View style={styles.detailRow}>
-              <MaterialCommunityIcons name="account" size={16} color="#E74C3C" />
-              <Text style={styles.detailText}>
-                Забронировал: {booking.booked_by_parent.full_name}
+                Спортсмен: {booking.athlete.first_name} {booking.athlete.last_name}
               </Text>
             </View>
           )}
@@ -85,7 +73,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-tie" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Тренер: {booking.class_obj.coach.full_name}
+                Тренер: {booking.class_obj.coach.first_name} {booking.class_obj.coach.last_name}
               </Text>
             </View>
           )}
@@ -196,10 +184,6 @@ const styles = StyleSheet.create({
     color: '#E74C3C',
     fontSize: 14,
     marginBottom: 2,
-  },
-  bookingType: {
-    color: '#fff',
-    fontSize: 12,
   },
   bookingMeta: {
     alignItems: 'flex-end',

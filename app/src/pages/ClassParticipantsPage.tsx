@@ -22,15 +22,14 @@ import { Class } from '../services/classes';
 
 interface ClassParticipant {
   id: number;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   birth_date: string;
-  booking_type: string;
   booking_status: string;
   class_date: string;
   is_paid: boolean;
   payment_amount?: number;
   notes?: string;
-  booked_by_parent?: string;
 }
 
 interface ClassParticipantsPageProps {
@@ -81,7 +80,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
   const handleApproveBooking = async (participant: ClassParticipant) => {
     Alert.alert(
       'Подтвердить запись',
-      `Подтвердить запись ${participant.full_name} на занятие?`,
+      `Подтвердить запись ${participant.first_name} ${participant.last_name} на занятие?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -103,7 +102,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
   const handleDeclineBooking = async (participant: ClassParticipant) => {
     Alert.alert(
       'Отклонить запись',
-      `Отклонить запись ${participant.full_name}?`,
+      `Отклонить запись ${participant.first_name} ${participant.last_name}?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -129,7 +128,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
     // Filter by search query
     if (searchQuery.trim()) {
       filtered = filtered.filter(participant =>
-        participant.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+        `${participant.first_name} ${participant.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -158,15 +157,6 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
       case 'cancelled': return 'Отменено';
       case 'completed': return 'Завершено';
       default: return status;
-    }
-  };
-
-  const getBookingTypeDisplayName = (type: string): string => {
-    switch (type) {
-      case 'regular': return 'Обычное';
-      case 'trial': return 'Пробное';
-      case 'makeup': return 'Компенсационное';
-      default: return type;
     }
   };
 
@@ -205,12 +195,12 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
       <Card.Content>
         <View style={styles.participantHeader}>
           <View style={styles.participantInfo}>
-            <Title style={styles.participantName}>{participant.full_name}</Title>
+            <Title style={styles.participantName}>{participant.first_name} {participant.last_name}</Title>
             <Text style={styles.participantAge}>
               {calculateAge(participant.birth_date)} лет
             </Text>
           </View>
-          <Badge 
+          <Badge
             style={[styles.statusBadge, { backgroundColor: getStatusColor(participant.booking_status) }]}
           >
             {getStatusDisplayName(participant.booking_status)}
@@ -223,14 +213,6 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
             <Text style={styles.detailLabel}>Дата занятия:</Text>
             <Text style={styles.detailValue}>
               {formatDate(participant.class_date)} в {formatTime(participant.class_date)}
-            </Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="bookmark" size={16} color="#E74C3C" />
-            <Text style={styles.detailLabel}>Тип записи:</Text>
-            <Text style={styles.detailValue}>
-              {getBookingTypeDisplayName(participant.booking_type)}
             </Text>
           </View>
 

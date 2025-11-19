@@ -30,15 +30,14 @@ interface ClassDetailPageProps {
 
 interface ClassParticipant {
   id: number;
-  full_name: string;
+  first_name: string;
+  last_name: string;
   birth_date: string;
-  booking_type: string;
   booking_status: string;
   class_date: string;
   is_paid: boolean;
   payment_amount?: number;
   notes?: string;
-  booked_by_parent?: string;
 }
 
 const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) => {
@@ -142,9 +141,9 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
             <View style={styles.infoSection}>
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons name="calendar" size={20} color="#E74C3C" />
-                <Text style={styles.infoLabel}>День недели:</Text>
+                <Text style={styles.infoLabel}>Дни недели:</Text>
                 <Text style={styles.infoValue}>
-                  {classesService.formatDayOfWeek(classData.day_of_week)}
+                  {classData.days_of_week?.filter(day => day).map(day => classesService.formatDayOfWeek(day)).join(', ') || 'Не указано'}
                 </Text>
               </View>
 
@@ -168,24 +167,9 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
                 <MaterialCommunityIcons name="account-tie" size={20} color="#E74C3C" />
                 <Text style={styles.infoLabel}>Тренер:</Text>
                 <Text style={styles.infoValue}>
-                  {classData.coach?.full_name || `ID: ${classData.coach_id}`}
+                  {classData.coach ? `${classData.coach.first_name} ${classData.coach.last_name}` : `ID: ${classData.coach_id}`}
                 </Text>
               </View>
-
-              {(classData.age_group_min || classData.age_group_max) && (
-                <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="account-group" size={20} color="#E74C3C" />
-                  <Text style={styles.infoLabel}>Возраст:</Text>
-                  <Text style={styles.infoValue}>
-                    {classData.age_group_min && classData.age_group_max 
-                      ? `${classData.age_group_min}-${classData.age_group_max} лет`
-                      : classData.age_group_min 
-                        ? `от ${classData.age_group_min} лет`
-                        : `до ${classData.age_group_max} лет`
-                    }
-                  </Text>
-                </View>
-              )}
 
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons name="account-multiple" size={20} color="#E74C3C" />
@@ -196,15 +180,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons name="currency-usd" size={20} color="#E74C3C" />
                 <Text style={styles.infoLabel}>Стоимость:</Text>
-                <Text style={styles.infoValue}>{classData.price_per_class} ₸</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="check-circle" size={20} color="#E74C3C" />
-                <Text style={styles.infoLabel}>Пробные занятия:</Text>
-                <Text style={styles.infoValue}>
-                  {classData.is_trial_available ? 'Доступны' : 'Недоступны'}
-                </Text>
+                <Text style={styles.infoValue}>{classData.price} ₸</Text>
               </View>
             </View>
           </Card.Content>
@@ -226,7 +202,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
                 .map((participant, index) => (
                   <View key={participant.id} style={styles.participantRow}>
                     <View style={styles.participantInfo}>
-                      <Text style={styles.participantName}>{participant.full_name}</Text>
+                      <Text style={styles.participantName}>{participant.first_name} {participant.last_name}</Text>
                       <Text style={styles.participantAge}>
                         {calculateAge(participant.birth_date)} лет
                       </Text>
@@ -302,8 +278,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
 const getDifficultyColor = (difficulty: string): string => {
   switch (difficulty) {
     case 'beginner': return '#4CAF50';
-    case 'intermediate': return '#FF9800';
-    case 'advanced': return '#F44336';
+    case 'amateur': return '#FF9800';
+    case 'professional': return '#F44336';
     default: return '#757575';
   }
 };

@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from typing import Optional, List
+from sqlalchemy import select, func, or_
+from typing import Optional, List, Tuple
 from datetime import date
 
 from app.users import models, schemas
@@ -145,3 +145,75 @@ async def get_users_by_phones(
         stmt = models.User.filter_active(stmt)
     result = await db.execute(stmt)
     return result.scalars().all()
+
+
+async def get_users_by_role(
+    db: AsyncSession,
+    role: models.UserRole,
+    include_deleted: bool = False
+) -> List[models.User]:
+    """Get all users with a specific role"""
+    stmt = select(models.User).where(models.User.primary_role == role)
+    if not include_deleted:
+        stmt = models.User.filter_active(stmt)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+async def get_users_with_filters(
+    db: AsyncSession,
+    filters: schemas.UserListFilters
+) -> Tuple[List[models.User], int]:
+    """
+    Get users with filtering and pagination.
+    Returns tuple of (users_list, total_count)
+    """
+    # Build base query
+    stmt = select(models.User)
+    count_stmt = select(func.count()).select_from(models.User)
+
+    # Apply filters
+    conditions = []
+
+    if filters.role:
+        conditions.append(models.User.primary_role == filters.role)
+
+    if filters.role_status:
+        conditions.append(models.User.role_status == filters.role_status)
+
+    if filters.search:
+        search_pattern = f"%{filters.search}%"
+        conditions.append(
+            or_(
+                models.User.first_name.ilike(search_pattern),
+                models.User.last_name.ilike(search_pattern),
+                models.User.phone.ilike(search_pattern),
+                models.User.email.ilike(search_pattern)
+            )
+        )
+
+    # Apply conditions to both queries
+    if conditions:
+        stmt = stmt.where(*conditions)
+        count_stmt = count_stmt.where(*conditions)
+
+    # Apply soft delete filter
+    if not filters.include_deleted:
+        stmt = models.User.filter_active(stmt)
+        count_stmt = models.User.filter_active(count_stmt)
+
+    # Get total count
+    total_result = await db.execute(count_stmt)
+    total = total_result.scalar()
+
+    # Apply ordering
+    stmt = stmt.order_by(models.User.created_at.desc())
+
+    # Apply pagination
+    stmt = stmt.offset(filters.skip).limit(filters.limit)
+
+    # Execute query
+    result = await db.execute(stmt)
+    users = result.scalars().all()
+
+    return users, total
