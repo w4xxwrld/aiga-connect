@@ -55,31 +55,53 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
 
     setLoading(true);
     try {
-      console.log('🔵 [OTP] Verifying OTP and logging in for phone:', phoneNumber);
+      console.log('🔵 [OTP] Verifying OTP for phone:', phoneNumber);
 
-      // Verify OTP AND authenticate user (this will only succeed if OTP is valid)
-      const authResponse = await authService.verifyOTPAndLogin(phoneNumber, otpCode);
-      console.log('🟢 [OTP] Authentication successful, tokens received');
+      // Verify OTP (will return tokens if existing user, or requires_role_selection if new user)
+      const verifyResponse = await authService.verifyOTP(phoneNumber, otpCode);
+      console.log('🟢 [OTP] OTP verified successfully:', verifyResponse);
 
-      // Now get the authenticated user data
-      const userData = await authService.getCurrentUser();
-      console.log('🟢 [OTP] User data retrieved:', userData);
+      // Check if this is an existing user (has tokens) or new user (needs role selection)
+      if (verifyResponse.access_token && verifyResponse.refresh_token) {
+        // Existing user - tokens are already stored by authService.verifyOTP
+        console.log('✅ [OTP] Existing user logged in, fetching user data');
 
-      if (userData) {
-        // Set user data which will trigger navigation
-        setUser(userData);
-        console.log('✅ [OTP] User authenticated and logged in successfully');
+        // Get the authenticated user data
+        const userData = await authService.getCurrentUser();
+        console.log('🟢 [OTP] User data retrieved:', userData);
 
-        // Navigate to MainTabs
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' as never }],
-        });
+        if (userData) {
+          // Set user data which will trigger navigation
+          setUser(userData);
+          console.log('✅ [OTP] User authenticated and logged in successfully');
+
+          // Navigate to MainTabs
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' as never }],
+          });
+        } else {
+          throw new Error('Failed to get user data after authentication');
+        }
+      } else if (verifyResponse.requires_role_selection) {
+        // New user - navigate to role selection
+        console.log('🔵 [OTP] New user, navigating to role selection');
+
+        // For registration flow, navigate to role selection
+        if (isRegistration) {
+          navigation.navigate('RoleSelection', { phoneNumber });
+        } else {
+          // If this is login but user doesn't exist, show error
+          Alert.alert(
+            'Пользователь не найден',
+            'Этот номер телефона не зарегистрирован. Пожалуйста, зарегистрируйтесь.'
+          );
+        }
       } else {
-        throw new Error('Failed to get user data after authentication');
+        throw new Error('Unexpected response from OTP verification');
       }
     } catch (error: any) {
-      console.error('🔴 [OTP] Verification/Login error:', error);
+      console.error('🔴 [OTP] Verification error:', error);
       let errorMessage = 'Не удалось подтвердить код';
       let errorTitle = 'Ошибка верификации';
 

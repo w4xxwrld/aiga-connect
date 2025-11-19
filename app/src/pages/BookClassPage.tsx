@@ -21,9 +21,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
 import classesService from '../services/classes';
 import bookingsService from '../services/bookings';
-import childrenService from '../services/children';
 import { Class } from '../services/classes';
-import { Child } from '../services/children';
 
 interface BookClassPageProps {
   navigation: any;
@@ -40,8 +38,6 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
   
   // State
   const [classData, setClassData] = useState<Class | null>(null);
-  const [children, setChildren] = useState<Child[]>([]);
-  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [bookingType, setBookingType] = useState<'regular' | 'trial' | 'makeup'>('regular');
   const [classDate, setClassDate] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
@@ -56,26 +52,15 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // Load class data
       const classInfo = await classesService.getClass(classId);
       setClassData(classInfo);
-      
-      // Load children if user is a parent
-      if (userRole === 'parent') {
-        const childrenData = await childrenService.getMyChildren();
-        setChildren(childrenData);
-        
-        // Auto-select first child if available
-        if (childrenData.length > 0) {
-          setSelectedChild(childrenData[0]);
-        }
-      }
-      
+
       // Set default class date to next occurrence
       const nextClassDate = getNextClassDate(classInfo);
       setClassDate(nextClassDate);
-      
+
     } catch (error: any) {
       console.error('Error loading data:', error);
       Alert.alert('Ошибка', error.message || 'Не удалось загрузить данные');
@@ -105,10 +90,6 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (userRole === 'parent' && !selectedChild) {
-      newErrors.child = 'Выберите ребенка для записи';
-    }
-
     if (!classDate) {
       newErrors.classDate = 'Выберите дату занятия';
     }
@@ -123,7 +104,7 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
     setBooking(true);
     try {
       const bookingData = {
-        athlete_id: userRole === 'parent' ? selectedChild!.id : user.id,
+        athlete_id: user.id,
         class_id: classId,
         booking_type: bookingType,
         class_date: classDate,
@@ -148,48 +129,6 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
     } finally {
       setBooking(false);
     }
-  };
-
-  const renderChildSelector = () => {
-    if (userRole !== 'parent' || children.length === 0) return null;
-
-    return (
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title style={styles.sectionTitle}>Выберите ребенка</Title>
-          {children.map((child) => (
-            <List.Item
-              key={child.id}
-              title={child.full_name}
-              description={`Возраст: ${childrenService.calculateAge(child.birth_date)} лет`}
-              titleStyle={styles.childName}
-              descriptionStyle={styles.childAge}
-              left={() => (
-                <Avatar.Text 
-                  size={40} 
-                  label={child.full_name.charAt(0)} 
-                  style={[
-                    styles.childAvatar,
-                    selectedChild?.id === child.id && styles.selectedChildAvatar
-                  ]}
-                />
-              )}
-              right={() => 
-                selectedChild?.id === child.id && (
-                  <MaterialCommunityIcons name="check-circle" size={24} color="#E74C3C" />
-                )
-              }
-              onPress={() => setSelectedChild(child)}
-              style={[
-                styles.childItem,
-                selectedChild?.id === child.id && styles.selectedChildItem
-              ]}
-            />
-          ))}
-          {errors.child && <HelperText type="error" visible={!!errors.child}>{errors.child}</HelperText>}
-        </Card.Content>
-      </Card>
-    );
   };
 
   const renderBookingForm = () => {
@@ -307,7 +246,6 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
       </View>
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {renderChildSelector()}
         {renderBookingForm()}
         
         <View style={styles.actionsContainer}>

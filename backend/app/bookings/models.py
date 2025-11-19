@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Enum as SqlEnum, ForeignKey, Dat
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.core.utils import get_utc_now
+from app.core.soft_delete import SoftDeleteMixin
 from enum import Enum
 
 class BookingStatus(str, Enum):
@@ -16,7 +17,7 @@ class IndividualTrainingStatus(str, Enum):
     declined = "declined"
     completed = "completed"
 
-class Booking(Base):
+class Booking(Base, SoftDeleteMixin):
     __tablename__ = "bookings"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -44,7 +45,7 @@ class Booking(Base):
     athlete = relationship("User", foreign_keys=[athlete_id])
     class_obj = relationship("Class", back_populates="bookings")
 
-class IndividualTrainingRequest(Base):
+class IndividualTrainingRequest(Base, SoftDeleteMixin):
     __tablename__ = "individual_training_requests"
 
     id = Column(Integer, primary_key=True, index=True)

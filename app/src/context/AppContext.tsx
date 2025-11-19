@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authService, { User } from '../services/auth';
-import childrenService, { Child } from '../services/children';
 
-type UserRole = 'parent' | 'athlete' | 'coach';
+type UserRole = 'athlete' | 'coach';
 
 interface AppContextType {
   hasSeenGreeting: boolean;
@@ -11,17 +10,13 @@ interface AppContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  linkedChildren: Child[];
-  isSidebarOpen: boolean;
   setHasSeenGreeting: (value: boolean) => void;
   setUserRole: (role: UserRole) => void;
   setUser: (user: User | null) => void;
   setIsAuthenticated: (value: boolean) => void;
-  setLinkedChildren: (children: Child[]) => void;
-  setIsSidebarOpen: (value: boolean) => void;
-  loadChildren: () => Promise<void>;
   resetApp: () => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -44,8 +39,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [linkedChildren, setLinkedChildren] = useState<Child[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     loadAppState();
@@ -61,29 +54,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       if (authenticated) {
         // Always try to get fresh user data from API first
         const freshUserData = await authService.getCurrentUser();
-        console.log('AppContext: Fresh user data from API:', freshUserData);
-        
+
         if (freshUserData) {
           setUser(freshUserData);
           setUserRole(freshUserData.primary_role);
-          
-          // Load children if user is a parent
-          if (freshUserData.primary_role === 'parent') {
-            await loadChildren();
-          }
         } else {
           // Fallback to stored data if API fails
           const userData = await authService.getUserData();
-          console.log('AppContext: Loaded user data from storage:', userData);
-          
+
           if (userData) {
             setUser(userData);
             setUserRole(userData.primary_role);
-            
-            // Load children if user is a parent
-            if (userData.primary_role === 'parent') {
-              await loadChildren();
-            }
           } else {
             // No valid user data, clear authentication
             console.log('AppContext: No valid user data, clearing auth');
@@ -109,7 +90,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setUserRole(null);
       setUser(null);
       setIsAuthenticated(false);
-      setLinkedChildren([]);
     } finally {
       setIsLoading(false);
     }
@@ -141,42 +121,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setUserRole(userData.primary_role);
       setIsAuthenticated(true);
       console.log('User set, isAuthenticated should be true now');
-      
-      // Load children if user is a parent
-      if (userData.primary_role === 'parent') {
-        await loadChildren();
-      }
     } else {
       setUser(null);
       setUserRole(null);
       setIsAuthenticated(false);
-      setLinkedChildren([]);
       console.log('User cleared, isAuthenticated should be false now');
-    }
-  };
-
-  const handleSetLinkedChildren = (childrenData: Child[]) => {
-    setLinkedChildren(childrenData);
-  };
-
-  const loadChildren = async () => {
-    try {
-      if (user?.primary_role === 'parent') {
-        const childrenData = await childrenService.getMyChildren();
-        setLinkedChildren(childrenData);
-        await AsyncStorage.setItem('children', JSON.stringify(childrenData));
-      }
-    } catch (error) {
-      console.error('Error loading children:', error);
-      // Try to load from storage as fallback
-      try {
-        const savedChildren = await AsyncStorage.getItem('children');
-        if (savedChildren) {
-          setLinkedChildren(JSON.parse(savedChildren));
-        }
-      } catch (storageError) {
-        console.error('Error loading children from storage:', storageError);
-      }
     }
   };
 
@@ -186,8 +135,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setUser(null);
       setUserRole(null);
       setIsAuthenticated(false);
-      setLinkedChildren([]);
-      
+
       // Don't manually navigate - let NavigationHandler handle it automatically
       console.log('Logging out, authentication state cleared');
     } catch (error) {
@@ -204,23 +152,30 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const freshUserData = await authService.getCurrentUser();
+      if (freshUserData) {
+        setUser(freshUserData);
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  };
+
   const value: AppContextType = {
     hasSeenGreeting,
     userRole,
     user,
     isAuthenticated,
     isLoading,
-    linkedChildren,
-    isSidebarOpen,
     setHasSeenGreeting: handleSetHasSeenGreeting,
     setUserRole: handleSetUserRole,
     setUser: handleSetUser,
     setIsAuthenticated,
-    setLinkedChildren: handleSetLinkedChildren,
-    setIsSidebarOpen,
-    loadChildren,
     resetApp,
     logout: handleLogout,
+    refreshUser,
   };
 
   return (

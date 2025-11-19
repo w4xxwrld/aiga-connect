@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,13 +20,12 @@ import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Layout from '../components/Layout';
-import Sidebar from '../components/Sidebar';
 import EmptyState from '../components/EmptyState';
 import ClassCard from '../components/cards/ClassCard';
 
 const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
-  const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
-  
+  const { user, userRole } = useAppContext();
+
   const [classes, setClasses] = useState<Class[]>([]);
   const [filteredClasses, setFilteredClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,10 +126,6 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     navigation?.navigate('BookClass', { classId: classItem.id });
   };
 
-  const handleSidebarClose = useCallback(() => {
-    setIsSidebarOpen(false);
-  }, [setIsSidebarOpen]);
-
   const renderClassCard = (classItem: Class) => (
     <ClassCard
       key={classItem.id}
@@ -161,9 +156,8 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   };
 
   return (
-    <Layout 
+    <Layout
       title={getHeaderTitle()}
-      onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
     >
       
       {userRole === 'coach' && (
@@ -249,12 +243,6 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           />
         )}
       </ScrollView>
-
-      {/* Sidebar */}
-      <Sidebar
-        isVisible={isSidebarOpen}
-        onClose={handleSidebarClose}
-      />
     </Layout>
   );
 };

@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Enum as SqlEnum, Date, ForeignKe
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.core.utils import get_utc_now
+from app.core.soft_delete import SoftDeleteMixin
 from enum import Enum
 
 class UserRole(str, Enum):
@@ -16,7 +17,7 @@ class RoleStatus(str, Enum):
     declined = "declined"
 
 
-class User(Base):
+class User(Base, SoftDeleteMixin):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)

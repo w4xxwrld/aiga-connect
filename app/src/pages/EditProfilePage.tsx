@@ -34,7 +34,7 @@ const EditProfilePage: React.FC<EditProfilePageProps> = ({ navigation }) => {
   const [phone, setPhone] = useState(user?.phone || '');
   const [birthDate, setBirthDate] = useState(user?.birth_date ? new Date(user.birth_date) : new Date());
   const [emergencyContact, setEmergencyContact] = useState(user?.emergency_contact || '');
-  
+
   // UI state
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -122,7 +122,7 @@ const EditProfilePage: React.FC<EditProfilePageProps> = ({ navigation }) => {
         setUser(updatedUser);
         Alert.alert(
           'Успешно',
-          'Профиль обновлен (изменения сохранены локально)',
+          'Профиль успешно обновлен',
           [
             {
               text: 'OK',

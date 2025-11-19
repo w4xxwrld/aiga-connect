@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Enum as SqlEnum, ForeignKey, Dat
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.core.utils import get_utc_now
+from app.core.soft_delete import SoftDeleteMixin
 from enum import Enum
 
 class DifficultyLevel(str, Enum):
@@ -9,7 +10,7 @@ class DifficultyLevel(str, Enum):
     amateur = "amateur"
     professional = "professional"
 
-class Class(Base):
+class Class(Base, SoftDeleteMixin):
     __tablename__ = "classes"
 
     id = Column(Integer, primary_key=True, index=True)

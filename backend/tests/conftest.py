@@ -75,7 +75,6 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 def sample_user_data():
     """Sample user data for testing."""
     return {
-        "iin": "123456789012",
         "full_name": "Test User",
         "email": "test@example.com",
         "phone": "+77012345678",
@@ -91,7 +90,6 @@ def sample_user_data():
 def sample_coach_data():
     """Sample coach data for testing."""
     return {
-        "iin": "987654321098",
         "full_name": "Test Coach",
         "email": "coach@example.com",
         "phone": "+77012345679",

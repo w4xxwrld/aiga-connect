@@ -21,10 +21,10 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 WORKDIR /app
 
 # Копировать только зависимости (для кэширования)
-COPY backend/pyproject.toml backend/poetry.lock* /app/
+COPY backend/pyproject.toml /app/
 
-# Установить зависимости
-RUN /opt/poetry/bin/poetry install --only main --no-cache
+# Установить зависимости (без lock file)
+RUN /opt/poetry/bin/poetry install --only main --no-cache --no-root
 
 
 # ============================================================

@@ -2,8 +2,9 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Date
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.core.utils import get_utc_now
+from app.core.soft_delete import SoftDeleteMixin
 
-class Attendance(Base):
+class Attendance(Base, SoftDeleteMixin):
     __tablename__ = "attendance"
 
     id = Column(Integer, primary_key=True, index=True)

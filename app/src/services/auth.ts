@@ -13,10 +13,11 @@ export interface User {
   roles: ('parent' | 'athlete' | 'coach')[];
   is_head_coach: boolean;
   created_at: string;
+  photo_url?: string;
 }
 
 export interface LoginData {
-  phone: string;
+  phone_number: string;
   password: string;
 }
 
@@ -66,6 +67,11 @@ export interface VerifyOTPResponse {
   success: boolean;
   message: string;
   phone_number: string;
+  requires_role_selection?: boolean;
+  access_token?: string;
+  refresh_token?: string;
+  role?: string;
+  role_status?: string;
 }
 
 export interface LoginValidationResponse {
@@ -75,28 +81,6 @@ export interface LoginValidationResponse {
 }
 
 class AuthService {
-  async validateLogin(loginData: LoginData): Promise<LoginValidationResponse> {
-    try {
-      console.log('🔵 [AUTH] Validating login credentials');
-      const response = await api.post('/users/validate-login', loginData);
-      console.log('🟢 [AUTH] Credentials validated:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('🔴 [AUTH] Validation error:', error);
-
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      if (error.response?.data?.message) {
-        throw new Error(error.response.data.message);
-      }
-      if (error.message) {
-        throw new Error(error.message);
-      }
-      throw new Error('Invalid phone number or password');
-    }
-  }
-
   async login(loginData: LoginData): Promise<AuthResponse> {
     try {
       const response = await api.post('/users/login', loginData);
@@ -209,6 +193,15 @@ class AuthService {
         data: response.data
       });
 
+      // If response includes tokens (existing user), store them
+      if (response.data.access_token && response.data.refresh_token) {
+        console.log('✅ [AUTH] User logged in, storing tokens');
+        await Promise.all([
+          SecureStore.setItemAsync('authToken', response.data.access_token),
+          SecureStore.setItemAsync('refreshToken', response.data.refresh_token),
+        ]);
+      }
+
       return response.data;
     } catch (error: any) {
       console.error('🔴 [AUTH] VerifyOTP ERROR:', {
@@ -219,7 +212,7 @@ class AuthService {
         responseData: error.response?.data
       });
 
-      if (error.response?.status === 400) {
+      if (error.response?.status === 400 || error.response?.status === 401) {
         const detail = error.response?.data?.detail;
         if (detail) {
           throw new Error(detail);
@@ -229,63 +222,6 @@ class AuthService {
         throw new Error('Слишком много попыток. Попробуйте позже.');
       }
       throw new Error('Не удалось подтвердить код. Попробуйте снова.');
-    }
-  }
-
-  async verifyOTPAndLogin(phoneNumber: string, code: string): Promise<AuthResponse> {
-    try {
-      console.log('🔵 [AUTH] VerifyOTPAndLogin REQUEST:', {
-        timestamp: new Date().toISOString(),
-        endpoint: '/users/verify-otp-and-login',
-        method: 'POST',
-        phoneNumber: phoneNumber,
-        codeLength: code.length
-      });
-
-      const response = await api.post('/users/verify-otp-and-login', {
-        phone_number: phoneNumber,
-        code: code
-      });
-
-      console.log('🟢 [AUTH] VerifyOTPAndLogin RESPONSE:', {
-        timestamp: new Date().toISOString(),
-        status: response.status,
-        hasAccessToken: !!response.data.access_token,
-        hasRefreshToken: !!response.data.refresh_token
-      });
-
-      const { access_token, refresh_token } = response.data;
-
-      // Store tokens securely
-      await Promise.all([
-        SecureStore.setItemAsync('authToken', access_token),
-        SecureStore.setItemAsync('refreshToken', refresh_token),
-      ]);
-
-      console.log('✅ [AUTH] Tokens stored successfully');
-
-      return response.data;
-    } catch (error: any) {
-      console.error('🔴 [AUTH] VerifyOTPAndLogin ERROR:', {
-        timestamp: new Date().toISOString(),
-        phoneNumber: phoneNumber,
-        errorMessage: error.message,
-        responseStatus: error.response?.status,
-        responseData: error.response?.data
-      });
-
-      if (error.response?.status === 400) {
-        const detail = error.response?.data?.detail;
-        if (detail) {
-          throw new Error(detail);
-        }
-        throw new Error('Неверный или истекший код верификации.');
-      } else if (error.response?.status === 401) {
-        throw new Error('Код верификации не подтвержден.');
-      } else if (error.response?.status === 429) {
-        throw new Error('Слишком много попыток. Попробуйте позже.');
-      }
-      throw new Error('Не удалось войти. Попробуйте снова.');
     }
   }
 
@@ -369,14 +305,28 @@ class AuthService {
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await api.get('/users/me');
-      const userData = response.data;
-      console.log('Current user data received:', userData);
+      const backendUser = response.data;
+
+      // Convert backend response to frontend User format
+      const userData: User = {
+        id: backendUser.id,
+        iin: backendUser.iin || '',
+        full_name: `${backendUser.first_name} ${backendUser.last_name}`,
+        email: backendUser.email,
+        phone: backendUser.phone,
+        birth_date: backendUser.birth_date,
+        emergency_contact: backendUser.emergency_contact || '',
+        primary_role: backendUser.primary_role,
+        roles: [backendUser.primary_role],
+        is_head_coach: backendUser.is_head_coach || false,
+        created_at: backendUser.created_at,
+        photo_url: backendUser.photo_url,
+      };
+
       await this.storeUserData(userData);
       return userData;
     } catch (error: any) {
       console.error('Error fetching current user:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
 
       // If token is invalid, clear stored data
       if (error.response?.status === 401) {
@@ -394,26 +344,59 @@ class AuthService {
     emergency_contact?: string;
   }): Promise<User> {
     try {
-      // Since backend doesn't have update endpoint, we'll update locally
       // Get current user data
       const currentUser = await this.getCurrentUser();
       if (!currentUser) {
         throw new Error('User not found');
       }
 
-      // Create updated user object
-      const updatedUser: User = {
-        ...currentUser,
-        ...updateData,
+      // Split full_name into first_name and last_name
+      let first_name = currentUser.full_name.split(' ')[0];
+      let last_name = currentUser.full_name.split(' ').slice(1).join(' ');
+
+      if (updateData.full_name) {
+        const nameParts = updateData.full_name.trim().split(' ');
+        first_name = nameParts[0] || first_name;
+        last_name = nameParts.slice(1).join(' ') || last_name;
+      }
+
+      // Prepare data for backend (UserCreate schema)
+      const backendUpdateData = {
+        phone: updateData.phone || currentUser.phone || '',
+        first_name,
+        last_name,
+        email: updateData.email || currentUser.email,
+        birth_date: updateData.birth_date || currentUser.birth_date,
+        primary_role: currentUser.primary_role,
+        photo_url: currentUser.photo_url || null,
       };
 
-      // Store updated user data locally
+      console.log('Updating profile with data:', backendUpdateData);
+
+      // Call backend API to update profile
+      const response = await api.put('/users/me', backendUpdateData);
+      const updatedBackendUser = response.data;
+
+      // Convert backend response to frontend User format
+      const updatedUser: User = {
+        ...currentUser,
+        full_name: `${updatedBackendUser.first_name} ${updatedBackendUser.last_name}`,
+        email: updatedBackendUser.email,
+        phone: updatedBackendUser.phone,
+        birth_date: updatedBackendUser.birth_date,
+        photo_url: updatedBackendUser.photo_url,
+        // Keep emergency_contact locally since backend doesn't support it
+        emergency_contact: updateData.emergency_contact || currentUser.emergency_contact,
+      };
+
+      // Store updated user data
       await this.storeUserData(updatedUser);
 
-      console.log('Profile updated locally:', updatedUser);
+      console.log('Profile updated successfully:', updatedUser);
       return updatedUser;
     } catch (error: any) {
       console.error('Error updating profile:', error);
+      console.error('Error response:', error.response?.data);
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
       }
@@ -533,6 +516,62 @@ class AuthService {
         throw new Error(error.response.data.detail);
       }
       throw new Error('Failed to get all users');
+    }
+  }
+
+  async uploadPhoto(uri: string, fileType: string): Promise<string> {
+    try {
+      console.log('Uploading photo:', { uri, fileType });
+
+      // Create FormData
+      const formData = new FormData();
+
+      // For React Native, we need to append the file as an object with uri, type, and name
+      const filename = uri.split('/').pop() || 'photo.jpg';
+
+      formData.append('file', {
+        uri,
+        type: fileType,
+        name: filename,
+      } as any);
+
+      // Send to backend
+      const response = await api.put('/users/me/photo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('Photo upload response:', response.data);
+
+      // Return the photo URL
+      return response.data.photo_url;
+    } catch (error: any) {
+      console.error('Photo upload error:', error);
+      console.error('Error response:', error.response?.data);
+
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Failed to upload photo');
+    }
+  }
+
+  async deletePhoto(): Promise<void> {
+    try {
+      console.log('Deleting photo...');
+
+      await api.delete('/users/me/photo');
+
+      console.log('Photo deleted successfully');
+    } catch (error: any) {
+      console.error('Photo delete error:', error);
+      console.error('Error response:', error.response?.data);
+
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Failed to delete photo');
     }
   }
 }

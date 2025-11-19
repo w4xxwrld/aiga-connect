@@ -20,7 +20,6 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
 import Layout from '../components/Layout';
-import Sidebar from '../components/Sidebar';
 import authService from '../services/auth';
 import { setBackendUrl, getBackendUrl } from '../config/backend';
 import EmptyState from '../components/EmptyState';
@@ -40,7 +39,7 @@ interface User {
 }
 
 const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
-  const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
+  const { user, userRole } = useAppContext();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -149,7 +148,6 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
     return (
       <Layout
         title="Управление пользователями"
-        onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
       >
         <View style={styles.accessDenied}>
           <MaterialCommunityIcons name="shield-alert" size={64} color="#E74C3C" />
@@ -165,7 +163,6 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
   return (
     <Layout
       title="Управление пользователями"
-      onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
     >
       <Searchbar
         placeholder="Поиск пользователей..."
@@ -295,8 +292,6 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
           />
         )}
       </ScrollView>
-
-      <Sidebar isVisible={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </Layout>
   );
 };

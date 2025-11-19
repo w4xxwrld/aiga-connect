@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer
 from app.deps import get_db
 from app.users.router import router as users_router
 from app.classes.router import router as classes_router
@@ -9,6 +10,12 @@ from app import models  # Import models to ensure they are registered
 from app.core.middleware import error_handler_middleware, logging_middleware
 from app.config import settings
 from sqlalchemy import select
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Security scheme for Swagger UI
+security = HTTPBearer()
 
 app = FastAPI(
     title="AIGA Connect API",

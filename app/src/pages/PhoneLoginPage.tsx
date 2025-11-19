@@ -10,10 +10,11 @@ import {
   Dimensions,
   StatusBar,
   TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import { Button, HelperText } from 'react-native-paper';
 import authService from '../services/auth';
-import CountryPicker, { Country, CountryCode } from 'react-native-country-picker-modal';
+import CountrySelect, { ICountry } from 'react-native-country-select';
 import parsePhoneNumberFromString, { isValidPhoneNumber } from 'libphonenumber-js';
 import {OtpInput} from "react-native-otp-entry";
 
@@ -28,13 +29,19 @@ export const PhoneLoginPage: React.FC<PhoneLoginPageProps> = ({ navigation }) =>
    const [error, setError] = useState<string>('');
    const [loading, setLoading] = useState<boolean>(false);
    const [isValid, setIsValid] = useState<boolean>(false);
-   const [countryCode, setCountryCode] = useState<CountryCode>('KZ');
+   const [showCountryPicker, setShowCountryPicker] = useState<boolean>(false);
+   const [selectedCountry, setSelectedCountry] = useState<ICountry | null>(null);
+   const [countryCode, setCountryCode] = useState<string>('KZ');
    const [callingCode, setCallingCode] = useState('+7');
    const [code, setCode] = useState<string>('');
 
-   const handleSelect = (country: Country) => {
-      setCountryCode(country.cca2 as CountryCode);
-      setCallingCode(`+${country.callingCode[0]}`);
+   const handleCountrySelect = (country: ICountry) => {
+      setSelectedCountry(country);
+      setCountryCode(country.cca2);
+      // Get the first calling code from the country
+      const dialCode = country.idd?.root + (country.idd?.suffixes?.[0] || '');
+      setCallingCode(dialCode || '+7');
+      setShowCountryPicker(false);
    };
 
    const handleChange = (text: string) => {
@@ -84,14 +91,12 @@ export const PhoneLoginPage: React.FC<PhoneLoginPageProps> = ({ navigation }) =>
 
          <View style={styles.formContainer}>
            <View style={styles.phoneInputContainer}>
-             <CountryPicker
-               countryCode={countryCode}
-               withFilter
-               withFlag
-               withCallingCode
-               onSelect={handleSelect}
-               containerButtonStyle={styles.countryPickerButton}
-             />
+             <TouchableOpacity
+               onPress={() => setShowCountryPicker(true)}
+               style={styles.countryPickerButton}
+             >
+               <Text style={styles.countryCodeText}>{countryCode}</Text>
+             </TouchableOpacity>
              <Text style={styles.callingCode}>{callingCode}</Text>
              <TextInput
                style={[
@@ -106,6 +111,12 @@ export const PhoneLoginPage: React.FC<PhoneLoginPageProps> = ({ navigation }) =>
                autoFocus={false}
              />
            </View>
+
+           <CountrySelect
+             visible={showCountryPicker}
+             onClose={() => setShowCountryPicker(false)}
+             onSelect={handleCountrySelect}
+           />
 
             ${code && (
                  <View style={{ padding: 20 }}>
@@ -206,6 +217,14 @@ const styles = StyleSheet.create({
   },
   countryPickerButton: {
     marginRight: 8,
+    padding: 8,
+    backgroundColor: '#34495E',
+    borderRadius: 4,
+  },
+  countryCodeText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   callingCode: {
     fontSize: 16,

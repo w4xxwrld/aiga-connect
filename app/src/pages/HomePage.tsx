@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,21 +17,18 @@ import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
 import bookingsService, { Booking } from '../services/bookings';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Sidebar from '../components/Sidebar';
 import Layout from '../components/Layout';
 import api from '../services/api';
-import tournamentsService, { Tournament } from '../services/tournaments';
 import StatCard from '../components/StatCard';
 import EmptyState from '../components/EmptyState';
 
 const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
-  const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
-  
+  const { user, userRole } = useAppContext();
+
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [recentClasses, setRecentClasses] = useState<Class[]>([]);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
-  const [upcomingTournaments, setUpcomingTournaments] = useState([]);
   const [stats, setStats] = useState({
     totalClasses: 0,
     totalBookings: 0,
@@ -45,18 +42,16 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const loadHomeData = async () => {
     try {
       setLoading(true);
-      
-      // Load classes, bookings, and tournaments in parallel
-      const [classesData, bookingsData, tournamentsData] = await Promise.all([
+
+      // Load classes and bookings in parallel
+      const [classesData, bookingsData] = await Promise.all([
         classesService.getClasses().catch(() => []),
-        bookingsService.getMyBookings().catch(() => []),
-        api.get('/progress/tournaments/upcoming').catch(() => ({ data: [] }))
+        bookingsService.getMyBookings().catch(() => [])
       ]);
 
       setRecentClasses(classesData.slice(0, 3));
       setRecentBookings(bookingsData.slice(0, 3));
-      setUpcomingTournaments(tournamentsData.data?.slice(0, 3) || []);
-      
+
       setStats({
         totalClasses: classesData.length,
         totalBookings: bookingsData.length,
@@ -75,10 +70,6 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  const handleSidebarClose = useCallback(() => {
-    setIsSidebarOpen(false);
-  }, [setIsSidebarOpen]);
-
   const renderWelcomeSection = () => (
     <Card style={styles.welcomeCard}>
       <Card.Content>
@@ -88,7 +79,6 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               Добро пожаловать{user?.full_name ? `, ${user.full_name}` : ''}! 👋
             </Title>
             <Text style={styles.welcomeSubtitle}>
-              {userRole === 'parent' && 'Управляйте тренировками ваших детей'}
               {userRole === 'athlete' && 'Отслеживайте свой прогресс'}
               {userRole === 'coach' && 'Управляйте тренировками и учениками'}
             </Text>
@@ -112,7 +102,7 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
         label="Записей"
       />
 
-      {(userRole === 'parent' || userRole === 'athlete') && (
+      {userRole === 'athlete' && (
         <StatCard
           icon="clock"
           value={stats.pendingBookings}
@@ -120,44 +110,6 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
         />
       )}
     </View>
-  );
-
-  const renderIncomingTournaments = () => (
-    <Card style={styles.sectionCard}>
-      <Card.Content>
-        <View style={styles.sectionHeader}>
-          <Title style={styles.sectionTitle}>Ближайшие турниры</Title>
-          <TouchableOpacity onPress={() => navigation?.navigate('Tournaments')}>
-            <Text style={styles.viewAllText}>Все турниры</Text>
-          </TouchableOpacity>
-        </View>
-        
-        {upcomingTournaments.length > 0 ? (
-          upcomingTournaments.map((tournament: any, index: number) => (
-            <TouchableOpacity
-              key={tournament.id || index}
-              style={styles.tournamentItem}
-              onPress={() => navigation?.navigate('Tournaments')}
-            >
-              <View style={styles.tournamentInfo}>
-                <Text style={styles.tournamentName}>{tournament.name}</Text>
-                <Text style={styles.tournamentDate}>
-                  {tournamentsService.formatDate(tournament.event_date)}
-                </Text>
-                <Text style={styles.tournamentLocation}>{tournament.location}</Text>
-                </View>
-                <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
-          ))
-        ) : (
-          <EmptyState
-            icon="medal"
-            message="Нет предстоящих турниров"
-            iconColor="#666"
-          />
-        )}
-      </Card.Content>
-    </Card>
   );
 
   const renderRecentClasses = () => (
@@ -203,7 +155,7 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
 
 
   const renderRecentBookings = () => {
-    if (userRole !== 'parent' && userRole !== 'athlete') return null;
+    if (userRole !== 'athlete') return null;
 
     return (
       <Card style={styles.sectionCard}>
@@ -263,7 +215,6 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   return (
     <Layout
       title="AIGA Connect"
-      onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
     >
       <ScrollView
         style={styles.scrollView}
@@ -274,16 +225,9 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
       >
         {renderWelcomeSection()}
         {renderQuickStats()}
-        {renderIncomingTournaments()}
         {renderRecentClasses()}
         {renderRecentBookings()}
       </ScrollView>
-
-      {/* Sidebar */}
-      <Sidebar
-        isVisible={isSidebarOpen}
-        onClose={handleSidebarClose}
-      />
     </Layout>
   );
 };
@@ -406,34 +350,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  tournamentItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2C3E50',
-  },
-  tournamentInfo: {
-    flex: 1,
-  },
-  tournamentName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  tournamentDate: {
-    color: '#3498DB',
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  tournamentLocation: {
-    color: '#B0BEC5',
-    fontSize: 14,
-  },
-
-
 });
 
 export default HomePage; 

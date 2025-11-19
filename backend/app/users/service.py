@@ -1,10 +1,11 @@
 """Business logic for user operations"""
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 
 from . import crud, schemas, models
 from app.core.security import create_access_token, create_refresh_token, decode_refresh_token
+from app.users.photo_service import PhotoService
 
 
 class UsersService:
@@ -277,3 +278,66 @@ class UsersService:
             user_id=updated_user.id,
             new_status=updated_user.role_status
         )
+
+    async def upload_profile_photo(self, user_id: int, file: UploadFile) -> str:
+        """
+        Upload profile photo for user.
+
+        Args:
+            user_id: User ID
+            file: Uploaded image file
+
+        Returns:
+            Public URL of uploaded photo
+
+        Raises:
+            HTTPException: If user not found or upload fails
+        """
+        # Get user
+        user = await crud.get_user_by_id(self.db, user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        # Delete old photo if exists
+        if user.photo_url:
+            PhotoService.delete_photo(user.photo_url)
+
+        # Upload new photo
+        photo_url = await PhotoService.upload_photo(user_id, file)
+
+        # Update user's photo_url in database
+        user.photo_url = photo_url
+        await self.db.commit()
+        await self.db.refresh(user)
+
+        return photo_url
+
+    async def delete_profile_photo(self, user_id: int) -> None:
+        """
+        Delete profile photo for user.
+
+        Args:
+            user_id: User ID
+
+        Raises:
+            HTTPException: If user not found
+        """
+        # Get user
+        user = await crud.get_user_by_id(self.db, user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        # Delete photo from storage if exists
+        if user.photo_url:
+            PhotoService.delete_photo(user.photo_url)
+
+        # Update user's photo_url to NULL
+        user.photo_url = None
+        await self.db.commit()
+        await self.db.refresh(user)

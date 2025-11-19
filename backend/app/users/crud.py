@@ -7,19 +7,21 @@ from app.users import models, schemas
 from app.core.security import get_password_hash, verify_password
 
 
-async def get_user_by_phone(db: AsyncSession, phone: str) -> Optional[models.User]:
+async def get_user_by_phone(db: AsyncSession, phone: str, include_deleted: bool = False) -> Optional[models.User]:
     """Get user by phone number"""
-    result = await db.execute(
-        select(models.User).where(models.User.phone == phone)
-    )
+    stmt = select(models.User).where(models.User.phone == phone)
+    if not include_deleted:
+        stmt = models.User.filter_active(stmt)
+    result = await db.execute(stmt)
     return result.scalars().first()
 
 
-async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[models.User]:
+async def get_user_by_id(db: AsyncSession, user_id: int, include_deleted: bool = False) -> Optional[models.User]:
     """Get user by ID"""
-    result = await db.execute(
-        select(models.User).where(models.User.id == user_id)
-    )
+    stmt = select(models.User).where(models.User.id == user_id)
+    if not include_deleted:
+        stmt = models.User.filter_active(stmt)
+    result = await db.execute(stmt)
     return result.scalars().first()
 
 
@@ -77,38 +79,42 @@ async def update_user(
     return user
 
 
-async def get_all_coaches(db: AsyncSession) -> List[models.User]:
+async def get_all_coaches(db: AsyncSession, include_deleted: bool = False) -> List[models.User]:
     """Get all users with coach role"""
-    result = await db.execute(
-        select(models.User).where(models.User.primary_role == models.UserRole.coach)
-    )
+    stmt = select(models.User).where(models.User.primary_role == models.UserRole.coach)
+    if not include_deleted:
+        stmt = models.User.filter_active(stmt)
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 
-async def get_pending_coaches(db: AsyncSession) -> List[models.User]:
+async def get_pending_coaches(db: AsyncSession, include_deleted: bool = False) -> List[models.User]:
     """Get all coaches with pending status"""
-    result = await db.execute(
-        select(models.User).where(
-            models.User.primary_role == models.UserRole.coach,
-            models.User.role_status == models.RoleStatus.pending
-        )
+    stmt = select(models.User).where(
+        models.User.primary_role == models.UserRole.coach,
+        models.User.role_status == models.RoleStatus.pending
     )
+    if not include_deleted:
+        stmt = models.User.filter_active(stmt)
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 
-async def get_all_athletes(db: AsyncSession) -> List[models.User]:
+async def get_all_athletes(db: AsyncSession, include_deleted: bool = False) -> List[models.User]:
     """Get all users with athlete role"""
-    result = await db.execute(
-        select(models.User).where(models.User.primary_role == models.UserRole.athlete)
-    )
+    stmt = select(models.User).where(models.User.primary_role == models.UserRole.athlete)
+    if not include_deleted:
+        stmt = models.User.filter_active(stmt)
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 
-async def get_all_users(db: AsyncSession) -> List[models.User]:
+async def get_all_users(db: AsyncSession, include_deleted: bool = False) -> List[models.User]:
     """Get all users"""
-    result = await db.execute(
-        select(models.User).order_by(models.User.created_at.desc())
-    )
+    stmt = select(models.User).order_by(models.User.created_at.desc())
+    if not include_deleted:
+        stmt = models.User.filter_active(stmt)
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 
@@ -130,10 +136,12 @@ async def update_role_status(
 
 async def get_users_by_phones(
     db: AsyncSession,
-    phone_numbers: List[str]
+    phone_numbers: List[str],
+    include_deleted: bool = False
 ) -> List[models.User]:
     """Get multiple users by phone numbers"""
-    result = await db.execute(
-        select(models.User).where(models.User.phone.in_(phone_numbers))
-    )
+    stmt = select(models.User).where(models.User.phone.in_(phone_numbers))
+    if not include_deleted:
+        stmt = models.User.filter_active(stmt)
+    result = await db.execute(stmt)
     return result.scalars().all()

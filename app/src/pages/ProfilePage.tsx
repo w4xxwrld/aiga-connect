@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,18 +14,16 @@ import {
   Avatar,
   Divider,
 } from 'react-native-paper';
+import * as ImagePicker from 'expo-image-picker';
 import { useAppContext } from '../context/AppContext';
-import childrenService, { Child } from '../services/children';
+import authService from '../services/auth';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Layout from '../components/Layout';
-import Sidebar from '../components/Sidebar';
-import EmptyState from '../components/EmptyState';
 
 const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
-  const { user, userRole, logout, isSidebarOpen, setIsSidebarOpen } = useAppContext();
+  const { user, userRole, logout, refreshUser } = useAppContext();
   const [loading, setLoading] = useState(false);
-  const [linkedChildren, setLinkedChildren] = useState<Child[]>([]);
-  const [loadingChildren, setLoadingChildren] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -53,7 +51,6 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
-      case 'parent': return 'Родитель';
       case 'athlete': return 'Спортсмен';
       case 'coach': return user?.is_head_coach ? 'Главный тренер' : 'Тренер';
       default: return role;
@@ -62,14 +59,94 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'parent': return 'account-child';
       case 'athlete': return 'account-group';
       case 'coach': return user?.is_head_coach ? 'crown' : 'account-tie';
       default: return 'account';
     }
   };
 
+  const handleUploadPhoto = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
+      if (status !== 'granted') {
+        Alert.alert(
+          'Требуется разрешение',
+          'Пожалуйста, предоставьте доступ к библиотеке фотографий в настройках'
+        );
+        return;
+      }
+
+      // Pick image
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setUploadingPhoto(true);
+        try {
+          // Get file type from URI
+          const uri = result.assets[0].uri;
+          const fileType = uri.endsWith('.png') ? 'image/png' : 'image/jpeg';
+
+          // Upload photo
+          await authService.uploadPhoto(uri, fileType);
+
+          // Refresh user data from server
+          await refreshUser();
+
+          Alert.alert('Успешно', 'Фото профиля обновлено');
+        } catch (error: any) {
+          console.error('Photo upload error:', error);
+          Alert.alert('Ошибка', error.message || 'Не удалось загрузить фото');
+        } finally {
+          setUploadingPhoto(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Ошибка', 'Не удалось выбрать фото');
+    }
+  };
+
+  const handleDeletePhoto = async () => {
+    if (!user?.photo_url) {
+      Alert.alert('Ошибка', 'Нет фото для удаления');
+      return;
+    }
+
+    Alert.alert(
+      'Удалить фото',
+      'Вы уверены, что хотите удалить фото профиля?',
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Удалить',
+          style: 'destructive',
+          onPress: async () => {
+            setUploadingPhoto(true);
+            try {
+              await authService.deletePhoto();
+
+              // Refresh user data from server
+              await refreshUser();
+
+              Alert.alert('Успешно', 'Фото профиля удалено');
+            } catch (error: any) {
+              console.error('Photo delete error:', error);
+              Alert.alert('Ошибка', error.message || 'Не удалось удалить фото');
+            } finally {
+              setUploadingPhoto(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const calculateAge = (birthDate: string) => {
     const today = new Date();
@@ -93,28 +170,6 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     });
   };
 
-  const loadLinkedChildren = async () => {
-    if (userRole !== 'parent') return;
-    
-    try {
-      setLoadingChildren(true);
-      const children = await childrenService.getMyChildren();
-      setLinkedChildren(children);
-    } catch (error: any) {
-      console.error('Error loading linked children:', error);
-    } finally {
-      setLoadingChildren(false);
-    }
-  };
-
-  useEffect(() => {
-    loadLinkedChildren();
-  }, [userRole]);
-
-  const handleSidebarClose = useCallback(() => {
-    setIsSidebarOpen(false);
-  }, [setIsSidebarOpen]);
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -127,7 +182,7 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     return (
     <Layout
       title="Профиль"
-      onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
+      showProfile={false}
     >
       <ScrollView
         style={styles.scrollView}
@@ -136,22 +191,60 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
         {/* Profile Header */}
         <Card style={styles.profileHeaderCard}>
           <Card.Content style={styles.profileHeaderContent}>
-            <Avatar.Text 
-              size={80} 
-              label={user?.full_name?.charAt(0) || 'U'} 
-              style={styles.avatar}
-              color="#fff"
-            />
+            {user?.photo_url ? (
+              <Avatar.Image
+                size={80}
+                source={{ uri: user.photo_url }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Avatar.Text
+                size={80}
+                label={user?.full_name?.charAt(0) || 'U'}
+                style={styles.avatar}
+                color="#fff"
+              />
+            )}
             <View style={styles.profileInfo}>
               <Title style={styles.userName}>{user?.full_name || 'Пользователь'}</Title>
               <View style={styles.roleContainer}>
-                <MaterialCommunityIcons 
-                  name={getRoleIcon(userRole || '')} 
-                  size={20} 
-                  color="#E74C3C" 
+                <MaterialCommunityIcons
+                  name={getRoleIcon(userRole || '')}
+                  size={20}
+                  color="#E74C3C"
                 />
                 <Text style={styles.roleText}>{getRoleDisplayName(userRole || '')}</Text>
               </View>
+            </View>
+
+            {/* Photo Action Buttons */}
+            <View style={styles.photoButtonsContainer}>
+              <Button
+                mode="outlined"
+                onPress={handleUploadPhoto}
+                style={styles.photoActionButton}
+                textColor="#E74C3C"
+                icon="upload"
+                disabled={uploadingPhoto}
+                loading={uploadingPhoto}
+                compact
+              >
+                Загрузить фото
+              </Button>
+
+              {user?.photo_url && (
+                <Button
+                  mode="outlined"
+                  onPress={handleDeletePhoto}
+                  style={styles.photoActionButton}
+                  textColor="#F44336"
+                  icon="delete"
+                  disabled={uploadingPhoto}
+                  compact
+                >
+                  Удалить фото
+                </Button>
+              )}
             </View>
           </Card.Content>
         </Card>
@@ -195,12 +288,6 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
                 </View>
               )}
 
-              <View style={styles.infoRow}>
-                <MaterialCommunityIcons name="card-account-details" size={20} color="#E74C3C" />
-                <Text style={styles.infoLabel}>ИИН:</Text>
-                <Text style={styles.infoValue}>{user?.iin || 'Не указан'}</Text>
-              </View>
-
               {user?.emergency_contact && (
                 <View style={styles.infoRow}>
                   <MaterialCommunityIcons name="phone-alert" size={20} color="#E74C3C" />
@@ -212,9 +299,6 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons name="calendar-clock" size={20} color="#E74C3C" />
                 <Text style={styles.infoLabel}>Дата регистрации:</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <View style={styles.infoSpacer} />
                 <Text style={styles.infoValue}>
                   {user?.created_at ? formatDate(user.created_at) : 'Не указана'}
                 </Text>
@@ -224,87 +308,6 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             </View>
           </Card.Content>
         </Card>
-
-        {/* Account Information */}
-        <Card style={styles.sectionCard}>
-          <Card.Content>
-            <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons name="account-cog" size={24} color="#E74C3C" />
-              <Title style={styles.sectionTitle}>Информация об аккаунте</Title>
-            </View>
-            
-            <Divider style={styles.divider} />
-            
-            <View style={styles.infoContainer}>
-              {(userRole === 'coach' || userRole === 'parent') && (
-                <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="crown" size={20} color="#E74C3C" />
-                  <Text style={styles.infoLabel}>Статус:</Text>
-                  <Text style={styles.infoValue}>
-                    {userRole === 'coach' 
-                      ? (user?.is_head_coach ? 'Главный тренер' : 'Тренер')
-                      : 'Родитель'
-                    }
-                  </Text>
-                </View>
-              )}
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Linked Children Section (for parents) */}
-        {userRole === 'parent' && (
-          <Card style={styles.sectionCard}>
-            <Card.Content>
-              <View style={styles.sectionHeader}>
-                <MaterialCommunityIcons name="account-child" size={24} color="#E74C3C" />
-                <Title style={styles.sectionTitle}>Мои дети</Title>
-              </View>
-              
-              <Divider style={styles.divider} />
-              
-              {loadingChildren ? (
-                <ActivityIndicator size="small" color="#E74C3C" />
-              ) : linkedChildren.length === 0 ? (
-                <EmptyState
-                  message="У вас пока нет связанных детей"
-                  buttonText="Связать ребенка"
-                  onButtonPress={() => navigation?.navigate('LinkChild')}
-                />
-              ) : (
-                <View style={styles.childrenContainer}>
-                  {linkedChildren.map((child) => (
-                    <Button
-                      key={child.id}
-                      mode="text"
-                      onPress={() => navigation?.navigate('ChildProfile', { childId: child.id, childName: child.full_name })}
-                      style={styles.childItem}
-                      contentStyle={styles.childItemContent}
-                    >
-                      <View style={styles.childItemInner}>
-                        <Avatar.Text 
-                          size={40} 
-                          label={child.full_name.charAt(0)} 
-                          style={styles.childAvatar}
-                          color="#fff"
-                        />
-                        <View style={styles.childInfo}>
-                          <Text style={styles.childName}>{child.full_name}</Text>
-                          <Text style={styles.childAge}>{calculateAge(child.birth_date)} лет</Text>
-                        </View>
-                        <MaterialCommunityIcons 
-                          name="chevron-right" 
-                          size={24} 
-                          color="#E74C3C" 
-                        />
-                      </View>
-                    </Button>
-                  ))}
-                </View>
-              )}
-            </Card.Content>
-          </Card>
-        )}
 
         {/* Actions */}
         <Card style={styles.sectionCard}>
@@ -326,18 +329,6 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               >
                 Редактировать профиль
               </Button>
-
-              {userRole === 'parent' && (
-                <Button
-                  mode="outlined"
-                  onPress={() => navigation?.navigate('LinkChild')}
-                  style={styles.actionButton}
-                  textColor="#E74C3C"
-                  icon="account-child"
-                >
-                  Связать ребенка
-                </Button>
-              )}
 
               <Button
                 mode="outlined"
@@ -365,12 +356,6 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           </Card.Content>
         </Card>
       </ScrollView>
-
-      {/* Sidebar */}
-      <Sidebar
-        isVisible={isSidebarOpen}
-        onClose={handleSidebarClose}
-      />
     </Layout>
   );
 };
@@ -407,7 +392,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   avatar: {
-    backgroundColor: '#E74C3C',
+    backgroundColor: '#6B7280',
     marginBottom: 16,
   },
   profileInfo: {
@@ -454,23 +439,27 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   infoContainer: {
-    gap: 12,
+    gap: 16,
   },
   infoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
   },
   infoLabel: {
     color: '#B0BEC5',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
-    marginLeft: 24,
-    minWidth: 140,
+    marginLeft: 12,
+    textAlign: 'left',
   },
   infoValue: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
+    textAlign: 'right',
     flex: 1,
+    marginLeft: 16,
   },
   infoSpacer: {
     width: 44, // Same width as icon + margin
@@ -516,6 +505,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
+  },
+  photoButtonsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 16,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  photoActionButton: {
+    flex: 1,
   },
 });
 

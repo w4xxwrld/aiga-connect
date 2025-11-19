@@ -12,10 +12,14 @@ async def get_all_classes(
     skip: int = 0,
     limit: int = 100,
     coach_id: Optional[int] = None,
-    difficulty: Optional[str] = None
+    difficulty: Optional[str] = None,
+    include_deleted: bool = False
 ) -> List[Class]:
     """Get list of classes with optional filters"""
     query = select(Class).options(selectinload(Class.coach))
+
+    if not include_deleted:
+        query = Class.filter_active(query)
 
     if coach_id:
         query = query.where(Class.coach_id == coach_id)
@@ -29,13 +33,14 @@ async def get_all_classes(
     return result.scalars().all()
 
 
-async def get_class_by_id(db: AsyncSession, class_id: int) -> Optional[Class]:
+async def get_class_by_id(db: AsyncSession, class_id: int, include_deleted: bool = False) -> Optional[Class]:
     """Get class by ID"""
-    result = await db.execute(
-        select(Class)
-        .where(Class.id == class_id)
-        .options(selectinload(Class.coach))
-    )
+    query = select(Class).where(Class.id == class_id).options(selectinload(Class.coach))
+
+    if not include_deleted:
+        query = Class.filter_active(query)
+
+    result = await db.execute(query)
     return result.scalar_one_or_none()
 
 
@@ -81,17 +86,18 @@ async def update_class(
 
 
 async def delete_class(db: AsyncSession, class_id: int) -> bool:
-    """Delete training class"""
+    """Soft delete training class"""
+    from app.core.soft_delete import soft_delete_instance
+
     result = await db.execute(
         select(Class).where(Class.id == class_id)
     )
     db_class = result.scalar_one_or_none()
 
-    if not db_class:
+    if not db_class or db_class.is_deleted:
         return False
 
-    await db.delete(db_class)
-    await db.commit()
+    await soft_delete_instance(db, db_class)
     return True
 
 
@@ -100,13 +106,19 @@ async def get_class_participants(db: AsyncSession, class_id: int):
     from app.bookings.models import Booking
     from app.users.models import User
 
-    result = await db.execute(
+    query = (
         select(User, Booking)
         .join(Booking, Booking.athlete_id == User.id)
         .where(Booking.class_id == class_id)
         .where(Booking.status.in_(['pending', 'confirmed']))
         .order_by(Booking.class_date.desc())
     )
+
+    # Filter out soft-deleted users and bookings
+    query = User.filter_active(query)
+    query = Booking.filter_active(query)
+
+    result = await db.execute(query)
 
     participants = []
     for user, booking in result.all():

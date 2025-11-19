@@ -16,12 +16,10 @@ export const API_ENDPOINTS = {
   USERS: '/users/',
   USER_PROFILE: '/users/me',
   MY_ATHLETES: '/users/my-athletes',
-  MY_PARENTS: '/users/my-parents',
   ADD_ROLE: '/users/add-role',
   CREATE_HEAD_COACH: '/users/create-head-coach',
   MAKE_HEAD_COACH: '/users/make-head-coach',
   HEAD_COACH: '/users/head-coach',
-  PARENT_ATHLETE_RELATIONSHIP: '/users/relationships',
   
   // Classes
   CLASSES: '/classes/',
@@ -39,7 +37,6 @@ export const API_ENDPOINTS = {
 
 // User roles
 export const USER_ROLES = {
-  PARENT: 'parent',
   ATHLETE: 'athlete',
   COACH: 'coach',
 };
@@ -124,7 +121,6 @@ export const STORAGE_KEYS = {
   USER_DATA: 'userData',
   GREETING_SEEN: 'greetingSeenThisInstall',
   USER_ROLE: 'userRole',
-  CHILDREN: 'children',
 };
 
 // Validation rules

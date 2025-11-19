@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
@@ -11,6 +11,7 @@ from app.users.twilio_service import TwilioService
 from app.core.rate_limit import rate_limit_otp
 
 router = APIRouter()
+security = HTTPBearer()
 
 
 @router.post("/register", response_model=schemas.RegistrationData)
@@ -37,23 +38,6 @@ async def login(
     Returns JWT tokens.
     """
     service = UsersService(db)
-    return await service.login(login_data)
-
-
-@router.post("/token", response_model=schemas.LoginResponse)
-async def login_for_swagger(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    OAuth2 compatible token login for Swagger UI.
-    Use phone number as username and your password.
-    """
-    service = UsersService(db)
-    login_data = schemas.LoginRequest(
-        phone_number=form_data.username,  # Phone number в поле username
-        password=form_data.password
-    )
     return await service.login(login_data)
 
 
@@ -84,10 +68,48 @@ async def update_current_user(
     """Update current user information"""
     service = UsersService(db)
     return await service.update_user_profile(
-        current_user.id, 
-        user_update, 
+        current_user.id,
+        user_update,
         current_user.phone
     )
+
+
+@router.put("/me/photo")
+async def upload_profile_photo(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Upload or update profile photo.
+
+    - **Allowed formats**: JPEG, PNG, WebP
+    - **Max size**: 5MB
+    - **Returns**: Photo URL
+    """
+    service = UsersService(db)
+    photo_url = await service.upload_profile_photo(current_user.id, file)
+    return {
+        "photo_url": photo_url,
+        "message": "Photo uploaded successfully"
+    }
+
+
+@router.delete("/me/photo")
+async def delete_profile_photo(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Delete profile photo.
+    """
+    service = UsersService(db)
+    await service.delete_profile_photo(current_user.id)
+    return {
+        "message": "Photo deleted successfully"
+    }
 
 
 @router.get("/coaches", response_model=List[schemas.UserSimple])

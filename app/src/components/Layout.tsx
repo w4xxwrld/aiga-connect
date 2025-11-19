@@ -6,31 +6,33 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import { Avatar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useAppContext } from '../context/AppContext';
 
 interface LayoutProps {
   children: React.ReactNode;
   title?: string;
-  showMenu?: boolean;
-  onMenuPress?: () => void;
   showBack?: boolean;
   onBackPress?: () => void;
-  showFooter?: boolean;
+  showProfile?: boolean;
 }
 
 const Layout: React.FC<LayoutProps> = ({
   children,
   title = 'AIGA Connect',
-  showMenu = true,
-  onMenuPress,
   showBack = false,
   onBackPress,
-  showFooter = true,
+  showProfile = true,
 }) => {
+  const navigation = useNavigation<NavigationProp<any>>();
+  const { user } = useAppContext();
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -41,22 +43,36 @@ const Layout: React.FC<LayoutProps> = ({
             >
               <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
             </TouchableOpacity>
-          ) : showMenu ? (
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={onMenuPress}
-            >
-              <MaterialCommunityIcons name="menu" size={24} color="#fff" />
-            </TouchableOpacity>
           ) : (
             <View style={styles.headerSpacer} />
           )}
         </View>
-        
+
         <Text style={styles.headerTitle}>{title}</Text>
-        
+
         <View style={styles.headerRight}>
-          <View style={styles.headerSpacer} />
+          {showProfile ? (
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={() => navigation.navigate('Profile' as never)}
+            >
+              {user?.photo_url ? (
+                <Avatar.Image
+                  size={36}
+                  source={{ uri: user.photo_url }}
+                />
+              ) : (
+                <Avatar.Text
+                  size={36}
+                  label={user?.full_name?.charAt(0) || 'U'}
+                  style={styles.avatarPlaceholder}
+                  color="#fff"
+                />
+              )}
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.headerSpacer} />
+          )}
         </View>
       </View>
 
@@ -65,7 +81,7 @@ const Layout: React.FC<LayoutProps> = ({
         {children}
       </View>
 
-      
+
     </View>
   );
 };
@@ -81,7 +97,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: 50, // Add top padding for status bar
+    paddingTop: 60, // Add extra top padding for dynamic island and status bar
     backgroundColor: '#1B263B',
     borderBottomWidth: 1,
     borderBottomColor: '#2C3E50',
@@ -96,6 +112,12 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 8,
+  },
+  profileButton: {
+    padding: 4,
+  },
+  avatarPlaceholder: {
+    backgroundColor: '#6B7280',
   },
   headerSpacer: {
     width: 40,

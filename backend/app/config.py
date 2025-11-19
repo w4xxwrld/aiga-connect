@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # 1 hour (security best practice)
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30  # 30 days (reduced from 90 for better security)
     DEBUG: bool = False
+    ENVIRONMENT: str = "development"  # development, staging, production
 
     # Database connection pool settings
     DB_POOL_SIZE: int = 20
@@ -31,6 +32,16 @@ class Settings(BaseSettings):
     # If provided, these will be used instead of Account SID/Auth Token
     TWILIO_API_SID: Optional[str] = None
     TWILIO_API_SECRET: Optional[str] = None
+
+    # Supabase settings for file storage
+    SUPABASE_URL: str
+    SUPABASE_KEY: str  # Service role key
+    SUPABASE_BUCKET: str = "profile-photos"
+
+    # File upload settings
+    MAX_UPLOAD_SIZE: int = 5 * 1024 * 1024  # 5MB in bytes
+    ALLOWED_IMAGE_EXTENSIONS: list[str] = [".jpg", ".jpeg", ".png", ".webp"]
+    ALLOWED_MIME_TYPES: list[str] = ["image/jpeg", "image/png", "image/webp"]
 
     # CORS settings
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]

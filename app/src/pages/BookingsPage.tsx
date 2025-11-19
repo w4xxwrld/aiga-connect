@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,13 +19,12 @@ import { useAppContext } from '../context/AppContext';
 import bookingsService, { Booking } from '../services/bookings';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Layout from '../components/Layout';
-import Sidebar from '../components/Sidebar';
 import StatCard from '../components/StatCard';
 import EmptyState from '../components/EmptyState';
 
 const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
-  const { user, userRole, isSidebarOpen, setIsSidebarOpen } = useAppContext();
-  
+  const { user, userRole } = useAppContext();
+
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,10 +95,6 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const handleBookingPress = (booking: Booking) => {
     navigation?.navigate('BookingDetail', { bookingId: booking.id });
   };
-
-  const handleSidebarClose = useCallback(() => {
-    setIsSidebarOpen(false);
-  }, [setIsSidebarOpen]);
 
   const handleQuickApprove = async (booking: Booking) => {
     Alert.alert(
@@ -320,9 +315,8 @@ if (loading) {
 }
 
   return (
-    <Layout 
+    <Layout
       title="Записи"
-      onMenuPress={() => setIsSidebarOpen(!isSidebarOpen)}
     >
     
     <View style={styles.actionHeader}>
@@ -448,12 +442,6 @@ if (loading) {
         />
       )}
     </ScrollView>
-
-    {/* Sidebar */}
-    <Sidebar
-              isVisible={isSidebarOpen}
-              onClose={handleSidebarClose}
-    />
   </Layout>
 );
 };

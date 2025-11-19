@@ -94,18 +94,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       title: 'Записи',
       icon: 'bookmark-check',
       route: 'Bookings',
-      showFor: ['athlete', 'parent'],
-    },
-    {
-      title: 'Турниры',
-      icon: 'medal',
-      route: 'Tournaments',
+      showFor: ['athlete'],
     },
     {
       title: 'Рейтинг тренеров',
       icon: 'star',
       route: 'CoachRating',
-      showFor: ['athlete', 'parent'],
+      showFor: ['athlete'],
     },
     {
       title: 'Управление аккаунтами',
@@ -153,8 +148,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
                   <Text style={styles.profileRole}>
                     {userRole === 'athlete'
                       ? 'Спортсмен'
-                      : userRole === 'parent'
-                      ? 'Родитель'
                       : userRole === 'coach'
                         ? (user?.is_head_coach ? 'Главный тренер' : 'Тренер')
                         : 'Пользователь'

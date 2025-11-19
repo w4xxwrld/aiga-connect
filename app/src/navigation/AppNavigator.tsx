@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -21,20 +21,15 @@ type RootStackParamList = {
   ClassParticipants: { classId: number };
   Profile: undefined;
   EditProfile: undefined;
-  LinkChild: undefined;
-  ChildProfile: { childId: number; childName: string };
   RequestIndividualTraining: undefined;
   IndividualTrainingRequests: undefined;
-  Tournaments: undefined;
-  TournamentDetail: { tournamentId: number };
-  CreateTournament: undefined;
   UsersManagement: undefined;
 };
 
 type MainTabParamList = {
   Home: undefined;
   Classes: undefined;
-  Bookings: undefined;
+  YourClasses: undefined;
 };
 
 import { useAppContext } from '../context/AppContext';
@@ -44,9 +39,9 @@ import OTPVerificationScreen from '../pages/OTPVerificationScreen';
 import HomePage from '../pages/HomePage';
 import ClassesPage from '../pages/ClassesPage';
 import BookingsPage from '../pages/BookingsPage';
+import YourClassesPage from '../pages/YourClassesPage';
 import ProfilePage from '../pages/ProfilePage';
 import EditProfilePage from '../pages/EditProfilePage';
-import LinkChildPage from '../pages/LinkChildPage';
 import ClassDetailPage from '../pages/ClassDetailPage';
 import BookClassPage from '../pages/BookClassPage';
 import CreateClassPage from '../pages/CreateClassPage';
@@ -55,11 +50,7 @@ import ClassParticipantsPage from '../pages/ClassParticipantsPage';
 import BookingDetailPage from '../pages/BookingDetailPage';
 import RequestIndividualTrainingPage from '../pages/RequestIndividualTrainingPage';
 import IndividualTrainingRequestsPage from '../pages/IndividualTrainingRequestsPage';
-import TournamentsPage from '../pages/TournamentsPage';
-import TournamentDetailPage from '../pages/TournamentDetailPage';
-import CreateTournamentPage from '../pages/CreateTournamentPage';
 import UsersManagementPage from '../pages/UsersManagementPage';
-import ChildProfilePage from '../pages/ChildProfilePage';
 import { RoleSelectionPage } from '../pages/RoleSelectionPage';
 
 
@@ -79,17 +70,6 @@ const MainLayout: React.FC = () => {
 
 // Custom Tab Bar Component
 const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
-  const { isSidebarOpen } = useAppContext();
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(slideAnim, {
-      toValue: isSidebarOpen ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [isSidebarOpen, slideAnim]);
-
   const getTabIcon = (routeName: string, focused: boolean) => {
     const iconColor = focused ? '#E74C3C' : '#B0BEC5';
     const iconSize = 24;
@@ -99,8 +79,8 @@ const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
         return <MaterialCommunityIcons name="home" size={iconSize} color={iconColor} />;
       case 'Classes':
         return <MaterialCommunityIcons name="calendar" size={iconSize} color={iconColor} />;
-      case 'Bookings':
-        return <MaterialCommunityIcons name="bookmark" size={iconSize} color={iconColor} />;
+      case 'YourClasses':
+        return <MaterialCommunityIcons name="bookmark-check" size={iconSize} color={iconColor} />;
       default:
         return <MaterialCommunityIcons name="home" size={iconSize} color={iconColor} />;
     }
@@ -112,27 +92,15 @@ const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
         return 'Главная';
       case 'Classes':
         return 'Занятия';
-      case 'Bookings':
-        return 'Записи';
+      case 'YourClasses':
+        return 'Ваши занятия';
       default:
         return 'Главная';
     }
   };
 
   return (
-    <Animated.View
-      style={[
-        styles.customTabBar,
-        {
-          transform: [{
-            translateY: slideAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, 70], // Slide down by tab bar height
-            })
-          }]
-        }
-      ]}
-    >
+    <View style={styles.customTabBar}>
       {state.routes.map((route: any, index: number) => {
         const { options } = descriptors[route.key];
         const label = getTabLabel(route.name);
@@ -166,17 +134,12 @@ const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
           </TouchableOpacity>
         );
       })}
-    </Animated.View>
+    </View>
   );
 };
 
 // Tab Navigator
 const MainTabs: React.FC = () => {
-  const { userRole } = useAppContext();
-
-  // Don't show Bookings tab for coaches
-  const shouldShowBookings = userRole !== 'coach';
-
   return (
     <Tab.Navigator
       tabBar={props => <CustomTabBar {...props} />}
@@ -186,7 +149,7 @@ const MainTabs: React.FC = () => {
     >
       <Tab.Screen name="Home" component={HomePage} />
       <Tab.Screen name="Classes" component={ClassesPage} />
-      {shouldShowBookings && <Tab.Screen name="Bookings" component={BookingsPage} />}
+      <Tab.Screen name="YourClasses" component={YourClassesPage} />
     </Tab.Navigator>
   );
 };
@@ -244,8 +207,6 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="ClassDetail" component={ClassDetailPage} />
         <Stack.Screen name="Profile" component={ProfilePage} />
         <Stack.Screen name="EditProfile" component={EditProfilePage} />
-        <Stack.Screen name="LinkChild" component={LinkChildPage} />
-        <Stack.Screen name="ChildProfile" component={ChildProfilePage} />
         {/* Placeholder screens for future implementation */}
         <Stack.Screen name="BookingDetail" component={BookingDetailPage} />
         <Stack.Screen name="RequestIndividualTraining" component={RequestIndividualTrainingPage} />
@@ -254,9 +215,6 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="CreateClass" component={CreateClassPage} />
         <Stack.Screen name="EditClass" component={EditClassPage} />
         <Stack.Screen name="ClassParticipants" component={ClassParticipantsPage} />
-        <Stack.Screen name="Tournaments" component={TournamentsPage} />
-        <Stack.Screen name="TournamentDetail" component={TournamentDetailPage} />
-        <Stack.Screen name="CreateTournament" component={CreateTournamentPage} />
         <Stack.Screen name="UsersManagement" component={UsersManagementPage} />
 
       </Stack.Navigator>

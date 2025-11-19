@@ -41,7 +41,7 @@ async def test_login_user(client: AsyncClient, sample_user_data):
 
     # Login
     login_data = {
-        "iin": sample_user_data["iin"],
+        "phone_number": sample_user_data["phone"],
         "password": sample_user_data["password"],
     }
     response = await client.post("/users/login", json=login_data)
@@ -61,13 +61,13 @@ async def test_login_invalid_credentials(client: AsyncClient, sample_user_data):
 
     # Try to login with wrong password
     login_data = {
-        "iin": sample_user_data["iin"],
+        "phone_number": sample_user_data["phone"],
         "password": "WrongPassword123!",
     }
     response = await client.post("/users/login", json=login_data)
 
     assert response.status_code == 401
-    assert "Invalid IIN or password" in response.json()["detail"]
+    assert "Invalid phone number or password" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -78,7 +78,7 @@ async def test_get_current_user(client: AsyncClient, sample_user_data):
 
     # Login to get token
     login_data = {
-        "iin": sample_user_data["iin"],
+        "phone_number": sample_user_data["phone"],
         "password": sample_user_data["password"],
     }
     login_response = await client.post("/users/login", json=login_data)
@@ -92,7 +92,7 @@ async def test_get_current_user(client: AsyncClient, sample_user_data):
     assert response.status_code == 200
     data = response.json()
     assert data["email"] == sample_user_data["email"]
-    assert data["iin"] == sample_user_data["iin"]
+    assert data["phone"] == sample_user_data["phone"]
 
 
 @pytest.mark.asyncio
@@ -101,7 +101,7 @@ async def test_refresh_token(client: AsyncClient, sample_user_data):
     # Register and login
     await client.post("/users/", json=sample_user_data)
     login_data = {
-        "iin": sample_user_data["iin"],
+        "phone_number": sample_user_data["phone"],
         "password": sample_user_data["password"],
     }
     login_response = await client.post("/users/login", json=login_data)
@@ -125,7 +125,7 @@ async def test_rate_limiting_login(client: AsyncClient, sample_user_data):
     await client.post("/users/", json=sample_user_data)
 
     login_data = {
-        "iin": sample_user_data["iin"],
+        "phone_number": sample_user_data["phone"],
         "password": sample_user_data["password"],
     }
 

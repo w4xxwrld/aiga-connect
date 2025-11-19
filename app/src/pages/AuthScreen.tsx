@@ -127,26 +127,34 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       // Format phone number to E.164 format
       const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
 
-      console.log('🔵 [AUTH] Step 1: Validating credentials for:', formattedPhone);
+      console.log('🔵 [AUTH] Logging in with phone and password:', formattedPhone);
 
-      // Step 1: Validate phone and password (without getting tokens)
-      await authService.validateLogin({ phone: formattedPhone, password });
-      console.log('✅ [AUTH] Step 1: Credentials validated successfully');
-
-      // Step 2: Send OTP after credentials are validated
-      console.log('🔵 [AUTH] Step 2: Sending OTP...');
-      const otpResponse = await authService.sendOTP(formattedPhone);
-      console.log('🟢 [AUTH] Step 2: OTP sent successfully:', otpResponse);
-
-      // Step 3: Navigate to OTP verification screen
-      // User will be logged in ONLY after OTP verification
-      console.log('🔵 [AUTH] Step 3: Navigating to OTP verification screen');
-      navigation.navigate('OTPVerification', {
-        phoneNumber: formattedPhone,
-        isRegistration: false,
+      // Login with phone and password
+      const authResponse = await authService.login({
+        phone_number: formattedPhone,
+        password
       });
+      console.log('🟢 [AUTH] Login successful, tokens received');
+
+      // Get user data
+      const userData = await authService.getCurrentUser();
+      console.log('🟢 [AUTH] User data retrieved:', userData);
+
+      if (userData) {
+        // Set user data which will trigger navigation
+        setUser(userData);
+        console.log('✅ [AUTH] User authenticated and logged in successfully');
+
+        // Navigate to MainTabs
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }],
+        });
+      } else {
+        throw new Error('Failed to get user data after authentication');
+      }
     } catch (error: any) {
-      console.error('🔴 [AUTH] Login flow error:', error);
+      console.error('🔴 [AUTH] Login error:', error);
       console.error('🔴 [AUTH] Error details:', {
         message: error.message,
         response: error.response?.data,
@@ -156,8 +164,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       let errorMessage = 'Не удалось войти в систему';
       let errorTitle = 'Ошибка входа';
 
-      // Check for rate limiting (429 error)
-      if (error.response?.status === 429) {
+      if (error.response?.status === 401) {
+        errorMessage = 'Неверный номер телефона или пароль';
+      } else if (error.response?.status === 429) {
         errorTitle = 'Слишком много попыток';
         errorMessage = error.response?.data?.detail || 'Вы превысили лимит попыток. Пожалуйста, подождите несколько минут и попробуйте снова.';
       } else if (error.response?.data?.detail) {
@@ -506,7 +515,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             )}
 
             <TextInput
-              label="Пароль"
+              label={mode === 'login' ? 'Пароль' : 'Пароль (опционально)'}
               value={password}
               onChangeText={setPassword}
               mode="outlined"
@@ -529,7 +538,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               mode="contained"
               onPress={handleSubmit}
               loading={loading}
-              disabled={loading || (mode === 'register' && (!phone || !firstName || !lastName || !email || !birthDate))}
+              disabled={
+                loading ||
+                !phone ||
+                (mode === 'login' && !password) ||
+                (mode === 'register' && (!firstName || !lastName || !email || !birthDate))
+              }
               style={styles.button}
               buttonColor="#E74C3C"
               icon={mode === 'login' ? 'login' : 'account-plus'}
