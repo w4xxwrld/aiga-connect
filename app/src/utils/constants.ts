@@ -16,7 +16,7 @@ export const API_ENDPOINTS = {
   USERS: '/users/',
   USER_PROFILE: '/users/me',
   MY_ATHLETES: '/users/my-athletes',
-  ADD_ROLE: '/users/add-role',
+  ADD_ROLE: '/users/select-role',
   CREATE_HEAD_COACH: '/users/create-head-coach',
   MAKE_HEAD_COACH: '/users/make-head-coach',
   HEAD_COACH: '/users/head-coach',

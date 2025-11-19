@@ -11,7 +11,6 @@ type RootStackParamList = {
   Auth: undefined;
   OTPVerification: { phoneNumber: string; isRegistration: boolean };
   MainTabs: undefined;
-  RoleSelection: undefined;
   RoleSettings: undefined;
   ClassDetail: { classId: number };
   BookingDetail: { bookingId: number };
@@ -24,11 +23,18 @@ type RootStackParamList = {
   RequestIndividualTraining: undefined;
   IndividualTrainingRequests: undefined;
   UsersManagement: undefined;
+  AttendanceScanner: undefined;
+  AttendanceHistory: undefined;
+  AttendanceCalendar: undefined;
+  CoachAttendanceDashboard: undefined;
+  ClassAttendanceReport: { classId: number };
+  AthleteInsights: undefined;
 };
 
 type MainTabParamList = {
   Home: undefined;
   Classes: undefined;
+  Attendance: undefined;
   YourClasses: undefined;
 };
 
@@ -51,7 +57,13 @@ import BookingDetailPage from '../pages/BookingDetailPage';
 import RequestIndividualTrainingPage from '../pages/RequestIndividualTrainingPage';
 import IndividualTrainingRequestsPage from '../pages/IndividualTrainingRequestsPage';
 import UsersManagementPage from '../pages/UsersManagementPage';
-import { RoleSelectionPage } from '../pages/RoleSelectionPage';
+import AttendanceTabPage from '../pages/attendance/AttendanceTabPage';
+import AttendanceScannerPage from '../pages/attendance/AttendanceScannerPage';
+import AttendanceHistoryPage from '../pages/attendance/AttendanceHistoryPage';
+import AttendanceCalendarPage from '../pages/attendance/AttendanceCalendarPage';
+import CoachAttendanceDashboardPage from '../pages/attendance/CoachAttendanceDashboardPage';
+import ClassAttendanceReportPage from '../pages/attendance/ClassAttendanceReportPage';
+import AthleteInsightsPage from '../pages/attendance/AthleteInsightsPage';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -79,6 +91,8 @@ const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
         return <MaterialCommunityIcons name="home" size={iconSize} color={iconColor} />;
       case 'Classes':
         return <MaterialCommunityIcons name="calendar" size={iconSize} color={iconColor} />;
+      case 'Attendance':
+        return <MaterialCommunityIcons name="clipboard-check-outline" size={iconSize} color={iconColor} />;
       case 'YourClasses':
         return <MaterialCommunityIcons name="bookmark-check" size={iconSize} color={iconColor} />;
       default:
@@ -92,6 +106,8 @@ const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
         return 'Главная';
       case 'Classes':
         return 'Занятия';
+      case 'Attendance':
+        return 'Посещения';
       case 'YourClasses':
         return 'Ваши занятия';
       default:
@@ -149,6 +165,7 @@ const MainTabs: React.FC = () => {
     >
       <Tab.Screen name="Home" component={HomePage} />
       <Tab.Screen name="Classes" component={ClassesPage} />
+      <Tab.Screen name="Attendance" component={AttendanceTabPage} />
       <Tab.Screen name="YourClasses" component={YourClassesPage} />
     </Tab.Navigator>
   );
@@ -201,7 +218,6 @@ const AppNavigator: React.FC = () => {
       >
         <Stack.Screen name="Greeting" component={GreetingPage} />
         <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="RoleSelection" component={RoleSelectionPage} />
         <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
         <Stack.Screen name="MainTabs" component={MainLayout} />
         <Stack.Screen name="ClassDetail" component={ClassDetailPage} />
@@ -216,6 +232,13 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="EditClass" component={EditClassPage} />
         <Stack.Screen name="ClassParticipants" component={ClassParticipantsPage} />
         <Stack.Screen name="UsersManagement" component={UsersManagementPage} />
+        {/* Attendance screens */}
+        <Stack.Screen name="AttendanceScanner" component={AttendanceScannerPage} />
+        <Stack.Screen name="AttendanceHistory" component={AttendanceHistoryPage} />
+        <Stack.Screen name="AttendanceCalendar" component={AttendanceCalendarPage} />
+        <Stack.Screen name="CoachAttendanceDashboard" component={CoachAttendanceDashboardPage} />
+        <Stack.Screen name="ClassAttendanceReport" component={ClassAttendanceReportPage} />
+        <Stack.Screen name="AthleteInsights" component={AthleteInsightsPage} />
 
       </Stack.Navigator>
     </NavigationContainer>

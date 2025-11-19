@@ -16,6 +16,7 @@ import {
 } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
+import attendanceService from '../services/attendance';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Layout from '../components/Layout';
 
@@ -82,6 +83,35 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
 
   const handleEditClass = () => {
     navigation.navigate('EditClass', { classId });
+  };
+
+  const handleMarkAttendance = () => {
+    navigation.navigate('AttendanceScanner');
+  };
+
+  const handleViewAttendance = () => {
+    navigation.navigate('ClassAttendanceReport', { classId });
+  };
+
+  const isClassHappeningNow = (): boolean => {
+    if (!classData) return false;
+
+    const now = new Date();
+    const currentDay = now.toLocaleDateString('ru-RU', { weekday: 'long' });
+
+    // Check if today is a class day
+    if (!classData.days_of_week.includes(currentDay)) {
+      return false;
+    }
+
+    // Check if within time window (30 minutes before to 30 minutes after)
+    const [classHour, classMinute] = classData.start_time.split(':').map(Number);
+    const classStartTime = new Date();
+    classStartTime.setHours(classHour, classMinute, 0, 0);
+
+    const timeDiff = (classStartTime.getTime() - now.getTime()) / (1000 * 60);
+
+    return timeDiff >= -30 && timeDiff <= 30;
   };
 
   if (loading) {
@@ -236,15 +266,29 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
 
         <View style={styles.actionsContainer}>
           {(userRole === 'parent' || userRole === 'athlete') && (
-            <Button
-              mode="contained"
-              onPress={handleBookClass}
-              style={styles.bookButton}
-              buttonColor="#E74C3C"
-              icon="bookmark-plus"
-            >
-              Записаться на занятие
-            </Button>
+            <>
+              <Button
+                mode="contained"
+                onPress={handleBookClass}
+                style={styles.bookButton}
+                buttonColor="#E74C3C"
+                icon="bookmark-plus"
+              >
+                Записаться на занятие
+              </Button>
+
+              {userRole === 'athlete' && isClassHappeningNow() && (
+                <Button
+                  mode="contained"
+                  onPress={handleMarkAttendance}
+                  style={styles.attendanceButton}
+                  buttonColor="#4CAF50"
+                  icon="qrcode-scan"
+                >
+                  Отметить посещение
+                </Button>
+              )}
+            </>
           )}
 
           {userRole === 'coach' && classData.coach_id === user?.id && (
@@ -266,6 +310,15 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
                 icon="account-group"
               >
                 Все участники ({participants.length})
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleViewAttendance}
+                style={styles.attendanceButton}
+                buttonColor="#4CAF50"
+                icon="clipboard-check-outline"
+              >
+                Посещаемость
               </Button>
             </>
           )}

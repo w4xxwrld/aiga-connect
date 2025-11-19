@@ -2,17 +2,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import List, Optional
 from datetime import date, datetime, timedelta
-import random
 
 from app.attendance.models import Attendance
 from app.attendance.schemas import AttendanceCreate
-
-
-async def generate_qr_code_for_class(class_id: int) -> str:
-    """Generate a 3-digit QR code for class attendance"""
-    # Generate random 3-digit code
-    qr_code = str(random.randint(100, 999))
-    return qr_code
 
 
 async def mark_attendance(

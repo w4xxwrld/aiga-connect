@@ -12,17 +12,6 @@ from app.attendance.service import AttendanceService
 router = APIRouter()
 
 
-@router.post("/generate-qr", response_model=schemas.GenerateQRCodeResponse)
-async def generate_qr_code(
-    request: schemas.GenerateQRCodeRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_coach)
-):
-    """Generate QR code for class attendance (coaches only)"""
-    service = AttendanceService(db)
-    return await service.generate_qr_code(request.class_id, current_user)
-
-
 @router.post("/mark", response_model=schemas.AttendanceOut, status_code=status.HTTP_201_CREATED)
 async def mark_attendance(
     request: schemas.MarkAttendanceRequest,

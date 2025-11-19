@@ -115,7 +115,18 @@ class AuthService {
       console.log('AuthService: Sending registration request to:', '/users/register');
       console.log('AuthService: Registration data:', registerData);
 
-      const response = await api.post('/users/register', registerData);
+      // Convert frontend format to backend format
+      // Backend expects phone_number (not phone) and doesn't want primary_role in /users/register
+      const backendData = {
+        phone_number: registerData.phone,
+        first_name: registerData.first_name,
+        last_name: registerData.last_name,
+        email: registerData.email,
+        password: registerData.password,
+        birth_date: registerData.birth_date,
+      };
+
+      const response = await api.post('/users/register', backendData);
       console.log('AuthService: Registration response:', response.data);
       return response.data;
     } catch (error: any) {
@@ -446,7 +457,7 @@ class AuthService {
 
   async addRoleToUser(role: 'parent' | 'athlete' | 'coach', targetUserId?: number): Promise<User> {
     try {
-      const response = await api.post('/users/add-role', {
+      const response = await api.post('/users/select-role', {
         role,
         target_user_id: targetUserId,
       });
@@ -456,6 +467,61 @@ class AuthService {
         throw new Error(error.response.data.detail);
       }
       throw new Error('Failed to add role');
+    }
+  }
+
+  async completeRegistration(registerData: RegisterData, role: 'athlete' | 'coach'): Promise<{
+    access_token: string;
+    refresh_token: string;
+    token_type: string;
+    role: string;
+    role_status?: string;
+    message?: string;
+  }> {
+    try {
+      console.log('🔵 [AUTH] CompleteRegistration: Creating user with role');
+      console.log('Registration data:', registerData);
+      console.log('Selected role:', role);
+
+      // Convert frontend format to backend format
+      // Backend expects phone_number and all registration data plus role
+      const backendData = {
+        phone_number: registerData.phone,
+        first_name: registerData.first_name,
+        last_name: registerData.last_name,
+        email: registerData.email,
+        password: registerData.password,
+        birth_date: registerData.birth_date,
+        role: role,
+      };
+
+      const response = await api.post('/users/select-role', backendData);
+      console.log('🟢 [AUTH] User created successfully:', response.data);
+
+      // Store tokens
+      if (response.data.access_token && response.data.refresh_token) {
+        await Promise.all([
+          SecureStore.setItemAsync('authToken', response.data.access_token),
+          SecureStore.setItemAsync('refreshToken', response.data.refresh_token),
+        ]);
+      }
+
+      return response.data;
+    } catch (error: any) {
+      console.error('🔴 [AUTH] CompleteRegistration error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      if (error.message) {
+        throw new Error(error.message);
+      }
+      throw new Error('Failed to complete registration');
     }
   }
 
@@ -509,7 +575,7 @@ class AuthService {
 
   async getAllUsers(): Promise<User[]> {
     try {
-      const response = await api.get('/users/all');
+      const response = await api.get('/users/athletes');
       return response.data;
     } catch (error: any) {
       if (error.response?.data?.detail) {

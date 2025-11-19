@@ -24,13 +24,14 @@ interface OTPVerificationScreenProps {
     params: {
       phoneNumber: string;
       isRegistration: boolean;
+      registrationData?: any;
     };
   };
 }
 
 const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigation, route }) => {
   const { setUser } = useAppContext();
-  const { phoneNumber, isRegistration } = route.params;
+  const { phoneNumber, isRegistration, registrationData } = route.params;
   const [code, setCode] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [resendLoading, setResendLoading] = useState<boolean>(false);
@@ -84,12 +85,41 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
           throw new Error('Failed to get user data after authentication');
         }
       } else if (verifyResponse.requires_role_selection) {
-        // New user - navigate to role selection
-        console.log('🔵 [OTP] New user, navigating to role selection');
+        // New user - complete registration with the role from registration data
+        console.log('🔵 [OTP] New user, completing registration with role:', registrationData?.primary_role);
 
-        // For registration flow, navigate to role selection
-        if (isRegistration) {
-          navigation.navigate('RoleSelection', { phoneNumber });
+        // For registration flow, complete registration immediately with the selected role
+        if (isRegistration && registrationData?.primary_role) {
+          // Complete registration with the role
+          const completeResponse = await authService.completeRegistration(
+            registrationData,
+            registrationData.primary_role
+          );
+          console.log('🟢 [OTP] Registration completed successfully:', completeResponse);
+
+          // Get the authenticated user data
+          const userData = await authService.getCurrentUser();
+          console.log('🟢 [OTP] User data retrieved:', userData);
+
+          if (userData) {
+            // Set user data which will trigger navigation
+            setUser(userData);
+            console.log('✅ [OTP] User authenticated and logged in successfully');
+
+            // Navigate to MainTabs
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTabs' as never }],
+            });
+          } else {
+            throw new Error('Failed to get user data after registration');
+          }
+        } else if (isRegistration && !registrationData?.primary_role) {
+          // No role provided in registration data
+          Alert.alert(
+            'Ошибка',
+            'Не указана роль пользователя. Пожалуйста, попробуйте снова.'
+          );
         } else {
           // If this is login but user doesn't exist, show error
           Alert.alert(

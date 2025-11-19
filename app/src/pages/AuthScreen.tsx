@@ -280,6 +280,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       navigation.navigate('OTPVerification', {
         phoneNumber: formattedPhone,
         isRegistration: true,
+        registrationData: registerData,
       });
 
     } catch (error: any) {
@@ -325,30 +326,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       email: email.trim(),
       birth_date: birthDateString,
       password: password || undefined,
-    };
-    navigation.navigate('RoleSelection', { formData: registerData });
-  };
-
-  useEffect(() => {
-    const selectedRole = route.params?.selectedRole;
-    const formData = route.params?.formData;
-
-    if (!selectedRole || !formData) return;
-
-    try {
-      navigation.setParams({ selectedRole: undefined, formData: undefined });
-    } catch (e) {
-    }
-
-    const finalData: any = {
-      ...formData,
-      primary_role: selectedRole,
+      primary_role: primaryRole, // Include role from form
     };
 
     console.log("handleRegister begin");
-    handleRegister(finalData);
+    handleRegister(registerData);
     console.log("handleRegister over");
-  }, [route.params?.selectedRole, route.params?.formData]);
+  };
 
   return (
     <KeyboardAvoidingView
@@ -511,11 +495,39 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                       inputMode="start"
                     />
                 </View>
+
+                <View style={styles.roleSelectionContainer}>
+                  <Text style={styles.roleSelectionLabel}>Выберите роль *</Text>
+                  <SegmentedButtons
+                    value={primaryRole}
+                    onValueChange={(value) => setPrimaryRole(value as 'athlete' | 'coach')}
+                    buttons={[
+                      {
+                        value: 'athlete',
+                        label: 'Спортсмен',
+                        icon: 'run',
+                      },
+                      {
+                        value: 'coach',
+                        label: 'Тренер',
+                        icon: 'whistle',
+                      },
+                    ]}
+                    style={styles.segmentedButtons}
+                    theme={{
+                      colors: {
+                        primary: '#E74C3C',
+                        onSurface: '#fff',
+                        onSurfaceVariant: '#fff',
+                      }
+                    }}
+                  />
+                </View>
               </>
             )}
 
             <TextInput
-              label={mode === 'login' ? 'Пароль' : 'Пароль (опционально)'}
+              label="Пароль *"
               value={password}
               onChangeText={setPassword}
               mode="outlined"
@@ -533,6 +545,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               left={<TextInput.Icon icon="lock" />}
               right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
             />
+            {mode === 'register' && password.length > 0 && password.length < 6 && (
+              <HelperText type="error" visible={true}>
+                Пароль должен содержать минимум 6 символов
+              </HelperText>
+            )}
 
             <Button
               mode="contained"
@@ -541,8 +558,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               disabled={
                 loading ||
                 !phone ||
-                (mode === 'login' && !password) ||
-                (mode === 'register' && (!firstName || !lastName || !email || !birthDate))
+                !password ||
+                (mode === 'register' && (!firstName || !lastName || !email || !birthDate || !primaryRole))
               }
               style={styles.button}
               buttonColor="#E74C3C"
@@ -619,6 +636,15 @@ const styles = StyleSheet.create({
   },
   roleButtons: {
     marginBottom: 8,
+  },
+  roleSelectionContainer: {
+    marginBottom: 20,
+  },
+  roleSelectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 12,
   },
   button: {
     marginTop: 8,

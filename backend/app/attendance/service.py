@@ -1,6 +1,6 @@
 """Business logic for attendance operations"""
 from typing import List, Optional
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 
@@ -13,42 +13,7 @@ class AttendanceService:
     
     def __init__(self, db: AsyncSession):
         self.db = db
-    
-    async def generate_qr_code(
-        self,
-        class_id: int,
-        current_user: User
-    ) -> dict:
-        """Generate a QR code for a class (for coaches only)"""
-        if current_user.primary_role != UserRole.coach:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only coaches can generate QR codes"
-            )
 
-        # Check if the class exists and belongs to this coach
-        from app.classes import crud as classes_crud
-        class_obj = await classes_crud.get_class_by_id(self.db, class_id)
-        if not class_obj:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Class not found"
-            )
-        
-        if class_obj.coach_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only the class coach can generate QR codes"
-            )
-        
-        qr_code = await crud.generate_qr_code_for_class(class_id)
-        
-        return {
-            "qr_code": qr_code,
-            "class_id": class_id,
-            "expires_at": datetime.utcnow() + timedelta(hours=2)
-        }
-    
     async def mark_attendance(
         self,
         class_id: int,

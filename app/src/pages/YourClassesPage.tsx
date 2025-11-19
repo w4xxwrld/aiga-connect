@@ -16,6 +16,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
 import bookingsService, { Booking } from '../services/bookings';
+import attendanceService from '../services/attendance';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Layout from '../components/Layout';
 import EmptyState from '../components/EmptyState';
@@ -37,6 +38,10 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   // For athletes: their bookings
   const [myBookings, setMyBookings] = useState<Booking[]>([]);
 
+  // Attendance counts
+  const [attendanceCounts, setAttendanceCounts] = useState<{[key: number]: number}>({});
+  const [personalAttendanceCount, setPersonalAttendanceCount] = useState(0);
+
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -54,10 +59,33 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           (classItem) => classItem.coach_id === user?.id
         );
         setMyClasses(coachClasses);
+
+        // Load attendance counts for each class
+        const counts: {[key: number]: number} = {};
+        await Promise.all(
+          coachClasses.map(async (classItem) => {
+            try {
+              const stats = await attendanceService.getClassAttendanceStats(classItem.id);
+              counts[classItem.id] = stats.total_attendances;
+            } catch (error) {
+              console.error(`Error loading attendance for class ${classItem.id}:`, error);
+              counts[classItem.id] = 0;
+            }
+          })
+        );
+        setAttendanceCounts(counts);
       } else {
         // Load bookings for athlete
         const bookings = await bookingsService.getMyBookings();
         setMyBookings(bookings);
+
+        // Load personal attendance count
+        try {
+          const count = await attendanceService.getMyAttendanceCount();
+          setPersonalAttendanceCount(count);
+        } catch (error) {
+          console.error('Error loading attendance count:', error);
+        }
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -186,6 +214,17 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               />
               <Text style={styles.infoText}>
                 {classItem.current_participants || 0} / {classItem.max_capacity}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons
+                name="clipboard-check-outline"
+                size={16}
+                color="#4CAF50"
+              />
+              <Text style={styles.infoText}>
+                {attendanceCounts[classItem.id] || 0} посещений
               </Text>
             </View>
           </View>

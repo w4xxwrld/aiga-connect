@@ -37,16 +37,6 @@ class AttendanceOut(AttendanceBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class GenerateQRCodeRequest(BaseModel):
-    class_id: int
-
-
-class GenerateQRCodeResponse(BaseModel):
-    qr_code: str
-    class_id: int
-    expires_at: datetime
-
-
 class MarkAttendanceRequest(BaseModel):
     class_id: int
     qr_code: str
