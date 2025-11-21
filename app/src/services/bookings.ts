@@ -5,18 +5,21 @@ export interface Booking {
   athlete_id: number;
   class_id: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  booking_type?: 'regular' | 'trial' | 'makeup';
   booking_date: string;
   class_date: string;
   is_paid: boolean;
   payment_amount?: number;
   notes?: string;
   cancellation_reason?: string;
+  booked_by_parent?: boolean;
   created_at: string;
   updated_at: string;
   athlete?: {
     id: number;
     first_name: string;
     last_name: string;
+    full_name?: string;
     phone: string;
   };
   class_obj?: {
@@ -26,6 +29,7 @@ export interface Booking {
       id: number;
       first_name: string;
       last_name: string;
+      full_name?: string;
     };
   };
 }
@@ -64,6 +68,7 @@ export interface IndividualTrainingRequest {
 export interface BookingCreate {
   athlete_id: number;
   class_id: number;
+  booking_type?: 'regular' | 'trial' | 'makeup';
   class_date: string;
   notes?: string;
 }
@@ -268,6 +273,15 @@ class BookingsService {
       completed: 'Завершено'
     };
     return statusMap[status] || status;
+  }
+
+  getBookingTypeDisplayName(bookingType?: string): string {
+    const typeMap: { [key: string]: string } = {
+      regular: 'Обычное',
+      trial: 'Пробное',
+      makeup: 'Отработка'
+    };
+    return bookingType ? (typeMap[bookingType] || bookingType) : 'Обычное';
   }
 
   getStatusColor(status: string): string {

@@ -5,6 +5,11 @@ from datetime import date, datetime, timedelta
 
 from app.attendance.models import Attendance
 from app.attendance.schemas import AttendanceCreate
+from app.core.utils import (
+    get_day_of_week_in_timezone,
+    is_within_class_time_window,
+    get_datetime_in_timezone
+)
 
 
 async def mark_attendance(
@@ -12,17 +17,74 @@ async def mark_attendance(
     athlete_id: int,
     class_id: int,
     qr_code: str,
+    timezone: str,
     method: str = "qr_scan"
 ) -> Attendance:
-    """Mark attendance for an athlete"""
+    """
+    Mark attendance for an athlete with time window validation.
+
+    Validates:
+    - Class runs on today's day of week (in user's timezone)
+    - Current time is within attendance window (30 min before start to 30 min after end)
+    - User has a confirmed booking for today
+    - Attendance not already marked today
+    """
+    from app.classes.models import Class
+    from app.bookings.models import Booking, BookingStatus
+
+    # Get class details
+    class_result = await db.execute(
+        select(Class).where(Class.id == class_id)
+    )
+    class_obj = class_result.scalar_one_or_none()
+
+    if not class_obj:
+        raise ValueError("Class not found")
+
+    # Get current datetime and day in user's timezone
+    try:
+        current_dt = get_datetime_in_timezone(timezone)
+        current_day = get_day_of_week_in_timezone(timezone)
+        current_date = current_dt.date()
+    except ValueError as e:
+        raise ValueError(f"Invalid timezone: {timezone}")
+
+    # Check if class runs today
+    if current_day not in class_obj.days_of_week:
+        raise ValueError(f"Class does not run on {current_day.capitalize()}")
+
+    # Check if within time window
+    is_within, error_msg = is_within_class_time_window(
+        class_obj.start_time,
+        class_obj.end_time,
+        timezone
+    )
+
+    if not is_within:
+        raise ValueError(error_msg)
+
+    # Check if user has a confirmed booking for this class today
+    booking_result = await db.execute(
+        select(Booking)
+        .where(
+            Booking.athlete_id == athlete_id,
+            Booking.class_id == class_id,
+            func.date(Booking.class_date) == current_date,
+            Booking.status == BookingStatus.confirmed
+        )
+    )
+    booking = booking_result.scalar_one_or_none()
+
+    if not booking:
+        raise ValueError("No confirmed booking found for this class today")
+
     # Check if already marked today
-    today = date.today()
     existing = await db.execute(
         select(Attendance)
         .where(
             Attendance.athlete_id == athlete_id,
             Attendance.class_id == class_id,
-            Attendance.attendance_date == today
+            Attendance.attendance_date == current_date
         )
     )
     if existing.scalar_one_or_none():
@@ -33,7 +95,7 @@ async def mark_attendance(
         athlete_id=athlete_id,
         class_id=class_id,
         qr_code=qr_code,
-        attendance_date=today,
+        attendance_date=current_date,
         method=method
     )
     db.add(db_attendance)

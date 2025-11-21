@@ -116,7 +116,7 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     <Card style={styles.sectionCard}>
       <Card.Content>
         <View style={styles.sectionHeader}>
-          <Title style={styles.sectionTitle}>Последние занятия</Title>
+          <Title style={styles.sectionTitle}>Все занятия</Title>
           <Button
             mode="text"
             onPress={() => navigation?.navigate('Classes')}
@@ -161,10 +161,10 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
       <Card style={styles.sectionCard}>
         <Card.Content>
           <View style={styles.sectionHeader}>
-            <Title style={styles.sectionTitle}>Последние записи</Title>
+            <Title style={styles.sectionTitle}>Ваши занятия</Title>
             <Button
               mode="text"
-              onPress={() => navigation?.navigate('Bookings')}
+              onPress={() => navigation?.navigate('YourClasses')}
               textColor="#E74C3C"
               icon="arrow-right"
             >

@@ -24,6 +24,25 @@ async def get_classes(
     return await service.get_classes(skip, limit, coach_id, difficulty)
 
 
+@router.get("/available-for-attendance")
+async def get_available_classes_for_attendance(
+    timezone: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get classes available for attendance marking.
+
+    Returns classes that:
+    - Run on today's day of week (in user's timezone)
+    - Are within the attendance window (30 min before start to 30 min after end)
+    - User has a confirmed booking for today
+    """
+    from app.attendance.schemas import AvailableClassForAttendance
+    service = ClassesService(db)
+    return await service.get_available_classes_for_attendance(timezone, current_user.id)
+
+
 @router.post("/", response_model=schemas.ClassOut, status_code=status.HTTP_201_CREATED)
 async def create_class(
     class_data: schemas.ClassCreate,

@@ -18,11 +18,12 @@ async def mark_attendance(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Mark attendance for current user (athletes only)"""
+    """Mark attendance for current user (athletes only) with time window validation"""
     service = AttendanceService(db)
     return await service.mark_attendance(
         request.class_id,
         request.qr_code,
+        request.timezone,
         request.method,
         current_user
     )

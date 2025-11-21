@@ -1,10 +1,18 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func, cast
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
+from datetime import date
 
 from app.classes.models import Class
 from app.classes.schemas import ClassCreate, ClassUpdate
+from app.core.utils import (
+    get_day_of_week_in_timezone,
+    is_within_class_time_window,
+    get_minutes_until_window_closes,
+    get_datetime_in_timezone
+)
 
 
 async def get_all_classes(
@@ -123,10 +131,12 @@ async def get_class_participants(db: AsyncSession, class_id: int):
     participants = []
     for user, booking in result.all():
         participants.append({
-            'id': user.id,
+            'id': booking.id,  # Use booking ID to ensure uniqueness
+            'athlete_id': user.id,  # Add athlete ID as separate field
             'first_name': user.first_name,
             'last_name': user.last_name,
             'phone': user.phone,
+            'birth_date': user.birth_date,
             'booking_status': booking.status.value,
             'class_date': booking.class_date,
             'is_paid': booking.is_paid,
@@ -135,3 +145,90 @@ async def get_class_participants(db: AsyncSession, class_id: int):
         })
 
     return participants
+
+
+async def get_available_classes_for_attendance(
+    db: AsyncSession,
+    timezone: str,
+    user_id: int
+) -> List[dict]:
+    """
+    Get classes available for attendance marking.
+
+    Returns classes that:
+    - Run on today's day of week (in user's timezone)
+    - Are within the attendance window (30 min before start to 30 min after end)
+    - User has a confirmed booking for today
+    """
+    from app.bookings.models import Booking, BookingStatus
+
+    # Get current day of week in user's timezone
+    try:
+        current_day = get_day_of_week_in_timezone(timezone)
+        current_dt = get_datetime_in_timezone(timezone)
+        current_date = current_dt.date()
+    except ValueError as e:
+        # Invalid timezone
+        return []
+
+    # Get all active classes that run on this day of week
+    # Use PostgreSQL JSON contains operator (@>) with proper casting
+    # Cast both the column and the value to JSONB since the column is JSON type
+    query = (
+        select(Class)
+        .where(cast(Class.days_of_week, JSONB).op('@>')(cast([current_day], JSONB)))
+        .options(selectinload(Class.coach))
+    )
+    query = Class.filter_active(query)
+
+    result = await db.execute(query)
+    classes = result.scalars().all()
+
+    available_classes = []
+
+    for class_obj in classes:
+        # Check if current time is within attendance window
+        is_within, error_msg = is_within_class_time_window(
+            class_obj.start_time,
+            class_obj.end_time,
+            timezone
+        )
+
+        if not is_within:
+            continue
+
+        # Check if user has a confirmed booking for this class today
+        booking_query = (
+            select(Booking)
+            .where(
+                Booking.athlete_id == user_id,
+                Booking.class_id == class_obj.id,
+                func.date(Booking.class_date) == current_date,
+                Booking.status == BookingStatus.confirmed
+            )
+        )
+        booking_query = Booking.filter_active(booking_query)
+
+        booking_result = await db.execute(booking_query)
+        booking = booking_result.scalar_one_or_none()
+
+        if not booking:
+            continue
+
+        # Calculate minutes remaining
+        minutes_remaining = get_minutes_until_window_closes(
+            class_obj.end_time,
+            timezone
+        )
+
+        # Add to available classes
+        available_classes.append({
+            'class_id': class_obj.id,
+            'class_name': class_obj.name,
+            'start_time': str(class_obj.start_time),
+            'end_time': str(class_obj.end_time),
+            'minutes_remaining': minutes_remaining,
+            'booking_id': booking.id
+        })
+
+    return available_classes

@@ -11,8 +11,8 @@ class Attendance(Base, SoftDeleteMixin):
     athlete_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
 
-    # QR code (3-digit code)
-    qr_code = Column(String(3), nullable=False)
+    # QR code (unified attendance QR code)
+    qr_code = Column(String(255), nullable=False)
 
     # Attendance details
     attendance_date = Column(Date, nullable=False)

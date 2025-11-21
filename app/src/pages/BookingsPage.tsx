@@ -188,7 +188,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-child" size={16} color="#E74C3C" />
               <Text style={[styles.detailText, { color: '#FFFFFF', fontWeight: '600' }]}>
-                Спортсмен: {booking.athlete.full_name}
+                Спортсмен: {booking.athlete.full_name || `${booking.athlete.first_name} ${booking.athlete.last_name}`}
               </Text>
             </View>
           )}
@@ -197,7 +197,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-child" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Спортсмен: {booking.athlete.full_name}
+                Спортсмен: {booking.athlete.full_name || `${booking.athlete.first_name} ${booking.athlete.last_name}`}
               </Text>
             </View>
           )}
@@ -206,7 +206,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Забронировал: {booking.booked_by_parent.full_name}
+                Забронировал: {(booking.booked_by_parent as any).full_name || `${(booking.booked_by_parent as any).first_name} ${(booking.booked_by_parent as any).last_name}`}
               </Text>
             </View>
           )}
@@ -215,7 +215,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-tie" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Тренер: {booking.class_obj.coach.full_name}
+                Тренер: {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
               </Text>
             </View>
           )}

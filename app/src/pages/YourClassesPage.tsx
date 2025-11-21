@@ -299,7 +299,7 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
                 color="#B0BEC5"
               />
               <Text style={styles.infoText}>
-                {bookingsService.formatDate(booking.class_date)}
+                {bookingsService.formatDateTime(booking.class_date)}
               </Text>
             </View>
 
@@ -507,27 +507,37 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   searchBar: {
     backgroundColor: '#1B263B',
     borderRadius: 8,
+    elevation: 0,
   },
   searchInput: {
     color: '#fff',
+    minHeight: 40,
   },
   filterContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxHeight: 52,
   },
   filterContent: {
     gap: 8,
+    alignItems: 'center',
   },
   filterChip: {
     backgroundColor: '#1B263B',
     borderColor: '#2C3E50',
     borderWidth: 1,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 0,
+    margin: 0,
   },
   filterChipSelected: {
     backgroundColor: '#E74C3C',
@@ -535,17 +545,22 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     color: '#B0BEC5',
+    fontSize: 13,
+    lineHeight: 18,
+    marginVertical: 0,
+    paddingVertical: 0,
   },
   filterChipTextSelected: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 80,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 100,
   },
   card: {
     backgroundColor: '#1B263B',

@@ -30,7 +30,17 @@ export interface Attendance {
 export interface MarkAttendanceRequest {
   class_id: number;
   qr_code: string;
+  timezone: string;  // IANA timezone string (e.g., "Asia/Almaty")
   method?: 'qr_scan' | 'manual_entry';
+}
+
+export interface AvailableClassForAttendance {
+  class_id: number;
+  class_name: string;
+  start_time: string;
+  end_time: string;
+  minutes_remaining: number;
+  booking_id: number;
 }
 
 export interface AttendanceStats {
@@ -50,6 +60,24 @@ export interface DateRange {
 }
 
 class AttendanceService {
+  /**
+   * Get classes available for attendance marking
+   * GET /classes/available-for-attendance
+   */
+  async getAvailableClassesForAttendance(timezone: string): Promise<AvailableClassForAttendance[]> {
+    try {
+      const response = await api.get('/classes/available-for-attendance', {
+        params: { timezone }
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Failed to get available classes for attendance');
+    }
+  }
+
   /**
    * Mark attendance for current user
    * POST /attendance/mark

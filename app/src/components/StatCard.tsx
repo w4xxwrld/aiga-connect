@@ -18,11 +18,11 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => {
   return (
     <Card style={styles.statCard}>
-      <Card.Content style={styles.statContent}>
+      <View style={styles.statContent}>
         {icon && <MaterialCommunityIcons name={icon} size={24} color={iconColor} />}
         <Text style={styles.statNumber}>{value}</Text>
         <Text style={styles.statLabel}>{label}</Text>
-      </Card.Content>
+      </View>
     </Card>
   );
 };
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   },
   statContent: {
     alignItems: 'center',
-    paddingVertical: 16,
+    padding: 16,
   },
   statNumber: {
     color: '#fff',

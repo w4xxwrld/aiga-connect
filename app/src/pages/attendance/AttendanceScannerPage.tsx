@@ -6,6 +6,7 @@ import {
   Alert,
   TouchableOpacity,
   Platform,
+  FlatList,
 } from 'react-native';
 import {
   Button,
@@ -13,82 +14,74 @@ import {
   Card,
   Title,
   ActivityIndicator,
+  Chip,
 } from 'react-native-paper';
 import { CameraView, Camera } from 'expo-camera';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Layout from '../../components/Layout';
-import attendanceService from '../../services/attendance';
-import bookingsService, { Booking } from '../../services/bookings';
-import classesService, { Class } from '../../services/classes';
+import attendanceService, { AvailableClassForAttendance } from '../../services/attendance';
+import { getDeviceTimezone } from '../../utils/timezone';
 
 const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
+  // UI State
+  const [currentStep, setCurrentStep] = useState<'class-selection' | 'qr-scan'>('class-selection');
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
-  const [availableClasses, setAvailableClasses] = useState<Class[]>([]);
+
+  // Data State
+  const [availableClasses, setAvailableClasses] = useState<AvailableClassForAttendance[]>([]);
+  const [selectedClass, setSelectedClass] = useState<AvailableClassForAttendance | null>(null);
+  const [timezone, setTimezone] = useState<string>('UTC');
 
   useEffect(() => {
-    requestCameraPermission();
-    loadAvailableClasses();
+    initializePage();
   }, []);
+
+  const initializePage = async () => {
+    // Get device timezone
+    const deviceTimezone = getDeviceTimezone();
+    setTimezone(deviceTimezone);
+
+    // Load available classes
+    await loadAvailableClasses(deviceTimezone);
+  };
 
   const requestCameraPermission = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
     setHasPermission(status === 'granted');
   };
 
-  const loadAvailableClasses = async () => {
+  const loadAvailableClasses = async (tz: string) => {
     try {
-      // Get user's bookings
-      const bookings = await bookingsService.getMyBookings();
-      const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+      setLoading(true);
+      const classes = await attendanceService.getAvailableClassesForAttendance(tz);
+      setAvailableClasses(classes);
 
-      // Get class details for each booking
-      const classIds = [...new Set(confirmedBookings.map(b => b.class_id))];
-      const allClasses = await classesService.getClasses();
-      const userClasses = allClasses.filter(c => classIds.includes(c.id));
-
-      setAvailableClasses(userClasses);
+      if (classes.length === 0) {
+        Alert.alert(
+          'Нет доступных занятий',
+          'В данный момент нет занятий, доступных для отметки посещения. Убедитесь, что:\n\n• У вас есть подтвержденная запись на занятие\n• Занятие начинается в пределах ближайших 30 минут или уже началось'
+        );
+      }
     } catch (error: any) {
       console.error('Error loading available classes:', error);
+      Alert.alert(
+        'Ошибка',
+        error.message || 'Не удалось загрузить доступные занятия'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-  const findMatchingClass = (): Class | null => {
-    if (availableClasses.length === 0) return null;
-
-    const now = new Date();
-    const currentDay = now.toLocaleDateString('ru-RU', { weekday: 'long' });
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    // Find classes that:
-    // 1. Are scheduled for today (match day of week)
-    // 2. Are happening now or soon (within 30 minutes before to 30 minutes after start time)
-    const matchingClasses = availableClasses.filter(classItem => {
-      if (!classItem.days_of_week.includes(currentDay)) {
-        return false;
-      }
-
-      // Parse class start time
-      const [classHour, classMinute] = classItem.start_time.split(':').map(Number);
-      const classStartTime = new Date(now);
-      classStartTime.setHours(classHour, classMinute, 0, 0);
-
-      // Calculate time difference in minutes
-      const timeDiff = (classStartTime.getTime() - now.getTime()) / (1000 * 60);
-
-      // Allow check-in from 30 minutes before to 30 minutes after class start
-      return timeDiff >= -30 && timeDiff <= 30;
-    });
-
-    // Return the closest match
-    if (matchingClasses.length > 0) {
-      return matchingClasses[0];
-    }
-
-    return null;
+  const handleClassSelect = async (classItem: AvailableClassForAttendance) => {
+    setSelectedClass(classItem);
+    // Request camera permission when moving to scanner
+    await requestCameraPermission();
+    setCurrentStep('qr-scan');
   };
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
@@ -96,13 +89,13 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
 
     setScanned(true);
 
-    // Extract 3-digit code from QR data
+    // Extract QR code data
     const qrCode = data.trim();
 
-    if (!/^\d{3}$/.test(qrCode)) {
+    if (!qrCode) {
       Alert.alert(
         'Неверный код',
-        'QR-код должен содержать 3 цифры. Попробуйте еще раз.',
+        'QR-код не может быть пустым. Попробуйте еще раз.',
         [{ text: 'OK', onPress: () => setScanned(false) }]
       );
       return;
@@ -112,43 +105,35 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
   };
 
   const handleManualSubmit = () => {
-    if (!manualCode || manualCode.length !== 3 || !/^\d{3}$/.test(manualCode)) {
-      Alert.alert('Ошибка', 'Введите 3-значный код');
+    if (!manualCode || !manualCode.trim()) {
+      Alert.alert('Ошибка', 'Введите код посещения');
       return;
     }
 
-    markAttendance(manualCode, 'manual_entry');
+    markAttendance(manualCode.trim(), 'manual_entry');
   };
 
   const markAttendance = async (qrCode: string, method: 'qr_scan' | 'manual_entry') => {
+    if (!selectedClass) {
+      Alert.alert('Ошибка', 'Класс не выбран');
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Find matching class based on time and user's bookings
-      const matchingClass = findMatchingClass();
-
-      if (!matchingClass) {
-        Alert.alert(
-          'Занятие не найдено',
-          'Не удалось найти подходящее занятие. Убедитесь, что:\n\n• Вы записаны на занятие\n• Занятие начинается сейчас (±30 минут)\n• Сегодня день проведения занятия',
-          [
-            { text: 'OK', onPress: () => setScanned(false) }
-          ]
-        );
-        return;
-      }
-
-      // Mark attendance
+      // Mark attendance with timezone
       await attendanceService.markAttendance({
-        class_id: matchingClass.id,
+        class_id: selectedClass.class_id,
         qr_code: qrCode,
+        timezone: timezone,
         method: method,
       });
 
       // Success!
       Alert.alert(
         'Успешно!',
-        `Посещение отмечено для занятия "${matchingClass.name}"`,
+        `Посещение отмечено для занятия "${selectedClass.class_name}"`,
         [
           {
             text: 'OK',
@@ -176,6 +161,87 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
     setScanned(false);
   };
 
+  const handleBackToClassSelection = () => {
+    setCurrentStep('class-selection');
+    setSelectedClass(null);
+    setScanned(false);
+    setShowManualEntry(false);
+  };
+
+  // Show class selection first
+  if (currentStep === 'class-selection') {
+    return (
+      <Layout>
+        <View style={styles.container}>
+          <Card style={styles.headerCard}>
+            <Card.Content>
+              <Title style={styles.headerTitle}>Выберите занятие</Title>
+              <Text style={styles.headerSubtitle}>
+                Выберите занятие для отметки посещения
+              </Text>
+            </Card.Content>
+          </Card>
+
+          {loading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color="#E74C3C" />
+              <Text style={styles.loadingText}>Загрузка занятий...</Text>
+            </View>
+          ) : availableClasses.length === 0 ? (
+            <View style={styles.centerContainer}>
+              <MaterialCommunityIcons name="calendar-alert" size={64} color="#B0BEC5" />
+              <Text style={styles.noClassesText}>
+                Нет доступных занятий
+              </Text>
+              <Text style={styles.noClassesSubtext}>
+                В данный момент нет занятий, доступных для отметки посещения
+              </Text>
+              <Button
+                mode="contained"
+                onPress={() => loadAvailableClasses(timezone)}
+                style={styles.refreshButton}
+              >
+                Обновить
+              </Button>
+            </View>
+          ) : (
+            <FlatList
+              data={availableClasses}
+              keyExtractor={(item) => item.class_id.toString()}
+              renderItem={({ item }) => (
+                <Card style={styles.classCard} onPress={() => handleClassSelect(item)}>
+                  <Card.Content>
+                    <View style={styles.classCardHeader}>
+                      <Title style={styles.className}>{item.class_name}</Title>
+                      <Chip
+                        mode="flat"
+                        style={styles.timeChip}
+                        textStyle={styles.timeChipText}
+                      >
+                        {item.minutes_remaining} мин
+                      </Chip>
+                    </View>
+                    <View style={styles.classCardInfo}>
+                      <MaterialCommunityIcons name="clock-outline" size={16} color="#B0BEC5" />
+                      <Text style={styles.classTime}>
+                        {item.start_time.substring(0, 5)} - {item.end_time.substring(0, 5)}
+                      </Text>
+                    </View>
+                    <Text style={styles.classDescription}>
+                      Нажмите, чтобы отметить посещение
+                    </Text>
+                  </Card.Content>
+                </Card>
+              )}
+              contentContainerStyle={styles.classList}
+            />
+          )}
+        </View>
+      </Layout>
+    );
+  }
+
+  // QR Scanner flow
   if (hasPermission === null) {
     return (
       <Layout>
@@ -205,6 +271,13 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
           >
             Ввести код вручную
           </Button>
+          <Button
+            mode="text"
+            onPress={handleBackToClassSelection}
+            style={styles.backButton}
+          >
+            Назад к выбору занятия
+          </Button>
         </View>
       </Layout>
     );
@@ -218,16 +291,17 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
             <Card.Content>
               <Title style={styles.manualTitle}>Ручной ввод кода</Title>
               <Text style={styles.manualSubtitle}>
-                Введите 3-значный код с QR-кода
+                Занятие: {selectedClass?.class_name}
+              </Text>
+              <Text style={styles.manualSubtitle}>
+                Введите код посещения с QR-кода
               </Text>
 
               <TextInput
                 mode="outlined"
-                label="Код (3 цифры)"
+                label="Код посещения"
                 value={manualCode}
                 onChangeText={setManualCode}
-                keyboardType="number-pad"
-                maxLength={3}
                 style={styles.input}
                 theme={{
                   colors: {
@@ -244,7 +318,7 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
                 mode="contained"
                 onPress={handleManualSubmit}
                 loading={loading}
-                disabled={loading || manualCode.length !== 3}
+                disabled={loading || !manualCode.trim()}
                 style={styles.submitButton}
               >
                 Отметить посещение
@@ -258,6 +332,15 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
               >
                 Вернуться к сканированию
               </Button>
+
+              <Button
+                mode="text"
+                onPress={handleBackToClassSelection}
+                style={styles.switchModeButton}
+                disabled={loading}
+              >
+                Выбрать другое занятие
+              </Button>
             </Card.Content>
           </Card>
         </View>
@@ -268,6 +351,23 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
   return (
     <Layout>
       <View style={styles.container}>
+        {/* Class info header */}
+        <Card style={styles.scannerHeaderCard}>
+          <Card.Content>
+            <View style={styles.scannerHeader}>
+              <TouchableOpacity onPress={handleBackToClassSelection} style={styles.backIconButton}>
+                <MaterialCommunityIcons name="arrow-left" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <View style={styles.scannerHeaderText}>
+                <Text style={styles.scannerClassName}>{selectedClass?.class_name}</Text>
+                <Text style={styles.scannerClassTime}>
+                  {selectedClass?.start_time.substring(0, 5)} - {selectedClass?.end_time.substring(0, 5)}
+                </Text>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
+
         <View style={styles.cameraContainer}>
           <CameraView
             style={styles.camera}
@@ -287,7 +387,9 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
             </View>
 
             <View style={styles.overlayMiddle}>
+              <View style={styles.overlaySide} />
               <View style={styles.scanFrame} />
+              <View style={styles.overlaySide} />
             </View>
 
             <View style={styles.overlayBottom}>
@@ -339,6 +441,113 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
+  // Class selection styles
+  headerCard: {
+    margin: 16,
+    marginBottom: 8,
+    backgroundColor: '#1B263B',
+    borderRadius: 12,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#B0BEC5',
+  },
+  classList: {
+    padding: 16,
+    paddingTop: 8,
+  },
+  classCard: {
+    marginBottom: 16,
+    backgroundColor: '#1B263B',
+    borderRadius: 12,
+  },
+  classCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  className: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    flex: 1,
+  },
+  timeChip: {
+    backgroundColor: '#E74C3C',
+  },
+  timeChipText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
+  classCardInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  classTime: {
+    fontSize: 14,
+    color: '#B0BEC5',
+    marginLeft: 4,
+  },
+  classDescription: {
+    fontSize: 12,
+    color: '#B0BEC5',
+    fontStyle: 'italic',
+  },
+  noClassesText: {
+    marginTop: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  noClassesSubtext: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#B0BEC5',
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
+  refreshButton: {
+    marginTop: 24,
+    backgroundColor: '#E74C3C',
+  },
+  // Scanner header styles
+  scannerHeaderCard: {
+    backgroundColor: '#1B263B',
+    borderRadius: 0,
+    marginBottom: 0,
+  },
+  scannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backIconButton: {
+    marginRight: 12,
+  },
+  scannerHeaderText: {
+    flex: 1,
+  },
+  scannerClassName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  scannerClassTime: {
+    fontSize: 12,
+    color: '#B0BEC5',
+    marginTop: 2,
+  },
+  backButton: {
+    marginTop: 8,
+  },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
@@ -381,7 +590,13 @@ const styles = StyleSheet.create({
   },
   overlayMiddle: {
     flexDirection: 'row',
-    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overlaySide: {
+    flex: 1,
+    height: 250,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   overlayBottom: {
     flex: 1,
@@ -399,9 +614,9 @@ const styles = StyleSheet.create({
   scanFrame: {
     width: 250,
     height: 250,
-    borderWidth: 3,
+    borderWidth: 6,
     borderColor: '#E74C3C',
-    borderRadius: 12,
+    borderRadius: 0,
     backgroundColor: 'transparent',
   },
   loadingOverlay: {

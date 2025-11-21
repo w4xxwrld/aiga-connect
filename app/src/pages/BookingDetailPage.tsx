@@ -191,7 +191,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
             <View style={styles.infoSection}>
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons name="calendar" size={20} color="#E74C3C" />
-                <Text style={styles.infoLabel}>Дата занятия:</Text>
+                <Text style={styles.infoLabel}>Дата и время занятия:</Text>
                 <Text style={styles.infoValue}>
                   {bookingsService.formatDateTime(booking.class_date)}
                 </Text>
@@ -218,7 +218,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
                   <MaterialCommunityIcons name="account-child" size={20} color="#E74C3C" />
                   <Text style={styles.infoLabel}>Спортсмен:</Text>
                   <Text style={styles.infoValue}>
-                    {booking.athlete.full_name}
+                    {booking.athlete.full_name || `${booking.athlete.first_name} ${booking.athlete.last_name}`}
                   </Text>
                 </View>
               )}
@@ -228,7 +228,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
                   <MaterialCommunityIcons name="account-tie" size={20} color="#E74C3C" />
                   <Text style={styles.infoLabel}>Тренер:</Text>
                   <Text style={styles.infoValue}>
-                    {booking.class_obj.coach.full_name}
+                    {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
                   </Text>
                 </View>
               )}

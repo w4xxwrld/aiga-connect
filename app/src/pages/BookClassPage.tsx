@@ -40,7 +40,6 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
   const [classData, setClassData] = useState<Class | null>(null);
   const [bookingType, setBookingType] = useState<'regular' | 'trial' | 'makeup'>('regular');
   const [classDate, setClassDate] = useState<string>('');
-  const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -72,30 +71,37 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
   const getNextClassDate = (classInfo: Class): string => {
     const today = new Date();
     const dayNames = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
-    const targetDay = dayNames.indexOf(classInfo.day_of_week.toLowerCase());
-    
+
+    // Get the first day from days_of_week array
+    const firstDay = classInfo.days_of_week?.[0];
+    if (!firstDay) {
+      // If no days specified, return today
+      return today.toISOString().split('T')[0];
+    }
+
+    const targetDay = dayNames.indexOf(firstDay.toLowerCase());
+    if (targetDay === -1) {
+      // Invalid day, return today
+      return today.toISOString().split('T')[0];
+    }
+
     let nextDate = new Date(today);
     const currentDay = today.getDay();
-    
+
     // Calculate days until next class
     let daysUntilNext = targetDay - currentDay;
     if (daysUntilNext <= 0) {
       daysUntilNext += 7; // Next week
     }
-    
+
     nextDate.setDate(today.getDate() + daysUntilNext);
     return nextDate.toISOString().split('T')[0];
   };
 
   const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!classDate) {
-      newErrors.classDate = 'Выберите дату занятия';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    // Date is automatically set to next class occurrence
+    // No validation needed for user input
+    return true;
   };
 
   const handleBookClass = async () => {
@@ -108,11 +114,10 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
         class_id: classId,
         booking_type: bookingType,
         class_date: classDate,
-        notes: notes.trim() || undefined,
       };
 
       await bookingsService.createBooking(bookingData);
-      
+
       Alert.alert(
         'Успешно',
         'Занятие успешно забронировано',
@@ -138,18 +143,55 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
       <Card style={styles.card}>
         <Card.Content>
           <Title style={styles.sectionTitle}>Информация о занятии</Title>
-          
+
           <View style={styles.classInfo}>
             <Text style={styles.className}>{classData.name}</Text>
-            <Text style={styles.classTime}>
-              {classesService.formatDayOfWeek(classData.day_of_week)} • {classesService.formatTime(classData.start_time)} - {classesService.formatTime(classData.end_time)}
-            </Text>
-            <Text style={styles.classCoach}>
-              Тренер: {classData.coach?.full_name || 'Не указан'}
-            </Text>
-            <Text style={styles.classPrice}>
-              Стоимость: {classData.price_per_class} ₸
-            </Text>
+
+            {classData.description && (
+              <Text style={styles.classDescription}>{classData.description}</Text>
+            )}
+
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="calendar" size={20} color="#E74C3C" />
+              <Text style={styles.infoText}>
+                {classData.days_of_week?.filter(day => day).map(day => classesService.formatDayOfWeek(day)).join(', ') || 'Не указано'}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="clock-outline" size={20} color="#E74C3C" />
+              <Text style={styles.infoText}>
+                {classesService.formatTime(classData.start_time)} - {classesService.formatTime(classData.end_time)}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="account-tie" size={20} color="#E74C3C" />
+              <Text style={styles.infoText}>
+                Тренер: {classData.coach?.full_name || classData.coach ? `${classData.coach.first_name} ${classData.coach.last_name}` : 'Не указан'}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="account-multiple" size={20} color="#E74C3C" />
+              <Text style={styles.infoText}>
+                Максимум мест: {classData.max_capacity}
+              </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <MaterialCommunityIcons name="signal" size={20} color="#E74C3C" />
+              <Text style={styles.infoText}>
+                Уровень: {classesService.getDifficultyDisplayName(classData.difficulty_level)}
+              </Text>
+            </View>
+
+            <View style={styles.infoPriceRow}>
+              <MaterialCommunityIcons name="currency-usd" size={24} color="#E74C3C" />
+              <Text style={styles.classPrice}>
+                {classData.price_per_class || classData.price} ₸
+              </Text>
+            </View>
           </View>
 
           <Divider style={styles.divider} />
@@ -184,46 +226,12 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
             </View>
           )}
 
-          <Title style={styles.sectionTitle}>Дата занятия</Title>
-          <TextInput
-            label="Дата"
-            value={classDate}
-            onChangeText={setClassDate}
-            mode="outlined"
-            style={styles.input}
-            outlineColor="#fff"
-            activeOutlineColor="#E74C3C"
-            textColor="#fff"
-            theme={{
-              colors: {
-                onSurfaceVariant: '#fff',
-              }
-            }}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#fff"
-            error={!!errors.classDate}
-          />
-          {errors.classDate && <HelperText type="error" visible={!!errors.classDate}>{errors.classDate}</HelperText>}
-
-          <Title style={styles.sectionTitle}>Дополнительная информация</Title>
-          <TextInput
-            label="Заметки (необязательно)"
-            value={notes}
-            onChangeText={setNotes}
-            mode="outlined"
-            style={styles.input}
-            outlineColor="#fff"
-            activeOutlineColor="#E74C3C"
-            textColor="#fff"
-            theme={{
-              colors: {
-                onSurfaceVariant: '#fff',
-              }
-            }}
-            placeholderTextColor="#fff"
-            multiline
-            numberOfLines={3}
-          />
+          <View style={styles.nextClassInfo}>
+            <MaterialCommunityIcons name="calendar-check" size={20} color="#4CAF50" />
+            <Text style={styles.nextClassText}>
+              Следующее занятие: {new Date(classDate).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </Text>
+          </View>
         </Card.Content>
       </Card>
     );
@@ -331,24 +339,52 @@ const styles: any = {
   },
   className: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  classTime: {
+  classDescription: {
     color: '#B0BEC5',
     fontSize: 16,
-    marginBottom: 4,
+    lineHeight: 24,
+    marginBottom: 16,
   },
-  classCoach: {
-    color: '#B0BEC5',
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  infoText: {
+    color: '#fff',
     fontSize: 16,
-    marginBottom: 4,
+    flex: 1,
+  },
+  infoPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 12,
   },
   classPrice: {
     color: '#E74C3C',
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
+  },
+  nextClassInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2C3E50',
+    padding: 16,
+    borderRadius: 8,
+    gap: 12,
+    marginTop: 8,
+  },
+  nextClassText: {
+    color: '#4CAF50',
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
   },
   divider: {
     backgroundColor: '#2C3E50',
@@ -358,37 +394,6 @@ const styles: any = {
     marginBottom: 12,
     marginHorizontal: -4,
     textColor: '#fff',
-  },
-  input: {
-    marginBottom: 8,
-    backgroundColor: '#2C3E50',
-  },
-  childItem: {
-    backgroundColor: '#2C3E50',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  selectedChildItem: {
-    backgroundColor: '#34495E',
-    borderColor: '#E74C3C',
-    borderWidth: 1,
-  },
-  childAvatar: {
-    backgroundColor: '#34495E',
-    marginLeft: 16,
-    alignSelf: 'center',
-  },
-  selectedChildAvatar: {
-    backgroundColor: '#E74C3C',
-  },
-  childName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  childAge: {
-    color: '#B0BEC5',
-    fontSize: 14,
   },
   actionsContainer: {
     gap: 12,

@@ -111,3 +111,6 @@ yarn-error.log*
 out/
 build/
 dist/
+
+# Generated API types
+backend/openapi.json

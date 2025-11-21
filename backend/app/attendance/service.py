@@ -18,10 +18,11 @@ class AttendanceService:
         self,
         class_id: int,
         qr_code: str,
+        timezone: str,
         method: str,
         current_user: User
     ) -> models.Attendance:
-        """Mark attendance (for athletes only)"""
+        """Mark attendance (for athletes only) with time window validation"""
         if current_user.primary_role != UserRole.athlete:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -36,13 +37,14 @@ class AttendanceService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Class not found"
             )
-        
+
         try:
             return await crud.mark_attendance(
                 self.db,
                 athlete_id=current_user.id,
                 class_id=class_id,
                 qr_code=qr_code,
+                timezone=timezone,
                 method=method
             )
         except ValueError as e:

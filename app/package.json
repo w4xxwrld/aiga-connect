@@ -6,7 +6,9 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "generate-types": "./scripts/generate-types.sh",
+    "types": "npm run generate-types"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -48,6 +50,7 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~19.1.10",
     "libphonenumber-js": "^1.12.26",
+    "openapi-typescript": "^7.10.1",
     "typescript": "~5.9.2"
   },
   "private": true

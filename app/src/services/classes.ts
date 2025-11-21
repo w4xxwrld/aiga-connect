@@ -11,12 +11,16 @@ export interface Class {
   end_time: string;
   max_capacity: number;
   price: number; // Price in tenge
+  price_per_class?: number; // Alias for price (for backward compatibility)
+  duration?: number; // Duration in minutes (optional)
+  is_trial_available?: boolean; // Whether trial sessions are available
   created_at: string;
   updated_at: string;
   coach?: {
     id: number;
     first_name: string;
     last_name: string;
+    full_name?: string;
   };
 }
 
@@ -139,7 +143,7 @@ class ClassesService {
   }
 
   formatDayOfWeek(day: string): string {
-    if (!day) return '';
+    if (!day || typeof day !== 'string') return '';
     const days: { [key: string]: string } = {
       'понедельник': 'Понедельник',
       'вторник': 'Вторник',
@@ -161,6 +165,7 @@ class ClassesService {
   }
 
   convertDayToEnglish(day: string): string {
+    if (!day || typeof day !== 'string') return '';
     const dayMapping: { [key: string]: string } = {
       'понедельник': 'monday',
       'вторник': 'tuesday',

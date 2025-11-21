@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import List, Optional
+from datetime import datetime, date, time as datetime_time
 
 from app.core.utils import get_utc_now
 from app.bookings.models import Booking, BookingStatus, IndividualTrainingRequest, IndividualTrainingStatus
@@ -11,7 +12,41 @@ from app.classes.models import Class
 
 async def create_booking(db: AsyncSession, booking_data: BookingCreate) -> Booking:
     """Create new booking"""
-    db_booking = Booking(**booking_data.model_dump())
+    # Get the class to fetch its start_time
+    class_result = await db.execute(
+        select(Class).where(Class.id == booking_data.class_id)
+    )
+    class_obj = class_result.scalar_one_or_none()
+
+    if not class_obj:
+        raise ValueError("Class not found")
+
+    # Parse the class_date (which might be just a date or datetime)
+    booking_dict = booking_data.model_dump()
+    class_date_value = booking_dict['class_date']
+
+    # If class_date is a string, parse it
+    if isinstance(class_date_value, str):
+        # Try to parse as datetime first, if it fails, parse as date
+        try:
+            parsed_date = datetime.fromisoformat(class_date_value.replace('Z', '+00:00'))
+            # If it's already a full datetime, extract just the date part
+            booking_date = parsed_date.date()
+        except ValueError:
+            # Parse as date only
+            booking_date = date.fromisoformat(class_date_value)
+    elif isinstance(class_date_value, datetime):
+        booking_date = class_date_value.date()
+    else:
+        booking_date = class_date_value
+
+    # Combine the booking date with the class start time
+    class_datetime = datetime.combine(booking_date, class_obj.start_time)
+
+    # Update the booking data with the proper datetime
+    booking_dict['class_date'] = class_datetime
+
+    db_booking = Booking(**booking_dict)
     db.add(db_booking)
     await db.commit()
     await db.refresh(db_booking)

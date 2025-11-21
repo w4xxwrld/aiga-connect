@@ -30,7 +30,8 @@ interface ClassDetailPageProps {
 }
 
 interface ClassParticipant {
-  id: number;
+  id: number; // Booking ID (unique)
+  athlete_id: number; // User/Athlete ID
   first_name: string;
   last_name: string;
   birth_date: string;

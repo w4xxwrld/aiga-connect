@@ -1,10 +1,12 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 from pathlib import Path
 from typing import Optional
 
 # Get the path to the backend directory
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Get the path to the root directory (parent of backend)
+ROOT_DIR = BASE_DIR.parent
 
 class Settings(BaseSettings):
     SECRET_KEY: str
@@ -46,11 +48,17 @@ class Settings(BaseSettings):
     ALLOWED_IMAGE_EXTENSIONS: list[str] = [".jpg", ".jpeg", ".png", ".webp"]
     ALLOWED_MIME_TYPES: list[str] = ["image/jpeg", "image/png", "image/webp"]
 
+    # Attendance settings
+    ATTENDANCE_QR_CODE: str = "DEFAULT_QR_CODE"  # Unified QR code for attendance marking
+
     # CORS settings
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 
-    class Config:
-        env_file = BASE_DIR / ".env"
-        extra = "allow"
+    model_config = SettingsConfigDict(
+        env_file=str(ROOT_DIR / ".env"),
+        env_file_encoding='utf-8',
+        extra='allow',
+        case_sensitive=False
+    )
 
 settings = Settings()

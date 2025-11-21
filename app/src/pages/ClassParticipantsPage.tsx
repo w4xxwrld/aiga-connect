@@ -21,7 +21,8 @@ import bookingsService from '../services/bookings';
 import { Class } from '../services/classes';
 
 interface ClassParticipant {
-  id: number;
+  id: number; // Booking ID (unique)
+  athlete_id: number; // User/Athlete ID
   first_name: string;
   last_name: string;
   birth_date: string;
@@ -191,7 +192,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
   };
 
   const renderParticipantCard = (participant: ClassParticipant) => (
-    <Card key={participant.id} style={styles.participantCard}>
+    <Card style={styles.participantCard}>
       <Card.Content>
         <View style={styles.participantHeader}>
           <View style={styles.participantInfo}>
@@ -310,15 +311,15 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
 
         {/* Stats */}
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
+          <View key="stat-total" style={styles.statCard}>
             <Text style={styles.statNumber}>{participants.length}</Text>
             <Text style={styles.statLabel}>Всего участников</Text>
           </View>
-          <View style={styles.statCard}>
+          <View key="stat-confirmed" style={styles.statCard}>
             <Text style={styles.statNumber}>{getStatusCount('confirmed')}</Text>
             <Text style={styles.statLabel}>Подтверждено</Text>
           </View>
-          <View style={styles.statCard}>
+          <View key="stat-pending" style={styles.statCard}>
             <Text style={styles.statNumber}>{getStatusCount('pending')}</Text>
             <Text style={styles.statLabel}>Ожидает</Text>
           </View>
@@ -337,6 +338,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
         <View style={styles.filterContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <Chip
+              key="all"
               selected={selectedStatus === 'all'}
               onPress={() => setSelectedStatus('all')}
               style={styles.filterChip}
@@ -345,6 +347,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
               Все ({participants.length})
             </Chip>
             <Chip
+              key="pending"
               selected={selectedStatus === 'pending'}
               onPress={() => setSelectedStatus('pending')}
               style={styles.filterChip}
@@ -353,6 +356,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
               Ожидает ({getStatusCount('pending')})
             </Chip>
             <Chip
+              key="confirmed"
               selected={selectedStatus === 'confirmed'}
               onPress={() => setSelectedStatus('confirmed')}
               style={styles.filterChip}
@@ -365,7 +369,11 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
 
         {/* Participants List */}
         {filteredParticipants.length > 0 ? (
-          filteredParticipants.map(renderParticipantCard)
+          filteredParticipants.map((participant) => (
+            <React.Fragment key={participant.id}>
+              {renderParticipantCard(participant)}
+            </React.Fragment>
+          ))
         ) : (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="account-group" size={48} color="#B0BEC5" />

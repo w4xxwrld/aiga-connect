@@ -117,5 +117,20 @@ class ClassesService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only the class coach can view participants"
             )
-        
+
         return await crud.get_class_participants(self.db, class_id)
+
+    async def get_available_classes_for_attendance(
+        self,
+        timezone: str,
+        user_id: int
+    ) -> List[dict]:
+        """
+        Get classes available for attendance marking.
+
+        Returns classes that:
+        - Run on today's day of week (in user's timezone)
+        - Are within the attendance window (30 min before start to 30 min after end)
+        - User has a confirmed booking for today
+        """
+        return await crud.get_available_classes_for_attendance(self.db, timezone, user_id)

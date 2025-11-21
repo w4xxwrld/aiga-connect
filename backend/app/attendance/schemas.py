@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional
 from datetime import date, datetime
+from app.config import settings
 
 
 class AttendanceBase(BaseModel):
@@ -13,8 +14,10 @@ class AttendanceBase(BaseModel):
     @field_validator("qr_code")
     @classmethod
     def validate_qr_code(cls, v):
-        if len(v) != 3 or not v.isdigit():
-            raise ValueError("QR code must be exactly 3 digits")
+        if not v or not v.strip():
+            raise ValueError("QR code cannot be empty")
+        if v != settings.ATTENDANCE_QR_CODE:
+            raise ValueError("Invalid QR code")
         return v
 
     @field_validator("method")
@@ -40,11 +43,34 @@ class AttendanceOut(AttendanceBase):
 class MarkAttendanceRequest(BaseModel):
     class_id: int
     qr_code: str
+    timezone: str  # IANA timezone string (e.g., "Asia/Almaty", "America/New_York")
     method: str = "qr_scan"
 
     @field_validator("qr_code")
     @classmethod
     def validate_qr_code(cls, v):
-        if len(v) != 3 or not v.isdigit():
-            raise ValueError("QR code must be exactly 3 digits")
+        if not v or not v.strip():
+            raise ValueError("QR code cannot be empty")
+        if v != settings.ATTENDANCE_QR_CODE:
+            raise ValueError("Invalid QR code")
         return v
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Timezone cannot be empty")
+        # Basic validation - will be validated more thoroughly in the service layer
+        return v
+
+
+class AvailableClassForAttendance(BaseModel):
+    """Schema for classes available for attendance marking."""
+    class_id: int
+    class_name: str
+    start_time: str  # Time as string (HH:MM:SS)
+    end_time: str  # Time as string (HH:MM:SS)
+    minutes_remaining: int  # Minutes until attendance window closes
+    booking_id: int  # User's booking ID for this class
+
+    model_config = ConfigDict(from_attributes=True)
