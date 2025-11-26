@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppContext } from '../context/AppContext';
 
 interface SidebarProps {
@@ -19,7 +20,10 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
   const navigation = useNavigation<NavigationProp<any>>();
-  const { user, userRole, setIsSidebarOpen, logout } = useAppContext();
+  const { user, userRole, logout } = useAppContext();
+  const insets = useSafeAreaInsets();
+
+  console.log('🔍 [DEBUG] Sidebar render - userRole:', userRole, 'user?.primary_role:', user?.primary_role);
   const slideAnim = useRef(new Animated.Value(-280)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [isAnimating, setIsAnimating] = useState(false);
@@ -86,6 +90,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
 
   const quickActions = [
     {
+      title: 'Панель админа',
+      icon: 'view-dashboard',
+      route: 'AdminDashboard',
+      showFor: ['admin'],
+    },
+    {
+      title: 'Заявки тренеров',
+      icon: 'account-clock',
+      route: 'PendingCoaches',
+      showFor: ['admin'],
+    },
+    {
+      title: 'Пользователи',
+      icon: 'account-group',
+      route: 'UsersList',
+      showFor: ['admin'],
+    },
+    {
+      title: 'Тренеры',
+      icon: 'whistle',
+      route: 'CoachesList',
+      showFor: ['admin'],
+    },
+    {
       title: 'Занятия',
       icon: 'calendar',
       route: 'Classes',
@@ -108,11 +136,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       route: 'UsersManagement',
       showFor: ['coach'],
       headCoachOnly: true,
-    },
-    {
-      title: 'Магазин',
-      icon: 'shopping',
-      route: 'Store',
     },
   ];
 
@@ -139,7 +162,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       <Animated.View style={[styles.sidebar, { transform: [{ translateX: slideAnim }] }]}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Profile Section */}
-          <TouchableOpacity onPress={handleProfilePress} activeOpacity={0.8} style={styles.profileSection}>
+          <TouchableOpacity onPress={handleProfilePress} activeOpacity={0.8} style={[styles.profileSection, { marginTop: insets.top }]}>
             <View style={styles.profileHeader}>
               <MaterialCommunityIcons name="account-circle" size={40} color="#3498DB" />
               <View style={styles.profileInfo}>
@@ -150,7 +173,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
                       ? 'Спортсмен'
                       : userRole === 'coach'
                         ? (user?.is_head_coach ? 'Главный тренер' : 'Тренер')
-                        : 'Пользователь'
+                        : userRole === 'admin'
+                          ? 'Администратор'
+                          : 'Пользователь'
                     }
                   </Text>
               </View>
@@ -163,7 +188,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
             <View style={styles.actionsGrid}>
               {quickActions.map((action, index) => {
                 // Check if action should be shown for current user role
-                if (action.showFor && userRole && !action.showFor.includes(userRole)) {
+                const shouldHide = action.showFor && userRole && !action.showFor.includes(userRole);
+                console.log('🔍 [DEBUG] Sidebar action:', action.title, 'showFor:', action.showFor, 'userRole:', userRole, 'shouldHide:', shouldHide);
+                if (shouldHide) {
                   return null;
                 }
                 

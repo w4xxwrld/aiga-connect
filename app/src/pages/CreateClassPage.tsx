@@ -385,7 +385,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
     >
       {/* Global Header */}
       <View style={styles.globalHeader}>
-        <Text style={styles.headerTitle}>AIGA Connect</Text>
+        <Text style={styles.headerTitle}>Создать занятие</Text>
       </View>
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -398,6 +398,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
             mode="contained"
             onPress={handleCreateClass}
             style={styles.createButton}
+            contentStyle={styles.buttonContent}
             buttonColor="#E74C3C"
             icon="plus"
             loading={creating}
@@ -410,6 +411,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
             mode="outlined"
             onPress={() => navigation.goBack()}
             style={styles.cancelButton}
+            contentStyle={styles.buttonContent}
             textColor="#E74C3C"
             icon="close"
             disabled={creating}
@@ -435,6 +437,8 @@ const styles: any = {
     borderBottomWidth: 1,
     borderBottomColor: '#2C3E50',
     zIndex: 1000,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     color: '#fff',
@@ -504,6 +508,11 @@ const styles: any = {
   createButton: {
     marginTop: 8,
     height: 48,
+  },
+  buttonContent: {
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cancelButton: {
     marginTop: 4,

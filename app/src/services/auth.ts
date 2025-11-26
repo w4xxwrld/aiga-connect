@@ -9,8 +9,8 @@ export interface User {
   phone?: string;
   birth_date: string;
   emergency_contact?: string;
-  primary_role: 'parent' | 'athlete' | 'coach';
-  roles: ('parent' | 'athlete' | 'coach')[];
+  primary_role: 'parent' | 'athlete' | 'coach' | 'admin';
+  roles: ('parent' | 'athlete' | 'coach' | 'admin')[];
   is_head_coach: boolean;
   created_at: string;
   photo_url?: string;
@@ -36,16 +36,6 @@ export interface AuthResponse {
   access_token: string;
   refresh_token: string;
   token_type: string;
-}
-
-export interface ParentAthleteRelationship {
-  id: number;
-  parent_id: number;
-  athlete_id: number;
-  relationship_type: 'parent' | 'guardian';
-  created_at: string;
-  parent: User;
-  athlete: User;
 }
 
 export interface SendOTPRequest {
@@ -415,61 +405,6 @@ class AuthService {
     }
   }
 
-  async getMyAthletes(): Promise<User[]> {
-    try {
-      const response = await api.get('/users/my-athletes');
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to get athletes');
-    }
-  }
-
-  async getMyParents(): Promise<User[]> {
-    try {
-      const response = await api.get('/users/my-parents');
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to get parents');
-    }
-  }
-
-  async createParentAthleteRelationship(relationship: {
-    parent_id: number;
-    athlete_id: number;
-    relationship_type: 'parent' | 'guardian';
-  }): Promise<ParentAthleteRelationship> {
-    try {
-      const response = await api.post('/users/relationships', relationship);
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to create relationship');
-    }
-  }
-
-  async addRoleToUser(role: 'parent' | 'athlete' | 'coach', targetUserId?: number): Promise<User> {
-    try {
-      const response = await api.post('/users/select-role', {
-        role,
-        target_user_id: targetUserId,
-      });
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to add role');
-    }
-  }
-
   async completeRegistration(registerData: RegisterData, role: 'athlete' | 'coach'): Promise<{
     access_token: string;
     refresh_token: string;
@@ -522,66 +457,6 @@ class AuthService {
         throw new Error(error.message);
       }
       throw new Error('Failed to complete registration');
-    }
-  }
-
-  async createHeadCoach(userData: RegisterData): Promise<User> {
-    try {
-      const response = await api.post('/users/create-head-coach', userData);
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to create head coach');
-    }
-  }
-
-  async makeUserHeadCoach(userId: number): Promise<User> {
-    try {
-      const response = await api.post(`/users/make-head-coach/${userId}`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to make user head coach');
-    }
-  }
-
-  async getHeadCoach(): Promise<User> {
-    try {
-      const response = await api.get('/users/head-coach');
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to get head coach');
-    }
-  }
-
-  async makeUserCoach(userId: number): Promise<any> {
-    try {
-      const response = await api.post(`/users/${userId}/make-coach`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to make user coach');
-    }
-  }
-
-  async getAllUsers(): Promise<User[]> {
-    try {
-      const response = await api.get('/users/athletes');
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to get all users');
     }
   }
 

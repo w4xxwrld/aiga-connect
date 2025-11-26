@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -36,8 +36,18 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
   const [selectedClass, setSelectedClass] = useState<AvailableClassForAttendance | null>(null);
   const [timezone, setTimezone] = useState<string>('UTC');
 
+  // Ref to prevent multiple simultaneous processing
+  const isProcessingRef = useRef(false);
+
   useEffect(() => {
     initializePage();
+
+    // Cleanup on unmount
+    return () => {
+      setScanned(false);
+      setLoading(false);
+      isProcessingRef.current = false;
+    };
   }, []);
 
   const initializePage = async () => {
@@ -85,9 +95,11 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
   };
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
-    if (scanned) return;
+    // Prevent multiple simultaneous scans
+    if (scanned || loading || isProcessingRef.current) return;
 
     setScanned(true);
+    isProcessingRef.current = true;
 
     // Extract QR code data
     const qrCode = data.trim();
@@ -96,7 +108,13 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
       Alert.alert(
         'Неверный код',
         'QR-код не может быть пустым. Попробуйте еще раз.',
-        [{ text: 'OK', onPress: () => setScanned(false) }]
+        [{
+          text: 'OK',
+          onPress: () => {
+            setScanned(false);
+            isProcessingRef.current = false;
+          }
+        }]
       );
       return;
     }
@@ -116,6 +134,7 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
   const markAttendance = async (qrCode: string, method: 'qr_scan' | 'manual_entry') => {
     if (!selectedClass) {
       Alert.alert('Ошибка', 'Класс не выбран');
+      isProcessingRef.current = false;
       return;
     }
 
@@ -138,6 +157,7 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
           {
             text: 'OK',
             onPress: () => {
+              isProcessingRef.current = false;
               navigation?.goBack();
             },
           },
@@ -148,7 +168,15 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
       Alert.alert(
         'Ошибка',
         error.message || 'Не удалось отметить посещение',
-        [{ text: 'OK', onPress: () => setScanned(false) }]
+        [
+          {
+            text: 'Попробовать снова',
+            onPress: () => {
+              setScanned(false);
+              isProcessingRef.current = false;
+            }
+          }
+        ]
       );
     } finally {
       setLoading(false);
@@ -159,6 +187,7 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
   const toggleManualEntry = () => {
     setShowManualEntry(!showManualEntry);
     setScanned(false);
+    isProcessingRef.current = false;
   };
 
   const handleBackToClassSelection = () => {
@@ -166,6 +195,7 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
     setSelectedClass(null);
     setScanned(false);
     setShowManualEntry(false);
+    isProcessingRef.current = false;
   };
 
   // Show class selection first

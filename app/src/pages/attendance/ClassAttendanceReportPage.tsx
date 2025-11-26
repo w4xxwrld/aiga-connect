@@ -155,41 +155,7 @@ const ClassAttendanceReportPage: React.FC<{ route?: any; navigation?: any }> = (
     );
   };
 
-  const renderMethodBreakdown = () => {
-    if (!stats) return null;
-
-    const qrPercentage =
-      stats.total_attendances > 0
-        ? Math.round((stats.qr_scan_count / stats.total_attendances) * 100)
-        : 0;
-    const manualPercentage = 100 - qrPercentage;
-
-    return (
-      <Card style={styles.card}>
-        <Card.Content>
-          <Title style={styles.cardTitle}>Способы отметки</Title>
-
-          <View style={styles.methodBreakdown}>
-            <View style={styles.methodItem}>
-              <MaterialCommunityIcons name="qrcode-scan" size={24} color="#4CAF50" />
-              <Text style={styles.methodLabel}>QR сканирование</Text>
-              <Text style={styles.methodValue}>
-                {stats.qr_scan_count} ({qrPercentage}%)
-              </Text>
-            </View>
-
-            <View style={styles.methodItem}>
-              <MaterialCommunityIcons name="pencil" size={24} color="#FF9800" />
-              <Text style={styles.methodLabel}>Ручной ввод</Text>
-              <Text style={styles.methodValue}>
-                {stats.manual_entry_count} ({manualPercentage}%)
-              </Text>
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
-    );
-  };
+  // Method breakdown removed - method field no longer exists in attendance model
 
   const renderAttendancesByDate = () => {
     if (attendances.length === 0) {
@@ -227,7 +193,7 @@ const ClassAttendanceReportPage: React.FC<{ route?: any; navigation?: any }> = (
             <View key={attendance.id} style={styles.attendanceItem}>
               <View style={styles.attendanceIcon}>
                 <MaterialCommunityIcons
-                  name={attendanceService.getMethodIcon(attendance.method)}
+                  name={attendanceService.getMethodIcon()}
                   size={20}
                   color="#4CAF50"
                 />
@@ -239,7 +205,7 @@ const ClassAttendanceReportPage: React.FC<{ route?: any; navigation?: any }> = (
                 </Text>
                 <Text style={styles.attendanceTime}>
                   {attendanceService.formatTime(attendance.marked_at)} •{' '}
-                  {attendanceService.getMethodDisplayName(attendance.method)}
+                  {attendanceService.getMethodDisplayName()}
                 </Text>
               </View>
             </View>
@@ -371,7 +337,6 @@ const ClassAttendanceReportPage: React.FC<{ route?: any; navigation?: any }> = (
       >
         {renderHeader()}
         {renderStats()}
-        {renderMethodBreakdown()}
         {renderFilters()}
         {groupBy === 'date' ? renderAttendancesByDate() : renderAttendancesByAthlete()}
       </ScrollView>
@@ -427,24 +392,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 16,
-  },
-  methodBreakdown: {
-    gap: 12,
-  },
-  methodItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  methodLabel: {
-    flex: 1,
-    fontSize: 16,
-    color: '#FFFFFF',
-  },
-  methodValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#E74C3C',
   },
   filterSection: {
     marginBottom: 16,

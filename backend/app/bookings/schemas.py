@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, field_validator, UUID4, Field
+from pydantic import BaseModel, ConfigDict, field_validator, Field
 from typing import Optional
 from datetime import datetime
 
@@ -125,74 +125,3 @@ class IndividualTrainingRequestOut(IndividualTrainingRequestBase):
     coach: Optional[UserSimple] = None
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class BookingResponse(BaseModel):
-    """Enhanced booking response with payment information"""
-    id: UUID4
-    user_id: UUID4
-    training_id: UUID4
-    
-    # Booking status
-    status: str = Field(..., description="Booking status (confirmed, pending, cancelled)")
-    
-    # Payment information
-    payment_required: bool = Field(..., description="Whether payment is required")
-    is_paid: bool = Field(default=False, description="Whether payment is completed")
-    payment_status: Optional[str] = Field(None, description="Payment status (pending, completed, failed, not_required)")
-    payment_url: Optional[str] = Field(None, description="Stripe Checkout URL for payment")
-    payment_id: Optional[UUID4] = Field(None, description="Associated payment ID")
-    amount: Optional[int] = Field(None, description="Payment amount in cents")
-    currency: Optional[str] = Field(default="usd", description="Currency code")
-    
-    # Timestamps
-    created_at: datetime
-    updated_at: datetime
-    paid_at: Optional[datetime] = None
-    
-    # Related entities (optional)
-    training: Optional["TrainingInBooking"] = None
-    payment: Optional["PaymentInBooking"] = None
-    
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
-            "example": {
-                "id": "123e4567-e89b-12d3-a456-426614174000",
-                "user_id": "uuid",
-                "training_id": "uuid",
-                "status": "confirmed",
-                "payment_required": True,
-                "is_paid": False,
-                "payment_status": "pending",
-                "payment_url": "https://checkout.stripe.com/pay/cs_test_xxxxx",
-                "amount": 2000,
-                "currency": "usd",
-                "created_at": "2025-10-28T12:00:00Z"
-            }
-        }
-
-
-class PaymentInBooking(BaseModel):
-    """Payment details in booking response"""
-    id: UUID4
-    status: str
-    amount: int
-    currency: str
-    paid_at: Optional[datetime]
-    
-    class Config:
-        from_attributes = True
-
-
-class TrainingInBooking(BaseModel):
-    """Training details in booking response"""
-    id: UUID4
-    name: str
-    description: Optional[str]
-    price: int
-    currency: str
-    date: Optional[datetime]
-    
-    class Config:
-        from_attributes = True

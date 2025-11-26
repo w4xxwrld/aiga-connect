@@ -101,9 +101,20 @@ class ClassesService:
     async def get_class_participants(
         self,
         class_id: int,
-        current_user: User
+        current_user: User,
+        class_date: Optional[str] = None
     ) -> List:
-        """Get class participants (only the coach of this class)"""
+        """
+        Get class participants (only the coach of this class).
+
+        Args:
+            class_id: ID of the class
+            current_user: The authenticated user
+            class_date: Optional date string (YYYY-MM-DD) to filter participants
+                       for a specific session. If not provided, returns all.
+        """
+        from datetime import date as date_type
+
         class_obj = await crud.get_class_by_id(self.db, class_id)
         if not class_obj:
             raise HTTPException(
@@ -118,7 +129,18 @@ class ClassesService:
                 detail="Only the class coach can view participants"
             )
 
-        return await crud.get_class_participants(self.db, class_id)
+        # Parse date if provided
+        parsed_date = None
+        if class_date:
+            try:
+                parsed_date = date_type.fromisoformat(class_date)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid date format. Use YYYY-MM-DD"
+                )
+
+        return await crud.get_class_participants(self.db, class_id, parsed_date)
 
     async def get_available_classes_for_attendance(
         self,

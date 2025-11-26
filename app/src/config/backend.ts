@@ -9,23 +9,6 @@ export const BACKEND_URLS = {
   LOCAL_IP: 'http://192.168.1.100:8000', // Change this to your computer's IP address
 };
 
-// Function to get the current backend URL
-export const getCurrentBackendUrl = (): string => {
-  // You can modify this function to return different URLs based on environment
-  return BACKEND_URL;
-};
-
-// Function to set a new backend URL (for development/testing)
-let currentBackendUrl = BACKEND_URL;
-export const setBackendUrl = (url: string) => {
-  currentBackendUrl = url;
-};
-
-// Function to get the current backend URL with override capability
-export const getBackendUrlWithOverride = (): string => {
-  return currentBackendUrl;
-};
-
 // API endpoints
 export const API_ENDPOINTS = {
   // Auth
@@ -61,20 +44,7 @@ export const API_ENDPOINTS = {
 
 // Helper function to get full URL for an endpoint
 export const getBackendUrl = (): string => {
-  return getBackendUrlWithOverride();
-};
-
-// Helper function to get full URL for an endpoint with path parameters
-export const getEndpointUrl = (endpoint: string, params?: Record<string, string | number>): string => {
-  let url = `${BACKEND_URL}${endpoint}`;
-
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      url = url.replace(`{${key}}`, String(value));
-    });
-  }
-
-  return url;
+  return BACKEND_URL;
 };
 
 // API response types

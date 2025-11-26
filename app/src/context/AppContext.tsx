@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import authService, { User } from '../services/auth';
 
-type UserRole = 'athlete' | 'coach';
+type UserRole = 'athlete' | 'coach' | 'admin';
 
 interface AppContextType {
   hasSeenGreeting: boolean;
@@ -10,6 +10,7 @@ interface AppContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAdmin: boolean;
   setHasSeenGreeting: (value: boolean) => void;
   setUserRole: (role: UserRole) => void;
   setUser: (user: User | null) => void;
@@ -54,10 +55,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       if (authenticated) {
         // Always try to get fresh user data from API first
         const freshUserData = await authService.getCurrentUser();
+        console.log('🔍 [DEBUG] AppContext loadAppState - freshUserData:', JSON.stringify(freshUserData, null, 2));
+        console.log('🔍 [DEBUG] AppContext loadAppState - freshUserData.primary_role:', freshUserData?.primary_role);
 
         if (freshUserData) {
           setUser(freshUserData);
           setUserRole(freshUserData.primary_role);
+          console.log('🔍 [DEBUG] AppContext - setUserRole called with:', freshUserData.primary_role);
         } else {
           // Fallback to stored data if API fails
           const userData = await authService.getUserData();
@@ -163,12 +167,15 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     }
   };
 
+  console.log('🔍 [DEBUG] AppContext value creation - userRole:', userRole, 'user?.primary_role:', user?.primary_role);
+
   const value: AppContextType = {
     hasSeenGreeting,
     userRole,
     user,
     isAuthenticated,
     isLoading,
+    isAdmin: user?.primary_role === 'admin',
     setHasSeenGreeting: handleSetHasSeenGreeting,
     setUserRole: handleSetUserRole,
     setUser: handleSetUser,

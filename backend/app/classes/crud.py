@@ -95,8 +95,6 @@ async def update_class(
 
 async def delete_class(db: AsyncSession, class_id: int) -> bool:
     """Soft delete training class"""
-    from app.core.soft_delete import soft_delete_instance
-
     result = await db.execute(
         select(Class).where(Class.id == class_id)
     )
@@ -105,12 +103,25 @@ async def delete_class(db: AsyncSession, class_id: int) -> bool:
     if not db_class or db_class.is_deleted:
         return False
 
-    await soft_delete_instance(db, db_class)
+    db_class.soft_delete()
+    await db.commit()
     return True
 
 
-async def get_class_participants(db: AsyncSession, class_id: int):
-    """Get list of athletes enrolled in a class"""
+async def get_class_participants(
+    db: AsyncSession,
+    class_id: int,
+    class_date: Optional[date] = None
+):
+    """
+    Get list of athletes enrolled in a class.
+
+    Args:
+        db: Database session
+        class_id: ID of the class
+        class_date: Optional date to filter participants for a specific session.
+                   If not provided, returns all participants across all dates.
+    """
     from app.bookings.models import Booking
     from app.users.models import User
 
@@ -119,8 +130,13 @@ async def get_class_participants(db: AsyncSession, class_id: int):
         .join(Booking, Booking.athlete_id == User.id)
         .where(Booking.class_id == class_id)
         .where(Booking.status.in_(['pending', 'confirmed']))
-        .order_by(Booking.class_date.desc())
     )
+
+    # Filter by specific date if provided
+    if class_date:
+        query = query.where(func.date(Booking.class_date) == class_date)
+
+    query = query.order_by(Booking.class_date.desc())
 
     # Filter out soft-deleted users and bookings
     query = User.filter_active(query)
@@ -210,7 +226,7 @@ async def get_available_classes_for_attendance(
         booking_query = Booking.filter_active(booking_query)
 
         booking_result = await db.execute(booking_query)
-        booking = booking_result.scalar_one_or_none()
+        booking = booking_result.scalars().first()
 
         if not booking:
             continue

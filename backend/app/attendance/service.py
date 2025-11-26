@@ -19,7 +19,6 @@ class AttendanceService:
         class_id: int,
         qr_code: str,
         timezone: str,
-        method: str,
         current_user: User
     ) -> models.Attendance:
         """Mark attendance (for athletes only) with time window validation"""
@@ -44,8 +43,7 @@ class AttendanceService:
                 athlete_id=current_user.id,
                 class_id=class_id,
                 qr_code=qr_code,
-                timezone=timezone,
-                method=method
+                timezone=timezone
             )
         except ValueError as e:
             raise HTTPException(

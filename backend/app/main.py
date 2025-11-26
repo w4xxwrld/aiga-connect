@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer
 from app.deps import get_db
 from app.users.router import router as users_router
+from app.users.admin_router import router as admin_users_router
 from app.classes.router import router as classes_router
 from app.bookings.router import router as bookings_router
 from app.attendance.router import router as attendance_router
@@ -13,9 +13,6 @@ from sqlalchemy import select
 import logging
 
 logger = logging.getLogger(__name__)
-
-# Security scheme for Swagger UI
-security = HTTPBearer()
 
 app = FastAPI(
     title="AIGA Connect API",
@@ -37,6 +34,7 @@ app.middleware("http")(error_handler_middleware)
 app.middleware("http")(logging_middleware)
 
 app.include_router(users_router, prefix="/users", tags=["users"])
+app.include_router(admin_users_router, prefix="/admin/users", tags=["admin-users"])
 app.include_router(classes_router, prefix="/classes", tags=["classes"])
 app.include_router(bookings_router, prefix="/bookings", tags=["bookings"])
 app.include_router(attendance_router, prefix="/attendance", tags=["attendance"])

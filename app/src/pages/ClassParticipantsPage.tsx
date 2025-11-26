@@ -45,17 +45,25 @@ interface ClassParticipantsPageProps {
 const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigation, route }) => {
   const { classId } = route.params;
   const { user, userRole } = useAppContext();
-  
+
   const [classData, setClassData] = useState<Class | null>(null);
   const [participants, setParticipants] = useState<ClassParticipant[]>([]);
   const [filteredParticipants, setFilteredParticipants] = useState<ClassParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null); // null = all dates
+  const [showAllDates, setShowAllDates] = useState(false);
+
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedDate, showAllDates]);
 
   useEffect(() => {
     filterParticipants();
@@ -64,17 +72,32 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
   const loadData = async () => {
     try {
       setLoading(true);
-      const [classInfo, participantsData] = await Promise.all([
-        classesService.getClass(classId),
-        classesService.getClassParticipants(classId)
-      ]);
+      const classInfo = await classesService.getClass(classId);
       setClassData(classInfo);
+
+      // Pass date filter to API (null for all dates)
+      const participantsData = await classesService.getClassParticipants(
+        classId,
+        showAllDates ? undefined : (selectedDate || getTodayDate())
+      );
       setParticipants(participantsData);
     } catch (error: any) {
       console.error('Error loading data:', error);
       Alert.alert('Ошибка', error.message || 'Не удалось загрузить данные');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleDateFilter = () => {
+    if (showAllDates) {
+      // Switch to today
+      setShowAllDates(false);
+      setSelectedDate(getTodayDate());
+    } else {
+      // Switch to all dates
+      setShowAllDates(true);
+      setSelectedDate(null);
     }
   };
 
@@ -281,7 +304,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
     <View style={styles.container}>
       {/* Global Header */}
       <View style={styles.globalHeader}>
-        <Text style={styles.headerTitle}>AIGA Connect</Text>
+        <Text style={styles.headerTitle}>Участники занятия</Text>
         {userRole === 'coach' && classData?.coach_id === user?.id && getStatusCount('pending') > 0 && (
           <Button
             mode="contained"
@@ -309,11 +332,28 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
           </Card>
         )}
 
+        {/* Date Filter Toggle */}
+        <View style={styles.dateFilterContainer}>
+          <Button
+            mode={showAllDates ? 'outlined' : 'contained'}
+            onPress={toggleDateFilter}
+            style={styles.dateFilterButton}
+            buttonColor={showAllDates ? undefined : '#E74C3C'}
+            textColor={showAllDates ? '#E74C3C' : '#fff'}
+            icon="calendar"
+          >
+            {showAllDates ? 'Показать на сегодня' : 'Показать все даты'}
+          </Button>
+          <Text style={styles.dateFilterLabel}>
+            {showAllDates ? 'Все записи' : `На ${new Date().toLocaleDateString('ru-RU')}`}
+          </Text>
+        </View>
+
         {/* Stats */}
         <View style={styles.statsContainer}>
           <View key="stat-total" style={styles.statCard}>
             <Text style={styles.statNumber}>{participants.length}</Text>
-            <Text style={styles.statLabel}>Всего участников</Text>
+            <Text style={styles.statLabel}>{showAllDates ? 'Всего записей' : 'На сегодня'}</Text>
           </View>
           <View key="stat-confirmed" style={styles.statCard}>
             <Text style={styles.statNumber}>{getStatusCount('confirmed')}</Text>
@@ -431,6 +471,17 @@ const styles: any = {
     backgroundColor: '#1B263B',
     borderRadius: 12,
     marginBottom: 16,
+  },
+  dateFilterContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  dateFilterButton: {
+    marginBottom: 8,
+  },
+  dateFilterLabel: {
+    color: '#B0BEC5',
+    fontSize: 14,
   },
   classTitle: {
     color: '#fff',

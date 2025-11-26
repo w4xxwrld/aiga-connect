@@ -59,11 +59,12 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
       setLoading(true);
       const data = await classesService.getClass(classId);
       setClassData(data);
-      
-      // Load participants if user is a coach
+
+      // Load participants if user is a coach (filter by today's date)
       if (userRole === 'coach' && data.coach_id === user?.id) {
         try {
-          const participantsData = await classesService.getClassParticipants(classId);
+          const today = new Date().toISOString().split('T')[0];
+          const participantsData = await classesService.getClassParticipants(classId, today);
           setParticipants(participantsData);
         } catch (error) {
           console.error('Error loading participants:', error);
@@ -217,13 +218,13 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
           </Card.Content>
         </Card>
 
-        {/* Accepted Athletes Section for Coaches */}
+        {/* Today's Athletes Section for Coaches */}
         {userRole === 'coach' && classData.coach_id === user?.id && participants.length > 0 && (
           <Card style={styles.mainCard}>
             <Card.Content>
-              <Title style={styles.sectionTitle}>Участники занятия</Title>
+              <Title style={styles.sectionTitle}>Участники на сегодня</Title>
               <Text style={styles.sectionSubtitle}>
-                {participants.filter(p => p.booking_status === 'confirmed').length} подтвержденных участников
+                {participants.filter(p => p.booking_status === 'confirmed').length} подтвержденных на {new Date().toLocaleDateString('ru-RU')}
               </Text>
               
               <Divider style={styles.divider} />

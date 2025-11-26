@@ -24,7 +24,6 @@ async def mark_attendance(
         request.class_id,
         request.qr_code,
         request.timezone,
-        request.method,
         current_user
     )
 

@@ -116,9 +116,18 @@ class ClassesService {
     }
   }
 
-  async getClassParticipants(classId: number): Promise<any[]> {
+  /**
+   * Get class participants.
+   * @param classId - ID of the class
+   * @param classDate - Optional date (YYYY-MM-DD) to filter participants for a specific session
+   */
+  async getClassParticipants(classId: number, classDate?: string): Promise<any[]> {
     try {
-      const response = await api.get(`/classes/${classId}/participants`);
+      const params: { class_date?: string } = {};
+      if (classDate) {
+        params.class_date = classDate;
+      }
+      const response = await api.get(`/classes/${classId}/participants`, { params });
       return response.data;
     } catch (error: any) {
       if (error.response?.data?.detail) {

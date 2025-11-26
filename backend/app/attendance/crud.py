@@ -17,8 +17,7 @@ async def mark_attendance(
     athlete_id: int,
     class_id: int,
     qr_code: str,
-    timezone: str,
-    method: str = "qr_scan"
+    timezone: str
 ) -> Attendance:
     """
     Mark attendance for an athlete with time window validation.
@@ -73,7 +72,7 @@ async def mark_attendance(
             Booking.status == BookingStatus.confirmed
         )
     )
-    booking = booking_result.scalar_one_or_none()
+    booking = booking_result.scalars().first()
 
     if not booking:
         raise ValueError("No confirmed booking found for this class today")
@@ -95,8 +94,7 @@ async def mark_attendance(
         athlete_id=athlete_id,
         class_id=class_id,
         qr_code=qr_code,
-        attendance_date=current_date,
-        method=method
+        attendance_date=current_date
     )
     db.add(db_attendance)
     await db.commit()
@@ -169,12 +167,8 @@ async def get_attendance_stats_by_class(
     # Calculate statistics
     total_attendances = len(attendances)
     unique_athletes = len(set(a.athlete_id for a in attendances))
-    qr_scan_count = sum(1 for a in attendances if a.method == "qr_scan")
-    manual_entry_count = sum(1 for a in attendances if a.method == "manual_entry")
 
     return {
         "total_attendances": total_attendances,
-        "unique_athletes": unique_athletes,
-        "qr_scan_count": qr_scan_count,
-        "manual_entry_count": manual_entry_count
+        "unique_athletes": unique_athletes
     }

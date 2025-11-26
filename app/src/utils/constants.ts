@@ -1,81 +1,13 @@
 // Navigation constants
 export const NAVIGATION = {
-  GREETING: 'Greeting',
   AUTH: 'Auth',
   HOME: 'Home',
-};
-
-// API endpoints
-export const API_ENDPOINTS = {
-  // Auth
-  LOGIN: '/users/login',
-  REGISTER: '/users/register',
-  REFRESH_TOKEN: '/users/refresh',
-  
-  // Users
-  USERS: '/users/',
-  USER_PROFILE: '/users/me',
-  MY_ATHLETES: '/users/my-athletes',
-  ADD_ROLE: '/users/select-role',
-  CREATE_HEAD_COACH: '/users/create-head-coach',
-  MAKE_HEAD_COACH: '/users/make-head-coach',
-  HEAD_COACH: '/users/head-coach',
-  
-  // Classes
-  CLASSES: '/classes/',
-  CLASS_DETAIL: '/classes/{id}',
-  CREATE_CLASS: '/classes/',
-  UPDATE_CLASS: '/classes/{id}',
-  
-  // Bookings
-  BOOKINGS: '/bookings/',
-  MY_BOOKINGS: '/bookings/my-bookings',
-  BOOKING_DETAIL: '/bookings/{id}',
-  CREATE_BOOKING: '/bookings/',
-  CANCEL_BOOKING: '/bookings/{id}/cancel',
 };
 
 // User roles
 export const USER_ROLES = {
   ATHLETE: 'athlete',
   COACH: 'coach',
-};
-
-// Training types
-export const TRAINING_TYPES = {
-  GROUP: 'group',
-  INDIVIDUAL: 'individual',
-  COMPETITION_PREP: 'competition_prep',
-  SEMINAR: 'seminar',
-};
-
-// Training levels
-export const TRAINING_LEVELS = {
-  BEGINNER: 'beginner',
-  INTERMEDIATE: 'intermediate',
-  ADVANCED: 'advanced',
-  MIXED: 'mixed',
-};
-
-// Age groups
-export const AGE_GROUPS = {
-  KIDS_4_7: 'kids_4_7',
-  KIDS_8_12: 'kids_8_12',
-  TEENS_13_17: 'teens_13_17',
-  ADULTS_18_PLUS: 'adults_18_plus',
-  MIXED_AGES: 'mixed_ages',
-};
-
-// Belt levels
-export const BELT_LEVELS = {
-  WHITE: 'white',
-  YELLOW: 'yellow',
-  ORANGE: 'orange',
-  GREEN: 'green',
-  BLUE: 'blue',
-  BROWN: 'brown',
-  BLACK: 'black',
-  MIXED: 'mixed',
 };
 
 // Booking statuses
@@ -91,13 +23,6 @@ export const BOOKING_TYPES = {
   REGULAR: 'regular',
   TRIAL: 'trial',
   MAKEUP: 'makeup',
-};
-
-// Class statuses
-export const CLASS_STATUSES = {
-  ACTIVE: 'active',
-  CANCELLED: 'cancelled',
-  COMPLETED: 'completed',
 };
 
 // Colors
@@ -119,8 +44,6 @@ export const STORAGE_KEYS = {
   AUTH_TOKEN: 'authToken',
   REFRESH_TOKEN: 'refreshToken',
   USER_DATA: 'userData',
-  GREETING_SEEN: 'greetingSeenThisInstall',
-  USER_ROLE: 'userRole',
 };
 
 // Validation rules

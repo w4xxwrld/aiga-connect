@@ -233,7 +233,7 @@ const AttendanceTabPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View key={attendance.id} style={styles.attendanceItem}>
               <View style={styles.attendanceIcon}>
                 <MaterialCommunityIcons
-                  name={attendanceService.getMethodIcon(attendance.method)}
+                  name={attendanceService.getMethodIcon()}
                   size={24}
                   color="#4CAF50"
                 />

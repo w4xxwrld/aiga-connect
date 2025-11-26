@@ -70,6 +70,7 @@ def require_role(required_role: UserRole):
 # Convenience dependencies for specific roles
 require_coach = require_role(UserRole.coach)
 require_athlete = require_role(UserRole.athlete)
+require_admin = require_role(UserRole.admin)
 
 
 # Async function for WebSocket authentication

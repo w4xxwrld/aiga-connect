@@ -1,9 +1,22 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const DarkTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#0D1B2A',
+    card: '#1B263B',
+    text: '#FFFFFF',
+    border: '#2C3E50',
+    primary: '#E74C3C',
+  },
+};
 
 // Define navigation types
 type RootStackParamList = {
@@ -29,6 +42,12 @@ type RootStackParamList = {
   CoachAttendanceDashboard: undefined;
   ClassAttendanceReport: { classId: number };
   AthleteInsights: undefined;
+  AdminDashboard: undefined;
+  PendingCoaches: undefined;
+  UsersList: undefined;
+  UserDetail: { userId: number };
+  CoachesList: undefined;
+  CoachDetail: { coachId: number };
 };
 
 type MainTabParamList = {
@@ -64,6 +83,12 @@ import AttendanceCalendarPage from '../pages/attendance/AttendanceCalendarPage';
 import CoachAttendanceDashboardPage from '../pages/attendance/CoachAttendanceDashboardPage';
 import ClassAttendanceReportPage from '../pages/attendance/ClassAttendanceReportPage';
 import AthleteInsightsPage from '../pages/attendance/AthleteInsightsPage';
+import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import PendingCoachesPage from '../pages/admin/PendingCoachesPage';
+import UsersListPage from '../pages/admin/UsersListPage';
+import UserDetailPage from '../pages/admin/UserDetailPage';
+import CoachesListPage from '../pages/admin/CoachesListPage';
+import CoachDetailPage from '../pages/admin/CoachDetailPage';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -82,6 +107,8 @@ const MainLayout: React.FC = () => {
 
 // Custom Tab Bar Component
 const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
+  const insets = useSafeAreaInsets();
+
   const getTabIcon = (routeName: string, focused: boolean) => {
     const iconColor = focused ? '#E74C3C' : '#B0BEC5';
     const iconSize = 24;
@@ -115,8 +142,13 @@ const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
     }
   };
 
+  // Minimal bottom padding
+  const bottomPadding = Platform.OS === 'android'
+    ? Math.max(insets.bottom, 8)
+    : Math.max(insets.bottom, 8);
+
   return (
-    <View style={styles.customTabBar}>
+    <View style={[styles.customTabBar, { paddingBottom: bottomPadding }]}>
       {state.routes.map((route: any, index: number) => {
         const { options } = descriptors[route.key];
         const label = getTabLabel(route.name);
@@ -160,8 +192,9 @@ const MainTabs: React.FC = () => {
     <Tab.Navigator
       tabBar={props => <CustomTabBar {...props} />}
       screenOptions={{
-        headerShown: false, // Hide default headers
+        headerShown: false,
       }}
+      sceneContainerStyle={{ backgroundColor: '#0D1B2A' }}
     >
       <Tab.Screen name="Home" component={HomePage} />
       <Tab.Screen name="Classes" component={ClassesPage} />
@@ -209,7 +242,7 @@ const AppNavigator: React.FC = () => {
   };
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} theme={DarkTheme}>
       <Stack.Navigator
         initialRouteName={getInitialRouteName()}
         screenOptions={{
@@ -239,6 +272,13 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="CoachAttendanceDashboard" component={CoachAttendanceDashboardPage} />
         <Stack.Screen name="ClassAttendanceReport" component={ClassAttendanceReportPage} />
         <Stack.Screen name="AthleteInsights" component={AthleteInsightsPage} />
+        {/* Admin screens */}
+        <Stack.Screen name="AdminDashboard" component={AdminDashboardPage} />
+        <Stack.Screen name="PendingCoaches" component={PendingCoachesPage} />
+        <Stack.Screen name="UsersList" component={UsersListPage} />
+        <Stack.Screen name="UserDetail" component={UserDetailPage} />
+        <Stack.Screen name="CoachesList" component={CoachesListPage} />
+        <Stack.Screen name="CoachDetail" component={CoachDetailPage} />
 
       </Stack.Navigator>
     </NavigationContainer>
@@ -269,9 +309,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1B263B',
     borderTopWidth: 1,
     borderTopColor: '#2C3E50',
-    paddingBottom: 20,
-    paddingTop: 20,
-    height: 90,
+    paddingTop: 8,
     position: 'absolute',
     bottom: 0,
     left: 0,

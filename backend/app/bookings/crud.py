@@ -40,6 +40,21 @@ async def create_booking(db: AsyncSession, booking_data: BookingCreate) -> Booki
     else:
         booking_date = class_date_value
 
+    # Check for duplicate booking (same athlete, class, and date)
+    existing_booking_result = await db.execute(
+        select(Booking)
+        .where(
+            Booking.athlete_id == booking_data.athlete_id,
+            Booking.class_id == booking_data.class_id,
+            func.date(Booking.class_date) == booking_date,
+            Booking.status != BookingStatus.cancelled
+        )
+    )
+    existing_booking = existing_booking_result.scalars().first()
+
+    if existing_booking:
+        raise ValueError("You have already booked this class for this date")
+
     # Combine the booking date with the class start time
     class_datetime = datetime.combine(booking_date, class_obj.start_time)
 

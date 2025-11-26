@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
+import Sidebar from './Sidebar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,13 +31,15 @@ const Layout: React.FC<LayoutProps> = ({
 }) => {
   const navigation = useNavigation<NavigationProp<any>>();
   const { user } = useAppContext();
+  const insets = useSafeAreaInsets();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0D1B2A" />
+      <StatusBar barStyle="light-content" backgroundColor="#1B263B" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerLeft}>
           {showBack ? (
             <TouchableOpacity
@@ -44,7 +49,12 @@ const Layout: React.FC<LayoutProps> = ({
               <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
             </TouchableOpacity>
           ) : (
-            <View style={styles.headerSpacer} />
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => setSidebarVisible(true)}
+            >
+              <MaterialCommunityIcons name="menu" size={24} color="#fff" />
+            </TouchableOpacity>
           )}
         </View>
 
@@ -81,7 +91,8 @@ const Layout: React.FC<LayoutProps> = ({
         {children}
       </View>
 
-
+      {/* Sidebar */}
+      <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
     </View>
   );
 };
@@ -96,8 +107,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 60, // Add extra top padding for dynamic island and status bar
+    paddingBottom: 12,
     backgroundColor: '#1B263B',
     borderBottomWidth: 1,
     borderBottomColor: '#2C3E50',

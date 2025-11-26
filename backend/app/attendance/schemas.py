@@ -9,7 +9,6 @@ class AttendanceBase(BaseModel):
     class_id: int
     qr_code: str
     attendance_date: date
-    method: str = "qr_scan"  # qr_scan or manual_entry
 
     @field_validator("qr_code")
     @classmethod
@@ -18,13 +17,6 @@ class AttendanceBase(BaseModel):
             raise ValueError("QR code cannot be empty")
         if v != settings.ATTENDANCE_QR_CODE:
             raise ValueError("Invalid QR code")
-        return v
-
-    @field_validator("method")
-    @classmethod
-    def validate_method(cls, v):
-        if v not in ["qr_scan", "manual_entry"]:
-            raise ValueError("Method must be 'qr_scan' or 'manual_entry'")
         return v
 
 
@@ -44,7 +36,6 @@ class MarkAttendanceRequest(BaseModel):
     class_id: int
     qr_code: str
     timezone: str  # IANA timezone string (e.g., "Asia/Almaty", "America/New_York")
-    method: str = "qr_scan"
 
     @field_validator("qr_code")
     @classmethod

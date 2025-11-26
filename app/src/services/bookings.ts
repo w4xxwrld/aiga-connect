@@ -115,18 +115,6 @@ class BookingsService {
     }
   }
 
-  async getCoachBookings(): Promise<Booking[]> {
-    try {
-      const response = await api.get('/bookings/coach-bookings');
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      throw new Error('Failed to get coach bookings');
-    }
-  }
-
   async getBooking(bookingId: number): Promise<Booking> {
     try {
       console.log('BookingsService: Getting booking with ID:', bookingId);

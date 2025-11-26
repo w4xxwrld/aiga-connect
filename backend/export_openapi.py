@@ -12,7 +12,6 @@ import sys
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://dummy:dummy@localhost/dummy")
 os.environ.setdefault("ALEMBIC_DATABASE_URL", "postgresql+asyncpg://dummy:dummy@localhost/dummy")
 os.environ.setdefault("SECRET_KEY", "dummy-secret-key-for-schema-generation")
-os.environ.setdefault("ADMIN_SECRET_KEY", "dummy-admin-secret-key")
 os.environ.setdefault("TWILIO_ACCOUNT_SID", "dummy-sid")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "dummy-token")
 os.environ.setdefault("TWILIO_VERIFY_SERVICE_SID", "dummy-service-sid")

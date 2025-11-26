@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -24,9 +23,6 @@ class Settings(BaseSettings):
 
     # Rate limiting settings
     MAX_PENDING_TRAINING_REQUESTS: int = 10
-
-    # Admin settings
-    ADMIN_SECRET_KEY: str  # Secret key for creating the first admin user
 
     # Twilio settings
     TWILIO_ACCOUNT_SID: str

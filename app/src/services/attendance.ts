@@ -7,7 +7,6 @@ export interface Attendance {
   qr_code: string;
   attendance_date: string;
   marked_at: string;
-  method: 'qr_scan' | 'manual_entry';
   created_at: string;
   athlete?: {
     id: number;
@@ -31,7 +30,6 @@ export interface MarkAttendanceRequest {
   class_id: number;
   qr_code: string;
   timezone: string;  // IANA timezone string (e.g., "Asia/Almaty")
-  method?: 'qr_scan' | 'manual_entry';
 }
 
 export interface AvailableClassForAttendance {
@@ -46,8 +44,6 @@ export interface AvailableClassForAttendance {
 export interface AttendanceStats {
   total_attendances: number;
   unique_athletes: number;
-  qr_scan_count: number;
-  manual_entry_count: number;
 }
 
 export interface AttendanceCountResponse {
@@ -201,22 +197,6 @@ class AttendanceService {
   }
 
   // Helper methods for display
-  getMethodDisplayName(method: string): string {
-    const methodMap: { [key: string]: string } = {
-      qr_scan: 'QR сканирование',
-      manual_entry: 'Ручной ввод'
-    };
-    return methodMap[method] || method;
-  }
-
-  getMethodIcon(method: string): string {
-    const iconMap: { [key: string]: string } = {
-      qr_scan: 'qrcode-scan',
-      manual_entry: 'pencil'
-    };
-    return iconMap[method] || 'check';
-  }
-
   formatDateTime(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleString('ru-RU', {
@@ -341,6 +321,24 @@ class AttendanceService {
     });
 
     return markedDates;
+  }
+
+  /**
+   * Get icon for attendance method (default icon since method field was removed)
+   */
+  getMethodIcon(method?: string): string {
+    // Method field was removed from attendance model
+    // Return default QR code icon
+    return 'qrcode-scan';
+  }
+
+  /**
+   * Get display name for attendance method (default name since method field was removed)
+   */
+  getMethodDisplayName(method?: string): string {
+    // Method field was removed from attendance model
+    // Return default display name
+    return 'QR-код';
   }
 }
 

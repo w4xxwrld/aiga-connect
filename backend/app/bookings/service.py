@@ -207,16 +207,14 @@ class BookingsService:
     ) -> List:
         """Get individual training requests"""
         if current_user.primary_role == UserRole.coach:
-            return await crud.get_individual_training_requests_for_coach(
+            return await crud.get_individual_training_requests_by_coach(
                 self.db,
-                current_user.id,
-                status_filter
+                current_user.id
             )
         else:  # athlete
             return await crud.get_individual_training_requests_by_athlete(
                 self.db,
-                current_user.id,
-                status_filter
+                current_user.id
             )
     
     async def decline_booking(
@@ -257,11 +255,8 @@ class BookingsService:
         current_user: User
     ):
         """Create a request for individual training"""
-        # Check user roles
-        user_roles = [ur.role for ur in current_user.user_roles]
-        has_athlete_role = UserRole.athlete in user_roles
-
-        if not has_athlete_role:
+        # Check user role
+        if current_user.primary_role != UserRole.athlete:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only athletes can request individual training"
@@ -269,23 +264,11 @@ class BookingsService:
 
         # Check if the requested coach exists and is a coach
         from app.users import crud as user_crud
-        coach = await user_crud.get_user(self.db, request_data.coach_id)
-        if not coach or not await user_crud.user_has_role(self.db, coach.id, UserRole.coach):
+        coach = await user_crud.get_user_by_id(self.db, request_data.coach_id)
+        if not coach or coach.primary_role != UserRole.coach:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Coach not found"
-            )
-
-        # Check pending requests limit for the coach
-        pending_count = await crud.count_pending_individual_training_requests_by_coach(
-            self.db, 
-            request_data.coach_id
-        )
-        max_pending = settings.MAX_PENDING_TRAINING_REQUESTS
-        if pending_count >= max_pending:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Coach has reached the maximum number of pending requests ({max_pending})"
             )
 
         # Check rights (only athletes for themselves)
@@ -303,8 +286,7 @@ class BookingsService:
         current_user: User
     ):
         """Get my individual training requests"""
-        user_roles = [ur.role for ur in current_user.user_roles]
-        if UserRole.athlete in user_roles:
+        if current_user.primary_role == UserRole.athlete:
             requests = await crud.get_individual_training_requests_by_athlete(
                 self.db,
                 current_user.id
@@ -321,8 +303,7 @@ class BookingsService:
         current_user: User
     ):
         """Get pending individual training requests (for coaches only)"""
-        user_roles = [ur.role for ur in current_user.user_roles]
-        if UserRole.coach not in user_roles:
+        if current_user.primary_role != UserRole.coach:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only coaches can view pending individual training requests"
@@ -348,9 +329,8 @@ class BookingsService:
             )
 
         # Check access rights
-        user_roles = [ur.role for ur in current_user.user_roles]
-        if (UserRole.athlete in user_roles and request.athlete_id != current_user.id) or \
-           (UserRole.coach in user_roles and request.coach_id != current_user.id):
+        if (current_user.primary_role == UserRole.athlete and request.athlete_id != current_user.id) or \
+           (current_user.primary_role == UserRole.coach and request.coach_id != current_user.id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied"
@@ -366,8 +346,7 @@ class BookingsService:
     ):
         """Accept an individual training request (for coaches only)"""
         # Check if the user is a coach
-        user_roles = [ur.role for ur in current_user.user_roles]
-        if UserRole.coach not in user_roles:
+        if current_user.primary_role != UserRole.coach:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only coaches can accept individual training requests"
@@ -409,8 +388,7 @@ class BookingsService:
     ):
         """Decline an individual training request (for coaches only)"""
         # Check if the user is a coach
-        user_roles = [ur.role for ur in current_user.user_roles]
-        if UserRole.coach not in user_roles:
+        if current_user.primary_role != UserRole.coach:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only coaches can decline individual training requests"
@@ -451,8 +429,7 @@ class BookingsService:
     ):
         """Complete an individual training request (for coaches only)"""
         # Check if the user is a coach
-        user_roles = [ur.role for ur in current_user.user_roles]
-        if UserRole.coach not in user_roles:
+        if current_user.primary_role != UserRole.coach:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only coaches can complete individual training requests"

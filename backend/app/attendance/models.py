@@ -17,10 +17,6 @@ class Attendance(Base, SoftDeleteMixin):
     # Attendance details
     attendance_date = Column(Date, nullable=False)
     marked_at = Column(DateTime, default=get_utc_now)
-
-    # Method used to mark attendance
-    method = Column(String, nullable=False, default="qr_scan")  # qr_scan or manual_entry
-
     created_at = Column(DateTime, default=get_utc_now)
 
     # Relationships

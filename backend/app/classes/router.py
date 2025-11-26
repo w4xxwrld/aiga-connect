@@ -90,9 +90,16 @@ async def delete_class(
 @router.get("/{class_id}/participants", response_model=List[schemas.ClassParticipantOut])
 async def get_class_participants(
     class_id: int,
+    class_date: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get list of class participants (only the class coach)"""
+    """
+    Get list of class participants (only the class coach).
+
+    Query parameters:
+    - **class_date**: Optional date (YYYY-MM-DD) to filter participants for a specific session.
+                     If not provided, returns all participants across all dates.
+    """
     service = ClassesService(db)
-    return await service.get_class_participants(class_id, current_user)
+    return await service.get_class_participants(class_id, current_user, class_date)

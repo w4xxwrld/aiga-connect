@@ -9,9 +9,7 @@ This preserves data integrity and provides an audit trail.
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Query
+from sqlalchemy import Column, DateTime
 
 from app.core.utils import get_utc_now
 
@@ -71,84 +69,3 @@ class SoftDeleteMixin:
             >>> result = await db.execute(stmt)
         """
         return stmt.where(cls.deleted_at.is_(None))
-
-    @classmethod
-    def filter_deleted(cls, stmt):
-        """
-        Filter a query to only include deleted records.
-
-        Args:
-            stmt: SQLAlchemy select statement
-
-        Returns:
-            Modified statement filtering for deleted records
-
-        Example:
-            >>> stmt = select(User)
-            >>> stmt = User.filter_deleted(stmt)
-            >>> result = await db.execute(stmt)
-        """
-        return stmt.where(cls.deleted_at.isnot(None))
-
-
-async def soft_delete_instance(
-    db: AsyncSession, instance: SoftDeleteMixin, commit: bool = True
-) -> None:
-    """
-    Soft delete a model instance.
-
-    Args:
-        db: Database session
-        instance: Model instance to soft delete
-        commit: Whether to commit the transaction (default: True)
-
-    Example:
-        >>> await soft_delete_instance(db, user)
-    """
-    instance.soft_delete()
-    if commit:
-        await db.commit()
-    else:
-        await db.flush()
-
-
-async def restore_instance(
-    db: AsyncSession, instance: SoftDeleteMixin, commit: bool = True
-) -> None:
-    """
-    Restore a soft deleted model instance.
-
-    Args:
-        db: Database session
-        instance: Model instance to restore
-        commit: Whether to commit the transaction (default: True)
-
-    Example:
-        >>> await restore_instance(db, user)
-    """
-    instance.restore()
-    if commit:
-        await db.commit()
-    else:
-        await db.flush()
-
-
-async def hard_delete_instance(db: AsyncSession, instance, commit: bool = True) -> None:
-    """
-    Permanently delete a model instance from the database.
-
-    WARNING: This is irreversible. Use with caution.
-
-    Args:
-        db: Database session
-        instance: Model instance to permanently delete
-        commit: Whether to commit the transaction (default: True)
-
-    Example:
-        >>> await hard_delete_instance(db, user)
-    """
-    await db.delete(instance)
-    if commit:
-        await db.commit()
-    else:
-        await db.flush()

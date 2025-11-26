@@ -177,7 +177,7 @@ const AttendanceHistoryPage: React.FC<{ navigation?: any }> = ({ navigation }) =
     >
       <View style={styles.attendanceIcon}>
         <MaterialCommunityIcons
-          name={attendanceService.getMethodIcon(attendance.method)}
+          name={attendanceService.getMethodIcon()}
           size={24}
           color="#4CAF50"
         />
@@ -197,7 +197,7 @@ const AttendanceHistoryPage: React.FC<{ navigation?: any }> = ({ navigation }) =
           </Text>
         </View>
         <Text style={styles.attendanceMethod}>
-          {attendanceService.getMethodDisplayName(attendance.method)}
+          {attendanceService.getMethodDisplayName()}
         </Text>
       </View>
 

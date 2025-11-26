@@ -252,57 +252,6 @@ class ReviewCoachResponse(BaseModel):
     new_status: RoleStatus
 
 
-# Admin account management schemas
-class CreateFirstAdminRequest(BaseModel):
-    """Request schema for creating the first admin user"""
-    phone_number: str
-    first_name: str
-    last_name: str
-    email: Optional[EmailStr] = None
-    password: str
-    birth_date: date
-    admin_secret_key: str  # Secret key from environment to authorize first admin creation
-
-    @field_validator("phone_number")
-    @classmethod
-    def validate_phone_number(cls, v):
-        return validate_e164_phone(v)
-
-    @field_validator("birth_date")
-    @classmethod
-    def validate_birth_date(cls, v):
-        if v > date.today():
-            raise ValueError("Birth date cannot be in the future")
-        return v
-
-    @field_validator("password")
-    @classmethod
-    def validate_password(cls, v):
-        """Validate password strength"""
-        is_valid, error_message = validate_password_strength(v)
-        if not is_valid:
-            raise ValueError(error_message)
-        return v
-
-
-class PromoteUserRequest(BaseModel):
-    """Request schema for promoting a user to admin"""
-    user_id: int
-
-
-class DemoteAdminRequest(BaseModel):
-    """Request schema for demoting an admin back to their original role"""
-    user_id: int
-    new_role: UserRole  # The role to assign (athlete or coach)
-
-    @field_validator("new_role")
-    @classmethod
-    def validate_new_role(cls, v):
-        if v == UserRole.admin:
-            raise ValueError("Cannot demote to admin role. Use promote endpoint instead.")
-        return v
-
-
 class AdminActionResponse(BaseModel):
     """Generic response schema for admin actions"""
     success: bool

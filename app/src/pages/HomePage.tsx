@@ -16,9 +16,9 @@ import {
 import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
 import bookingsService, { Booking } from '../services/bookings';
+import attendanceService, { Attendance } from '../services/attendance';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Layout from '../components/Layout';
-import api from '../services/api';
 import StatCard from '../components/StatCard';
 import EmptyState from '../components/EmptyState';
 
@@ -29,10 +29,14 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [recentClasses, setRecentClasses] = useState<Class[]>([]);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
+  const [attendanceData, setAttendanceData] = useState<Attendance[]>([]);
   const [stats, setStats] = useState({
     totalClasses: 0,
     totalBookings: 0,
     pendingBookings: 0,
+    totalAttendance: 0,
+    currentStreak: 0,
+    monthlyAttendance: 0,
   });
 
   useEffect(() => {
@@ -43,19 +47,26 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     try {
       setLoading(true);
 
-      // Load classes and bookings in parallel
-      const [classesData, bookingsData] = await Promise.all([
+      // Load classes, bookings, and attendance in parallel
+      const [classesData, bookingsData, attendances] = await Promise.all([
         classesService.getClasses().catch(() => []),
-        bookingsService.getMyBookings().catch(() => [])
+        bookingsService.getMyBookings().catch(() => []),
+        userRole === 'athlete'
+          ? attendanceService.getMyAttendance().catch(() => [])
+          : Promise.resolve([])
       ]);
 
       setRecentClasses(classesData.slice(0, 3));
       setRecentBookings(bookingsData.slice(0, 3));
+      setAttendanceData(attendances);
 
       setStats({
         totalClasses: classesData.length,
         totalBookings: bookingsData.length,
         pendingBookings: bookingsData.filter((b: Booking) => b.status === 'pending').length,
+        totalAttendance: attendances.length,
+        currentStreak: attendanceService.calculateStreak(attendances),
+        monthlyAttendance: attendanceService.getMonthlyAttendanceCount(attendances),
       });
     } catch (error) {
       console.error('Error loading home data:', error);
@@ -154,6 +165,48 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   );
 
 
+  const renderAttendancePreview = () => {
+    if (userRole !== 'athlete') return null;
+
+    return (
+      <Card style={styles.sectionCard}>
+        <Card.Content>
+          <View style={styles.sectionHeader}>
+            <Title style={styles.sectionTitle}>Посещаемость</Title>
+            <Button
+              mode="text"
+              onPress={() => navigation?.navigate('AttendanceTab')}
+              textColor="#E74C3C"
+              icon="arrow-right"
+            >
+              Все
+            </Button>
+          </View>
+
+          <View style={styles.attendanceStatsGrid}>
+            <View style={styles.attendanceStat}>
+              <MaterialCommunityIcons name="check-circle" size={32} color="#4CAF50" />
+              <Text style={styles.attendanceStatValue}>{stats.totalAttendance}</Text>
+              <Text style={styles.attendanceStatLabel}>Всего посещений</Text>
+            </View>
+
+            <View style={styles.attendanceStat}>
+              <MaterialCommunityIcons name="fire" size={32} color="#FF9800" />
+              <Text style={styles.attendanceStatValue}>{stats.currentStreak}</Text>
+              <Text style={styles.attendanceStatLabel}>Текущая серия</Text>
+            </View>
+
+            <View style={styles.attendanceStat}>
+              <MaterialCommunityIcons name="calendar-month" size={32} color="#2196F3" />
+              <Text style={styles.attendanceStatValue}>{stats.monthlyAttendance}</Text>
+              <Text style={styles.attendanceStatLabel}>В этом месяце</Text>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+    );
+  };
+
   const renderRecentBookings = () => {
     if (userRole !== 'athlete') return null;
 
@@ -171,7 +224,7 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               Все
             </Button>
           </View>
-          
+
           {recentBookings.length > 0 ? (
             recentBookings.map((booking) => (
               <View key={booking.id} style={styles.recentItem}>
@@ -225,6 +278,7 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
       >
         {renderWelcomeSection()}
         {renderQuickStats()}
+        {renderAttendancePreview()}
         {renderRecentClasses()}
         {renderRecentBookings()}
       </ScrollView>
@@ -349,6 +403,27 @@ const styles = StyleSheet.create({
     color: '#3498DB',
     fontSize: 14,
     fontWeight: '500',
+  },
+  attendanceStatsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 8,
+  },
+  attendanceStat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  attendanceStatValue: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+  attendanceStatLabel: {
+    color: '#B0BEC5',
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'center',
   },
 });
 
