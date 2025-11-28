@@ -230,6 +230,7 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
               disabled={loading}
               style={styles.button}
               buttonColor="#E74C3C"
+              textColor="#fff"
               icon="check-circle"
             >
               {loading ? 'Проверка...' : 'Подтвердить'}

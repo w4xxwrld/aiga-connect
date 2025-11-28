@@ -31,7 +31,7 @@
         "CAMERA"
       ],
       "navigationBar": {
-        "backgroundColor": "#1B263B",
+        "backgroundColor": "#0D1B2A",
         "barStyle": "light-content"
       },
       "package": "org.aiga.aigaconnect"

@@ -71,8 +71,28 @@ async def list_all_users(
     from app.users.models import UserRole, RoleStatus
 
     # Convert string parameters to enums if provided
-    role_enum = UserRole(role) if role else None
-    role_status_enum = RoleStatus(role_status) if role_status else None
+    role_enum = None
+    role_status_enum = None
+
+    if role:
+        try:
+            role_enum = UserRole(role)
+        except ValueError:
+            valid_roles = [r.value for r in UserRole]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid role '{role}'. Valid values: {valid_roles}"
+            )
+
+    if role_status:
+        try:
+            role_status_enum = RoleStatus(role_status)
+        except ValueError:
+            valid_statuses = [s.value for s in RoleStatus]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid role_status '{role_status}'. Valid values: {valid_statuses}"
+            )
 
     filters = schemas.UserListFilters(
         role=role_enum,
@@ -182,7 +202,16 @@ async def list_all_coaches_admin(
     from app.users.models import RoleStatus
 
     # Convert string parameter to enum if provided
-    role_status_enum = RoleStatus(role_status) if role_status else None
+    role_status_enum = None
+    if role_status:
+        try:
+            role_status_enum = RoleStatus(role_status)
+        except ValueError:
+            valid_statuses = [s.value for s in RoleStatus]
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid role_status '{role_status}'. Valid values: {valid_statuses}"
+            )
 
     filters = schemas.CoachListFilters(
         role_status=role_status_enum,

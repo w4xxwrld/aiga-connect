@@ -348,6 +348,7 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
                 onPress={handleLogout}
                 style={[styles.actionButton, styles.logoutButton]}
                 buttonColor="#F44336"
+                textColor="#fff"
                 icon="logout"
               >
                 Выйти из аккаунта

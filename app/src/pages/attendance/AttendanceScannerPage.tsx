@@ -5,12 +5,10 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
-  Platform,
   FlatList,
 } from 'react-native';
 import {
   Button,
-  TextInput,
   Card,
   Title,
   ActivityIndicator,
@@ -27,9 +25,7 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
   const [currentStep, setCurrentStep] = useState<'class-selection' | 'qr-scan'>('class-selection');
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
-  const [manualCode, setManualCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showManualEntry, setShowManualEntry] = useState(false);
 
   // Data State
   const [availableClasses, setAvailableClasses] = useState<AvailableClassForAttendance[]>([]);
@@ -119,19 +115,10 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
       return;
     }
 
-    markAttendance(qrCode, 'qr_scan');
+    markAttendance(qrCode);
   };
 
-  const handleManualSubmit = () => {
-    if (!manualCode || !manualCode.trim()) {
-      Alert.alert('Ошибка', 'Введите код посещения');
-      return;
-    }
-
-    markAttendance(manualCode.trim(), 'manual_entry');
-  };
-
-  const markAttendance = async (qrCode: string, method: 'qr_scan' | 'manual_entry') => {
+  const markAttendance = async (qrCode: string) => {
     if (!selectedClass) {
       Alert.alert('Ошибка', 'Класс не выбран');
       isProcessingRef.current = false;
@@ -146,7 +133,7 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
         class_id: selectedClass.class_id,
         qr_code: qrCode,
         timezone: timezone,
-        method: method,
+        method: 'qr_scan',
       });
 
       // Success!
@@ -180,21 +167,13 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
       );
     } finally {
       setLoading(false);
-      setManualCode('');
     }
-  };
-
-  const toggleManualEntry = () => {
-    setShowManualEntry(!showManualEntry);
-    setScanned(false);
-    isProcessingRef.current = false;
   };
 
   const handleBackToClassSelection = () => {
     setCurrentStep('class-selection');
     setSelectedClass(null);
     setScanned(false);
-    setShowManualEntry(false);
     isProcessingRef.current = false;
   };
 
@@ -230,6 +209,7 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
                 mode="contained"
                 onPress={() => loadAvailableClasses(timezone)}
                 style={styles.refreshButton}
+                textColor="#fff"
               >
                 Обновить
               </Button>
@@ -295,84 +275,12 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
             Пожалуйста, разрешите доступ к камере в настройках приложения
           </Text>
           <Button
-            mode="outlined"
-            onPress={toggleManualEntry}
-            style={styles.manualEntryButton}
-          >
-            Ввести код вручную
-          </Button>
-          <Button
             mode="text"
             onPress={handleBackToClassSelection}
             style={styles.backButton}
           >
             Назад к выбору занятия
           </Button>
-        </View>
-      </Layout>
-    );
-  }
-
-  if (showManualEntry) {
-    return (
-      <Layout>
-        <View style={styles.container}>
-          <Card style={styles.manualCard}>
-            <Card.Content>
-              <Title style={styles.manualTitle}>Ручной ввод кода</Title>
-              <Text style={styles.manualSubtitle}>
-                Занятие: {selectedClass?.class_name}
-              </Text>
-              <Text style={styles.manualSubtitle}>
-                Введите код посещения с QR-кода
-              </Text>
-
-              <TextInput
-                mode="outlined"
-                label="Код посещения"
-                value={manualCode}
-                onChangeText={setManualCode}
-                style={styles.input}
-                theme={{
-                  colors: {
-                    primary: '#E74C3C',
-                    background: '#0D1B2A',
-                    placeholder: '#B0BEC5',
-                    text: '#FFFFFF',
-                  },
-                }}
-                disabled={loading}
-              />
-
-              <Button
-                mode="contained"
-                onPress={handleManualSubmit}
-                loading={loading}
-                disabled={loading || !manualCode.trim()}
-                style={styles.submitButton}
-              >
-                Отметить посещение
-              </Button>
-
-              <Button
-                mode="text"
-                onPress={toggleManualEntry}
-                style={styles.switchModeButton}
-                disabled={loading}
-              >
-                Вернуться к сканированию
-              </Button>
-
-              <Button
-                mode="text"
-                onPress={handleBackToClassSelection}
-                style={styles.switchModeButton}
-                disabled={loading}
-              >
-                Выбрать другое занятие
-              </Button>
-            </Card.Content>
-          </Card>
         </View>
       </Layout>
     );
@@ -422,16 +330,7 @@ const AttendanceScannerPage: React.FC<{ navigation?: any }> = ({ navigation }) =
               <View style={styles.overlaySide} />
             </View>
 
-            <View style={styles.overlayBottom}>
-              <Button
-                mode="text"
-                onPress={toggleManualEntry}
-                icon="keyboard"
-                textColor="#FFFFFF"
-              >
-                Ввести код вручную
-              </Button>
-            </View>
+            <View style={styles.overlayBottom} />
           </View>
 
           {/* Loading overlay */}
@@ -597,10 +496,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 32,
   },
-  manualEntryButton: {
-    marginTop: 24,
-    borderColor: '#E74C3C',
-  },
   cameraContainer: {
     flex: 1,
     position: 'relative',
@@ -671,32 +566,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#FFFFFF',
-  },
-  manualCard: {
-    margin: 16,
-    backgroundColor: '#1B263B',
-    borderRadius: 12,
-  },
-  manualTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  manualSubtitle: {
-    fontSize: 14,
-    color: '#B0BEC5',
-    marginBottom: 24,
-  },
-  input: {
-    marginBottom: 16,
-  },
-  submitButton: {
-    backgroundColor: '#E74C3C',
-    marginBottom: 8,
-  },
-  switchModeButton: {
-    marginTop: 8,
   },
 });
 

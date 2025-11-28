@@ -120,37 +120,29 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   };
 
   const handleQuickDecline = async (booking: Booking) => {
-    Alert.prompt(
+    Alert.alert(
       'Отклонить запись',
-      `Укажите причину отклонения записи ${booking.athlete?.full_name || 'спортсмена'}:`,
+      `Отклонить запись ${booking.athlete?.full_name || 'спортсмена'} на занятие "${booking.class_obj?.name}"?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
           text: 'Отклонить',
           style: 'destructive',
-          onPress: async (reason) => {
-            if (!reason || reason.trim() === '') {
-              Alert.alert('Ошибка', 'Пожалуйста, укажите причину отклонения');
-              return;
-            }
+          onPress: async () => {
             try {
-              await bookingsService.declineBooking(booking.id, reason.trim());
+              await bookingsService.declineBooking(booking.id, 'Отклонено тренером');
               Alert.alert('Успех', 'Запись отклонена');
-              loadBookings(); // Reload bookings
+              loadBookings();
             } catch (error: any) {
               Alert.alert('Ошибка', error.message || 'Не удалось отклонить запись');
             }
           }
         }
-      ],
-      'plain-text'
+      ]
     );
   };
 
   const renderBookingCard = (booking: Booking) => {
-    console.log('BookingsPage: Rendering booking:', booking.id, 'Status:', booking.status, 'UserRole:', userRole);
-    console.log('BookingsPage: Should show coach actions:', userRole === 'coach' && booking.status === 'pending');
-    
     return (
     <Card key={booking.id} style={styles.bookingCard} onPress={() => handleBookingPress(booking)}>
       <Card.Content>
@@ -211,7 +203,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             </View>
           )}
 
-          {booking.class_obj?.coach && (
+          {booking.class_obj?.coach && (booking.class_obj.coach.first_name || booking.class_obj.coach.full_name) && (
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-tie" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
@@ -266,6 +258,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
                 onPress={() => handleQuickApprove(booking)}
                 style={[styles.actionButton, styles.quickApproveButton]}
                 buttonColor="#4CAF50"
+                textColor="#fff"
                 icon="check"
                 compact
               >
@@ -276,6 +269,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
                 onPress={() => handleQuickDecline(booking)}
                 style={[styles.actionButton, styles.quickDeclineButton]}
                 buttonColor="#F44336"
+                textColor="#fff"
                 icon="close"
                 compact
               >
@@ -291,6 +285,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               onPress={() => handleCancelBooking(booking)}
               style={[styles.actionButton, styles.cancelButton]}
               buttonColor="#F44336"
+              textColor="#fff"
             >
               Отменить
             </Button>
@@ -325,6 +320,7 @@ if (loading) {
           mode="contained"
           onPress={() => navigation?.navigate('Classes')}
           buttonColor="#E74C3C"
+          textColor="#fff"
           icon="plus"
           style={styles.actionButton}
         >

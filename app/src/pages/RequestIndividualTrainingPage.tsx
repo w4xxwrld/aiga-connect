@@ -261,6 +261,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
             disabled={loading || !selectedCoach}
             style={[styles.bookButton, !selectedCoach && styles.disabledButton]}
             buttonColor={selectedCoach ? "#E74C3C" : "#666"}
+            textColor="#fff"
             icon="send"
           >
             {selectedCoach ? "Отправить запрос" : "Выберите тренера"}

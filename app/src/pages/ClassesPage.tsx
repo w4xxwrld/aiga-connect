@@ -166,6 +166,7 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             mode="contained"
             onPress={() => navigation?.navigate('CreateClass')}
             buttonColor="#E74C3C"
+            textColor="#FFFFFF"
             icon="plus"
           >
             Создать

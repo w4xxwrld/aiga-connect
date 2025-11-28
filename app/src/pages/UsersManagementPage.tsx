@@ -263,14 +263,15 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
                           `Вы уверены, что хотите назначить ${userItem.full_name} тренером?`,
                           [
                             { text: 'Отмена', style: 'cancel' },
-                            { 
-                              text: 'Назначить', 
+                            {
+                              text: 'Назначить',
                               onPress: () => makeUserCoach(userItem.id)
                             },
                           ]
                         );
                       }}
                       buttonColor="#E74C3C"
+                      textColor="#fff"
                       icon="account-tie"
                       style={styles.makeCoachButton}
                     >

@@ -409,6 +409,7 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
             onPress={handleUpdateClass}
             style={styles.updateButton}
             buttonColor="#E74C3C"
+            textColor="#fff"
             icon="content-save"
             loading={saving}
             disabled={saving}

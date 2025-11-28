@@ -23,7 +23,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
   const { user, userRole, logout } = useAppContext();
   const insets = useSafeAreaInsets();
 
-  console.log('🔍 [DEBUG] Sidebar render - userRole:', userRole, 'user?.primary_role:', user?.primary_role);
   const slideAnim = useRef(new Animated.Value(-280)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [isAnimating, setIsAnimating] = useState(false);
@@ -189,7 +188,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
               {quickActions.map((action, index) => {
                 // Check if action should be shown for current user role
                 const shouldHide = action.showFor && userRole && !action.showFor.includes(userRole);
-                console.log('🔍 [DEBUG] Sidebar action:', action.title, 'showFor:', action.showFor, 'userRole:', userRole, 'shouldHide:', shouldHide);
                 if (shouldHide) {
                   return null;
                 }

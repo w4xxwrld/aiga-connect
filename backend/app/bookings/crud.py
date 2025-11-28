@@ -97,6 +97,7 @@ async def get_bookings_by_athlete(db: AsyncSession, athlete_id: int) -> List[Boo
         select(Booking)
         .where(Booking.athlete_id == athlete_id)
         .options(
+            selectinload(Booking.athlete),
             selectinload(Booking.class_obj).selectinload(Class.coach)
         )
         .order_by(Booking.class_date.desc())

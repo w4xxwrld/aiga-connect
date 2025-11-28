@@ -174,6 +174,7 @@ const AttendanceTabPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           mode="contained"
           icon="qrcode-scan"
           style={styles.primaryButton}
+          textColor="#fff"
           onPress={handleMarkAttendance}
         >
           Отметить посещение
@@ -184,6 +185,7 @@ const AttendanceTabPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             mode="outlined"
             icon="history"
             style={styles.secondaryButton}
+            textColor="#fff"
             onPress={handleViewHistory}
           >
             История
@@ -192,6 +194,7 @@ const AttendanceTabPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             mode="outlined"
             icon="calendar"
             style={styles.secondaryButton}
+            textColor="#fff"
             onPress={handleViewCalendar}
           >
             Календарь
@@ -289,6 +292,7 @@ const AttendanceTabPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           mode="contained"
           icon="view-dashboard"
           style={styles.primaryButton}
+          textColor="#fff"
           onPress={handleViewDashboard}
         >
           Панель посещаемости

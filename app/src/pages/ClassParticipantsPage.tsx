@@ -266,6 +266,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
               onPress={() => handleApproveBooking(participant)}
               style={[styles.actionButton, styles.approveButton]}
               buttonColor="#4CAF50"
+              textColor="#fff"
               icon="check"
               compact
             >
@@ -276,6 +277,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
               onPress={() => handleDeclineBooking(participant)}
               style={[styles.actionButton, styles.declineButton]}
               buttonColor="#F44336"
+              textColor="#fff"
               icon="close"
               compact
             >
@@ -311,6 +313,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
             onPress={() => setSelectedStatus('pending')}
             style={styles.pendingActionButton}
             buttonColor="#FF9800"
+            textColor="#fff"
             icon="clock"
             compact
           >

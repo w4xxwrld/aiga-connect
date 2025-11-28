@@ -154,6 +154,7 @@ export const PhoneLoginPage: React.FC<PhoneLoginPageProps> = ({ navigation }) =>
              disabled={loading || !phoneNumber || !!error}
              style={styles.button}
              buttonColor="#E74C3C"
+             textColor="#fff"
              icon="send"
            >
              {loading ? 'Отправка...' : 'Отправить код'}

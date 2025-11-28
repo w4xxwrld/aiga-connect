@@ -109,21 +109,17 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
   const handleDeclineBooking = async () => {
     if (!booking) return;
 
-    Alert.prompt(
+    Alert.alert(
       'Отклонить запись',
-      'Укажите причину отклонения:',
+      `Отклонить запись ${booking.athlete?.full_name || 'спортсмена'}?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
           text: 'Отклонить',
           style: 'destructive',
-          onPress: async (reason) => {
-            if (!reason || reason.trim() === '') {
-              Alert.alert('Ошибка', 'Пожалуйста, укажите причину отклонения');
-              return;
-            }
+          onPress: async () => {
             try {
-              await bookingsService.declineBooking(booking.id, reason.trim());
+              await bookingsService.declineBooking(booking.id, 'Отклонено тренером');
               Alert.alert('Успех', 'Запись отклонена');
               navigation.goBack();
             } catch (error: any) {
@@ -131,8 +127,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
             }
           }
         }
-      ],
-      'plain-text'
+      ]
     );
   };
 
@@ -155,7 +150,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Запись не найдена</Text>
-        <Button mode="contained" onPress={() => navigation.goBack()}>
+        <Button mode="contained" onPress={() => navigation.goBack()} textColor="#fff">
           Назад
         </Button>
       </View>
@@ -284,6 +279,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
                 onPress={handleApproveBooking}
                 style={styles.approveButton}
                 buttonColor="#4CAF50"
+                textColor="#fff"
                 icon="check"
               >
                 Подтвердить
@@ -293,6 +289,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
                 onPress={handleDeclineBooking}
                 style={styles.declineButton}
                 buttonColor="#F44336"
+                textColor="#fff"
                 icon="close"
               >
                 Отклонить
@@ -307,6 +304,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
               onPress={handleCancelBooking}
               style={styles.cancelButton}
               buttonColor="#F44336"
+              textColor="#fff"
               icon="close"
             >
               Отменить запись

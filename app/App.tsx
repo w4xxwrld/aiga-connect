@@ -10,10 +10,8 @@ import AppNavigator from './src/navigation/AppNavigator';
 export default function App() {
   useEffect(() => {
     if (Platform.OS === 'android') {
-      // Make navigation bar transparent so app extends to bottom
-      NavigationBar.setBackgroundColorAsync('#1B263BFF');
+      NavigationBar.setBackgroundColorAsync('#0D1B2A');
       NavigationBar.setButtonStyleAsync('light');
-      NavigationBar.setPositionAsync('absolute');
     }
   }, []);
 

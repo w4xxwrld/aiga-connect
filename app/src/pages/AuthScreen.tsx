@@ -563,6 +563,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               }
               style={styles.button}
               buttonColor="#E74C3C"
+              textColor="#fff"
               icon={mode === 'login' ? 'login' : 'account-plus'}
             >
               {mode === 'login' ? 'Войти' : 'Дальше'}

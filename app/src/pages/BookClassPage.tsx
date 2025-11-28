@@ -262,6 +262,7 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
             onPress={handleBookClass}
             style={styles.bookButton}
             buttonColor="#E74C3C"
+            textColor="#fff"
             icon="calendar-check"
             loading={booking}
             disabled={booking}

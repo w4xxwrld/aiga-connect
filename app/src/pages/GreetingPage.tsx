@@ -138,6 +138,7 @@ const GreetingPage: React.FC<GreetingPageProps> = ({ navigation }) => {
           style={styles.loginButton}
           contentStyle={styles.buttonContent}
           labelStyle={styles.buttonLabel}
+          textColor="#fff"
           icon="login"
         >
           Войти

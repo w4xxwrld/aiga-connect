@@ -303,20 +303,22 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
               </Text>
             </View>
 
-            <View style={styles.infoRow}>
-              <MaterialCommunityIcons
-                name="bookmark-check"
-                size={16}
-                color="#B0BEC5"
-              />
-              <Text style={styles.infoText}>
-                {booking.booking_type === 'regular' && 'Обычное'}
-                {booking.booking_type === 'trial' && 'Пробное'}
-                {booking.booking_type === 'makeup' && 'Отработка'}
-              </Text>
-            </View>
+            {booking.booking_type && (
+              <View style={styles.infoRow}>
+                <MaterialCommunityIcons
+                  name="bookmark-check"
+                  size={16}
+                  color="#B0BEC5"
+                />
+                <Text style={styles.infoText}>
+                  {booking.booking_type === 'regular' && 'Обычное'}
+                  {booking.booking_type === 'trial' && 'Пробное'}
+                  {booking.booking_type === 'makeup' && 'Отработка'}
+                </Text>
+              </View>
+            )}
 
-            {booking.class_obj && (
+            {booking.class_obj?.coach && (booking.class_obj.coach.first_name || booking.class_obj.coach.full_name) && (
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons
                   name="account"
@@ -324,7 +326,7 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
                   color="#B0BEC5"
                 />
                 <Text style={styles.infoText}>
-                  {booking.class_obj.coach_name || 'Тренер'}
+                  Тренер: {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
                 </Text>
               </View>
             )}

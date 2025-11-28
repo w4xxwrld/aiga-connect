@@ -124,6 +124,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
                 onPress={onApprove}
                 style={[styles.actionButton, styles.quickApproveButton]}
                 buttonColor="#4CAF50"
+                textColor="#fff"
                 icon="check"
                 compact
               >
@@ -134,6 +135,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
                 onPress={onDecline}
                 style={[styles.actionButton, styles.quickDeclineButton]}
                 buttonColor="#F44336"
+                textColor="#fff"
                 icon="close"
                 compact
               >
@@ -149,6 +151,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
               onPress={onCancel}
               style={[styles.actionButton, styles.cancelButton]}
               buttonColor="#F44336"
+              textColor="#fff"
             >
               Отменить
             </Button>

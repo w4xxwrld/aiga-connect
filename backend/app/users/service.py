@@ -868,7 +868,7 @@ class UsersService:
         total_bookings = total_bookings_result.scalar() or 0
 
         # Get unique students count
-        total_students_stmt = select(func.count(distinct(Booking.user_id))).select_from(Booking).join(
+        total_students_stmt = select(func.count(distinct(Booking.athlete_id))).select_from(Booking).join(
             Class, Booking.class_id == Class.id
         ).where(
             Class.coach_id == coach_id

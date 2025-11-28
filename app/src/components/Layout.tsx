@@ -30,9 +30,12 @@ const Layout: React.FC<LayoutProps> = ({
   showProfile = true,
 }) => {
   const navigation = useNavigation<NavigationProp<any>>();
-  const { user } = useAppContext();
+  const { user, userRole } = useAppContext();
   const insets = useSafeAreaInsets();
   const [sidebarVisible, setSidebarVisible] = useState(false);
+
+  // Only show sidebar for admin users
+  const showSidebar = userRole === 'admin';
 
   return (
     <View style={styles.container}>
@@ -48,13 +51,15 @@ const Layout: React.FC<LayoutProps> = ({
             >
               <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
             </TouchableOpacity>
-          ) : (
+          ) : showSidebar ? (
             <TouchableOpacity
               style={styles.headerButton}
               onPress={() => setSidebarVisible(true)}
             >
               <MaterialCommunityIcons name="menu" size={24} color="#fff" />
             </TouchableOpacity>
+          ) : (
+            <View style={styles.headerSpacer} />
           )}
         </View>
 
@@ -91,8 +96,10 @@ const Layout: React.FC<LayoutProps> = ({
         {children}
       </View>
 
-      {/* Sidebar */}
-      <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+      {/* Sidebar - only for admin */}
+      {showSidebar && (
+        <Sidebar isVisible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+      )}
     </View>
   );
 };

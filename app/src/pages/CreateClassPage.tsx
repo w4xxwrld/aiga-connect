@@ -400,6 +400,7 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
             style={styles.createButton}
             contentStyle={styles.buttonContent}
             buttonColor="#E74C3C"
+            textColor="#FFFFFF"
             icon="plus"
             loading={creating}
             disabled={creating}

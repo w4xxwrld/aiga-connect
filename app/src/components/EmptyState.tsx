@@ -33,6 +33,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
           onPress={onButtonPress}
           style={styles.emptyStateButton}
           buttonColor="#E74C3C"
+          textColor="#fff"
         >
           {buttonText}
         </Button>

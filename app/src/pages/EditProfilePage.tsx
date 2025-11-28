@@ -304,6 +304,7 @@ const EditProfilePage: React.FC<EditProfilePageProps> = ({ navigation }) => {
             onPress={handleSave}
             style={styles.saveButton}
             buttonColor="#E74C3C"
+            textColor="#fff"
             icon="content-save"
             disabled={loading}
           >

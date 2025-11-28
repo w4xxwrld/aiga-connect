@@ -129,15 +129,17 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Занятие не найдено</Text>
-        <Button mode="contained" onPress={() => navigation.goBack()}>
+        <Button mode="contained" onPress={() => navigation.goBack()} textColor="#fff">
           Назад
         </Button>
       </View>
     );
   }
 
-  const calculateAge = (birthDateString: string) => {
+  const calculateAge = (birthDateString: string | null | undefined): number | null => {
+    if (!birthDateString) return null;
     const birthDate = new Date(birthDateString);
+    if (isNaN(birthDate.getTime())) return null;
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -231,31 +233,38 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
               
               {participants
                 .filter(participant => participant.booking_status === 'confirmed')
-                .map((participant, index) => (
-                  <View key={participant.id} style={styles.participantRow}>
-                    <View style={styles.participantInfo}>
-                      <Text style={styles.participantName}>{participant.first_name} {participant.last_name}</Text>
-                      <Text style={styles.participantAge}>
-                        {calculateAge(participant.birth_date)} лет
-                      </Text>
+                .map((participant, index) => {
+                  const age = calculateAge(participant.birth_date);
+                  return (
+                    <View key={participant.id} style={styles.participantRow}>
+                      <View style={styles.participantInfo}>
+                        <Text style={styles.participantName}>{participant.first_name} {participant.last_name}</Text>
+                        {age !== null && (
+                          <Text style={styles.participantAge}>
+                            {age} лет
+                          </Text>
+                        )}
+                      </View>
+                      <View style={styles.participantStatus}>
+                        <View
+                          style={[
+                            styles.paymentBadge,
+                            { backgroundColor: participant.is_paid ? '#4CAF50' : '#F44336' }
+                          ]}
+                        >
+                          <Text style={styles.paymentBadgeText}>
+                            {participant.is_paid ? 'Оплачено' : 'Не оплачено'}
+                          </Text>
+                        </View>
+                        {participant.payment_amount && (
+                          <Text style={styles.paymentAmount}>
+                            {participant.payment_amount} ₸
+                          </Text>
+                        )}
+                      </View>
                     </View>
-                    <View style={styles.participantStatus}>
-                      <Badge 
-                        style={[
-                          styles.paymentBadge, 
-                          { backgroundColor: participant.is_paid ? '#4CAF50' : '#F44336' }
-                        ]}
-                      >
-                        {participant.is_paid ? 'Оплачено' : 'Не оплачено'}
-                      </Badge>
-                      {participant.payment_amount && (
-                        <Text style={styles.paymentAmount}>
-                          {participant.payment_amount} ₸
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                ))}
+                  );
+                })}
               
               {participants.filter(p => p.booking_status === 'confirmed').length === 0 && (
                 <Text style={styles.noParticipantsText}>
@@ -274,6 +283,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
                 onPress={handleBookClass}
                 style={styles.bookButton}
                 buttonColor="#E74C3C"
+                textColor="#fff"
                 icon="bookmark-plus"
               >
                 Записаться на занятие
@@ -285,6 +295,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
                   onPress={handleMarkAttendance}
                   style={styles.attendanceButton}
                   buttonColor="#4CAF50"
+                  textColor="#fff"
                   icon="qrcode-scan"
                 >
                   Отметить посещение
@@ -309,6 +320,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
                 onPress={() => navigation.navigate('ClassParticipants', { classId })}
                 style={styles.participantsButton}
                 buttonColor="#2C3E50"
+                textColor="#fff"
                 icon="account-group"
               >
                 Все участники ({participants.length})
@@ -318,6 +330,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
                 onPress={handleViewAttendance}
                 style={styles.attendanceButton}
                 buttonColor="#4CAF50"
+                textColor="#fff"
                 icon="clipboard-check-outline"
               >
                 Посещаемость
@@ -437,6 +450,9 @@ const styles = StyleSheet.create({
   participantsButton: {
     marginTop: 8,
   },
+  attendanceButton: {
+    marginTop: 8,
+  },
   sectionTitle: {
     color: '#fff',
     fontSize: 20,
@@ -478,6 +494,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     marginBottom: 4,
+  },
+  paymentBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   paymentAmount: {
     color: '#fff',

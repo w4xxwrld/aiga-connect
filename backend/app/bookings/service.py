@@ -16,21 +16,21 @@ def enhance_booking_with_payment(
 ) -> Dict[str, Any]:
     """
     Enhance booking with payment information
-    
+
     Args:
         booking: Booking object
         class_price: Price of the class in tenge
-        
+
     Returns:
         Dict with enhanced booking data including payment fields
     """
     # Determine payment requirement
     payment_required = class_price > 0
-    
+
     # Initialize payment fields
     payment_status = "not_required"
     payment_url = None
-    
+
     if payment_required:
         if booking.is_paid:
             payment_status = "completed"
@@ -42,9 +42,51 @@ def enhance_booking_with_payment(
             #     session = stripe.checkout.Session.retrieve(payment.stripe_session_id)
             #     if session.status == 'open':
             #         payment_url = session.url
-    
+
+    # Serialize athlete relationship
+    athlete_data = None
+    if booking.athlete:
+        athlete_data = {
+            "id": booking.athlete.id,
+            "first_name": booking.athlete.first_name,
+            "last_name": booking.athlete.last_name,
+            "phone": booking.athlete.phone,
+            "full_name": f"{booking.athlete.first_name} {booking.athlete.last_name}"
+        }
+
+    # Serialize class_obj relationship with nested coach
+    class_obj_data = None
+    if booking.class_obj:
+        coach_data = None
+        if booking.class_obj.coach:
+            coach_data = {
+                "id": booking.class_obj.coach.id,
+                "first_name": booking.class_obj.coach.first_name,
+                "last_name": booking.class_obj.coach.last_name,
+                "phone": booking.class_obj.coach.phone,
+                "full_name": f"{booking.class_obj.coach.first_name} {booking.class_obj.coach.last_name}"
+            }
+        class_obj_data = {
+            "id": booking.class_obj.id,
+            "name": booking.class_obj.name,
+            "coach": coach_data
+        }
+
     return {
-        **booking.__dict__,
+        "id": booking.id,
+        "athlete_id": booking.athlete_id,
+        "class_id": booking.class_id,
+        "class_date": booking.class_date,
+        "status": booking.status,
+        "booking_date": booking.booking_date,
+        "is_paid": booking.is_paid,
+        "payment_amount": booking.payment_amount,
+        "notes": booking.notes,
+        "cancellation_reason": booking.cancellation_reason,
+        "created_at": booking.created_at,
+        "updated_at": booking.updated_at,
+        "athlete": athlete_data,
+        "class_obj": class_obj_data,
         "payment_required": payment_required,
         "payment_status": payment_status,
         "payment_url": payment_url,

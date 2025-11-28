@@ -130,6 +130,7 @@ const PendingCoachesPage: React.FC = () => {
             onPress={() => handleReview(item, 'approve')}
             style={styles.approveButton}
             buttonColor="#4CAF50"
+            textColor="#fff"
             icon="check"
           >
             Одобрить

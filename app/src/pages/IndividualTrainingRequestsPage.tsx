@@ -70,7 +70,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
   };
 
   const handleAcceptRequest = async (request: IndividualTrainingRequest) => {
-    Alert.prompt(
+    Alert.alert(
       'Принять запрос',
       `Принять запрос от ${request.athlete?.full_name || 'спортсмена'} на ${bookingsService.formatDate(request.requested_date)}?`,
       [
@@ -87,45 +87,39 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
                 payment_amount: 5000, // Default payment amount
                 is_paid: false,
               };
-              
+
               await bookingsService.acceptIndividualTrainingRequest(request.id, updateData);
               Alert.alert('Успех', 'Запрос принят');
-              loadRequests(); // Reload requests
+              loadRequests();
             } catch (error: any) {
               Alert.alert('Ошибка', error.message || 'Не удалось принять запрос');
             }
           }
         }
-      ],
-      'plain-text'
+      ]
     );
   };
 
   const handleDeclineRequest = async (request: IndividualTrainingRequest) => {
-    Alert.prompt(
+    Alert.alert(
       'Отклонить запрос',
-      `Укажите причину отклонения запроса от ${request.athlete?.full_name || 'спортсмена'}:`,
+      `Отклонить запрос от ${request.athlete?.full_name || 'спортсмена'}?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
           text: 'Отклонить',
           style: 'destructive',
-          onPress: async (reason) => {
-            if (!reason || reason.trim() === '') {
-              Alert.alert('Ошибка', 'Пожалуйста, укажите причину отклонения');
-              return;
-            }
+          onPress: async () => {
             try {
-              await bookingsService.declineIndividualTrainingRequest(request.id, reason.trim());
+              await bookingsService.declineIndividualTrainingRequest(request.id, 'Отклонено тренером');
               Alert.alert('Успех', 'Запрос отклонен');
-              loadRequests(); // Reload requests
+              loadRequests();
             } catch (error: any) {
               Alert.alert('Ошибка', error.message || 'Не удалось отклонить запрос');
             }
           }
         }
-      ],
-      'plain-text'
+      ]
     );
   };
 
@@ -270,6 +264,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
                 onPress={() => handleAcceptRequest(request)}
                 style={[styles.actionButton, styles.acceptButton]}
                 buttonColor="#4CAF50"
+                textColor="#fff"
                 icon="check"
               >
                 Принять
@@ -279,6 +274,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
                 onPress={() => handleDeclineRequest(request)}
                 style={[styles.actionButton, styles.declineButton]}
                 buttonColor="#F44336"
+                textColor="#fff"
                 icon="close"
               >
                 Отклонить
@@ -292,6 +288,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
               onPress={() => handleCompleteRequest(request)}
               style={[styles.actionButton, styles.completeButton]}
               buttonColor="#2196F3"
+              textColor="#fff"
               icon="flag-checkered"
             >
               Завершить

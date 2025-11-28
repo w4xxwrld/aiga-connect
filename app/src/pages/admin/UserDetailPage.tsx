@@ -205,6 +205,7 @@ const UserDetailPage: React.FC = () => {
               onPress={() => setRoleModalVisible(true)}
               style={styles.actionButton}
               buttonColor="#2196F3"
+              textColor="#fff"
               icon="account-switch"
             >
               Изменить роль
@@ -226,6 +227,7 @@ const UserDetailPage: React.FC = () => {
                 onPress={handleRestore}
                 style={styles.actionButton}
                 buttonColor="#4CAF50"
+                textColor="#fff"
                 icon="restore"
               >
                 Восстановить пользователя

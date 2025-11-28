@@ -17,7 +17,7 @@ const StatCard: React.FC<StatCardProps> = ({
   iconColor = '#E74C3C',
 }) => {
   return (
-    <Card style={styles.statCard}>
+    <Card style={styles.statCard} elevation={0}>
       <View style={styles.statContent}>
         {icon && <MaterialCommunityIcons name={icon} size={24} color={iconColor} />}
         <Text style={styles.statNumber}>{value}</Text>

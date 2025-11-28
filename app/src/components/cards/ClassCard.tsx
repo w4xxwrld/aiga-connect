@@ -91,6 +91,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
               onPress={onBook}
               style={[styles.actionButton, styles.bookButton]}
               buttonColor="#E74C3C"
+              textColor="#fff"
             >
               Записаться
             </Button>
