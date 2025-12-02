@@ -73,7 +73,9 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
       setName(data.name);
       setDescription(data.description || '');
       setDifficultyLevel(data.difficulty_level);
-      setSelectedDays(data.days_of_week);
+      // Convert English day names from backend to Russian for UI
+      const russianDays = data.days_of_week.map(day => classesService.convertDayToRussian(day));
+      setSelectedDays(russianDays);
       setStartTime(data.start_time);
       setEndTime(data.end_time);
       setMaxCapacity(data.max_capacity.toString());
@@ -237,10 +239,14 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
                 key={day}
                 mode="outlined"
                 onPress={() => {
+                  // Remove all duplicates first, then toggle day
+                  const daysWithoutCurrent = selectedDays.filter(d => d !== day);
                   if (selectedDays.includes(day)) {
-                    setSelectedDays(selectedDays.filter(d => d !== day));
+                    // Day is selected, remove it
+                    setSelectedDays(daysWithoutCurrent);
                   } else {
-                    setSelectedDays([...selectedDays, day]);
+                    // Day is not selected, add it (no duplicates possible)
+                    setSelectedDays([...daysWithoutCurrent, day]);
                   }
                 }}
                 style={[
@@ -263,10 +269,14 @@ const EditClassPage: React.FC<EditClassPageProps> = ({ navigation, route }) => {
                 key={day}
                 mode="outlined"
                 onPress={() => {
+                  // Remove all duplicates first, then toggle day
+                  const daysWithoutCurrent = selectedDays.filter(d => d !== day);
                   if (selectedDays.includes(day)) {
-                    setSelectedDays(selectedDays.filter(d => d !== day));
+                    // Day is selected, remove it
+                    setSelectedDays(daysWithoutCurrent);
                   } else {
-                    setSelectedDays([...selectedDays, day]);
+                    // Day is not selected, add it (no duplicates possible)
+                    setSelectedDays([...daysWithoutCurrent, day]);
                   }
                 }}
                 style={[
