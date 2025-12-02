@@ -128,13 +128,14 @@ const CoachAttendanceDashboardPage: React.FC<{ navigation?: any }> = ({ navigati
     color: string;
   } => {
     const now = new Date();
-    const [classHour, classMinute] = classItem.start_time.split(':').map(Number);
+    const [startHour, startMinute] = classItem.start_time.split(':').map(Number);
+    const [endHour, endMinute] = classItem.end_time.split(':').map(Number);
 
     const classStartTime = new Date();
-    classStartTime.setHours(classHour, classMinute, 0, 0);
+    classStartTime.setHours(startHour, startMinute, 0, 0);
 
-    const classEndTime = new Date(classStartTime);
-    classEndTime.setMinutes(classEndTime.getMinutes() + classItem.duration);
+    const classEndTime = new Date();
+    classEndTime.setHours(endHour, endMinute, 0, 0);
 
     if (now < classStartTime) {
       return { status: 'upcoming', label: 'Предстоящее', color: '#FF9800' };
@@ -209,7 +210,7 @@ const CoachAttendanceDashboardPage: React.FC<{ navigation?: any }> = ({ navigati
               <View style={styles.classInfo}>
                 <Text style={styles.className}>{classItem.name}</Text>
                 <Text style={styles.classTime}>
-                  {classItem.start_time} • {classItem.duration} мин
+                  {classesService.formatTime(classItem.start_time)}
                 </Text>
               </View>
               <Chip
