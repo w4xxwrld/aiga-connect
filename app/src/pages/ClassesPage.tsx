@@ -191,32 +191,60 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           <Chip
             selected={selectedDifficulty === 'all'}
             onPress={() => setSelectedDifficulty('all')}
-            style={styles.filterChip}
-            textStyle={styles.filterChipText}
+            style={[
+              styles.filterChip,
+              selectedDifficulty === 'all' && styles.filterChipSelected,
+            ]}
+            textStyle={[
+              styles.filterChipText,
+              selectedDifficulty === 'all' && styles.filterChipTextSelected,
+            ]}
+            selectedColor="#E74C3C"
           >
             Все
           </Chip>
           <Chip
             selected={selectedDifficulty === 'beginner'}
             onPress={() => setSelectedDifficulty('beginner')}
-            style={styles.filterChip}
-            textStyle={styles.filterChipText}
+            style={[
+              styles.filterChip,
+              selectedDifficulty === 'beginner' && styles.filterChipSelected,
+            ]}
+            textStyle={[
+              styles.filterChipText,
+              selectedDifficulty === 'beginner' && styles.filterChipTextSelected,
+            ]}
+            selectedColor="#E74C3C"
           >
             Начинающие
           </Chip>
           <Chip
             selected={selectedDifficulty === 'amateur'}
             onPress={() => setSelectedDifficulty('amateur')}
-            style={styles.filterChip}
-            textStyle={styles.filterChipText}
+            style={[
+              styles.filterChip,
+              selectedDifficulty === 'amateur' && styles.filterChipSelected,
+            ]}
+            textStyle={[
+              styles.filterChipText,
+              selectedDifficulty === 'amateur' && styles.filterChipTextSelected,
+            ]}
+            selectedColor="#E74C3C"
           >
             Любитель
           </Chip>
           <Chip
             selected={selectedDifficulty === 'professional'}
             onPress={() => setSelectedDifficulty('professional')}
-            style={styles.filterChip}
-            textStyle={styles.filterChipText}
+            style={[
+              styles.filterChip,
+              selectedDifficulty === 'professional' && styles.filterChipSelected,
+            ]}
+            textStyle={[
+              styles.filterChipText,
+              selectedDifficulty === 'professional' && styles.filterChipTextSelected,
+            ]}
+            selectedColor="#E74C3C"
           >
             Профессионал
           </Chip>
@@ -288,9 +316,19 @@ const styles = StyleSheet.create({
   filterChip: {
     marginRight: 8,
     backgroundColor: '#1B263B',
+    borderWidth: 1,
+    borderColor: '#2C3E50',
+  },
+  filterChipSelected: {
+    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+    borderColor: '#E74C3C',
   },
   filterChipText: {
-    color: '#fff',
+    color: '#B0BEC5',
+  },
+  filterChipTextSelected: {
+    color: '#E74C3C',
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,

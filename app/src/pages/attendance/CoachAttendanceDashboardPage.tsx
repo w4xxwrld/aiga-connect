@@ -178,6 +178,9 @@ const CoachAttendanceDashboardPage: React.FC<{ navigation?: any }> = ({ navigati
           colors: {
             secondaryContainer: '#E74C3C',
             onSecondaryContainer: '#FFFFFF',
+            surface: 'transparent',
+            onSurface: '#FFFFFF',
+            outline: '#2C3E50',
           },
         }}
       />

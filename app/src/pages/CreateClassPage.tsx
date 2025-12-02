@@ -213,6 +213,15 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
           ]}
           style={styles.segmentedButtons}
           density="small"
+          theme={{
+            colors: {
+              secondaryContainer: '#E74C3C',
+              onSecondaryContainer: '#FFFFFF',
+              surface: 'transparent',
+              onSurface: '#FFFFFF',
+              outline: '#2C3E50',
+            }
+          }}
         />
       </Card.Content>
     </Card>
