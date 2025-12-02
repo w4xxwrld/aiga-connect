@@ -32,7 +32,7 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'all' | 'beginner' | 'amateur' | 'professional'>('all');
 
   useFocusEffect(
     useCallback(() => {
@@ -205,20 +205,20 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             Начинающие
           </Chip>
           <Chip
-            selected={selectedDifficulty === 'intermediate'}
-            onPress={() => setSelectedDifficulty('intermediate')}
+            selected={selectedDifficulty === 'amateur'}
+            onPress={() => setSelectedDifficulty('amateur')}
             style={styles.filterChip}
             textStyle={styles.filterChipText}
           >
-            Средний
+            Любитель
           </Chip>
           <Chip
-            selected={selectedDifficulty === 'advanced'}
-            onPress={() => setSelectedDifficulty('advanced')}
+            selected={selectedDifficulty === 'professional'}
+            onPress={() => setSelectedDifficulty('professional')}
             style={styles.filterChip}
             textStyle={styles.filterChipText}
           >
-            Продвинутые
+            Профессионал
           </Chip>
         </ScrollView>
       </View>
