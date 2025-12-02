@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   Searchbar,
   Chip,
 } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -33,9 +34,11 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
 
-  useEffect(() => {
-    loadClasses();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadClasses();
+    }, [userRole, user?.id, user?.is_head_coach])
+  );
 
   useEffect(() => {
     filterClasses();
