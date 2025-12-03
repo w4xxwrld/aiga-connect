@@ -187,6 +187,20 @@ class ClassesService {
     return dayMapping[day.toLowerCase()] || day.toLowerCase();
   }
 
+  convertDayToRussian(day: string): string {
+    if (!day || typeof day !== 'string') return '';
+    const dayMapping: { [key: string]: string } = {
+      'monday': 'понедельник',
+      'tuesday': 'вторник',
+      'wednesday': 'среда',
+      'thursday': 'четверг',
+      'friday': 'пятница',
+      'saturday': 'суббота',
+      'sunday': 'воскресенье'
+    };
+    return dayMapping[day.toLowerCase()] || day.toLowerCase();
+  }
+
   calculateDuration(startTime: string, endTime: string): string {
     const start = new Date(`2000-01-01T${startTime}`);
     const end = new Date(`2000-01-01T${endTime}`);

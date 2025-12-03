@@ -274,6 +274,9 @@ const AthleteInsightsPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
           colors: {
             secondaryContainer: '#E74C3C',
             onSecondaryContainer: '#FFFFFF',
+            surface: 'transparent',
+            onSurface: '#FFFFFF',
+            outline: '#2C3E50',
           },
         }}
       />

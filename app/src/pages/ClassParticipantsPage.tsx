@@ -374,7 +374,16 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={styles.searchBar}
+          inputStyle={styles.searchInput}
           iconColor="#E74C3C"
+          placeholderTextColor="#B0BEC5"
+          theme={{
+            colors: {
+              primary: '#E74C3C',
+              background: '#1B263B',
+              text: '#FFFFFF',
+            },
+          }}
         />
 
         {/* Filters */}
@@ -523,6 +532,9 @@ const styles: any = {
     backgroundColor: '#1B263B',
     borderRadius: 12,
     marginBottom: 16,
+  },
+  searchInput: {
+    color: '#fff',
   },
   filterContainer: {
     marginBottom: 16,

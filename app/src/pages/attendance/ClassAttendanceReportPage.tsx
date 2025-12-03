@@ -113,6 +113,9 @@ const ClassAttendanceReportPage: React.FC<{ route?: any; navigation?: any }> = (
           colors: {
             secondaryContainer: '#E74C3C',
             onSecondaryContainer: '#FFFFFF',
+            surface: 'transparent',
+            onSurface: '#FFFFFF',
+            outline: '#2C3E50',
           },
         }}
       />
@@ -130,6 +133,9 @@ const ClassAttendanceReportPage: React.FC<{ route?: any; navigation?: any }> = (
           colors: {
             secondaryContainer: '#E74C3C',
             onSecondaryContainer: '#FFFFFF',
+            surface: 'transparent',
+            onSurface: '#FFFFFF',
+            outline: '#2C3E50',
           },
         }}
       />

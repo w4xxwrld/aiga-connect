@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Button,
   ActivityIndicator,
 } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
 import bookingsService, { Booking } from '../services/bookings';
@@ -39,9 +40,11 @@ const HomePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     monthlyAttendance: 0,
   });
 
-  useEffect(() => {
-    loadHomeData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadHomeData();
+    }, [userRole])
+  );
 
   const loadHomeData = async () => {
     try {

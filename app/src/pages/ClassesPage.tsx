@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   Searchbar,
   Chip,
 } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
 import classesService, { Class } from '../services/classes';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -31,11 +32,13 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'all' | 'beginner' | 'amateur' | 'professional'>('all');
 
-  useEffect(() => {
-    loadClasses();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadClasses();
+    }, [userRole, user?.id, user?.is_head_coach])
+  );
 
   useEffect(() => {
     filterClasses();
@@ -188,34 +191,62 @@ const ClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           <Chip
             selected={selectedDifficulty === 'all'}
             onPress={() => setSelectedDifficulty('all')}
-            style={styles.filterChip}
-            textStyle={styles.filterChipText}
+            style={[
+              styles.filterChip,
+              selectedDifficulty === 'all' && styles.filterChipSelected,
+            ]}
+            textStyle={[
+              styles.filterChipText,
+              selectedDifficulty === 'all' && styles.filterChipTextSelected,
+            ]}
+            selectedColor="#E74C3C"
           >
             Все
           </Chip>
           <Chip
             selected={selectedDifficulty === 'beginner'}
             onPress={() => setSelectedDifficulty('beginner')}
-            style={styles.filterChip}
-            textStyle={styles.filterChipText}
+            style={[
+              styles.filterChip,
+              selectedDifficulty === 'beginner' && styles.filterChipSelected,
+            ]}
+            textStyle={[
+              styles.filterChipText,
+              selectedDifficulty === 'beginner' && styles.filterChipTextSelected,
+            ]}
+            selectedColor="#E74C3C"
           >
             Начинающие
           </Chip>
           <Chip
-            selected={selectedDifficulty === 'intermediate'}
-            onPress={() => setSelectedDifficulty('intermediate')}
-            style={styles.filterChip}
-            textStyle={styles.filterChipText}
+            selected={selectedDifficulty === 'amateur'}
+            onPress={() => setSelectedDifficulty('amateur')}
+            style={[
+              styles.filterChip,
+              selectedDifficulty === 'amateur' && styles.filterChipSelected,
+            ]}
+            textStyle={[
+              styles.filterChipText,
+              selectedDifficulty === 'amateur' && styles.filterChipTextSelected,
+            ]}
+            selectedColor="#E74C3C"
           >
-            Средний
+            Любитель
           </Chip>
           <Chip
-            selected={selectedDifficulty === 'advanced'}
-            onPress={() => setSelectedDifficulty('advanced')}
-            style={styles.filterChip}
-            textStyle={styles.filterChipText}
+            selected={selectedDifficulty === 'professional'}
+            onPress={() => setSelectedDifficulty('professional')}
+            style={[
+              styles.filterChip,
+              selectedDifficulty === 'professional' && styles.filterChipSelected,
+            ]}
+            textStyle={[
+              styles.filterChipText,
+              selectedDifficulty === 'professional' && styles.filterChipTextSelected,
+            ]}
+            selectedColor="#E74C3C"
           >
-            Продвинутые
+            Профессионал
           </Chip>
         </ScrollView>
       </View>
@@ -285,9 +316,19 @@ const styles = StyleSheet.create({
   filterChip: {
     marginRight: 8,
     backgroundColor: '#1B263B',
+    borderWidth: 1,
+    borderColor: '#2C3E50',
+  },
+  filterChipSelected: {
+    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+    borderColor: '#E74C3C',
   },
   filterChipText: {
-    color: '#fff',
+    color: '#B0BEC5',
+  },
+  filterChipTextSelected: {
+    color: '#E74C3C',
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
