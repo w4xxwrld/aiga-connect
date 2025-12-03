@@ -49,6 +49,54 @@ export interface CoachStats {
   total_students: number;
 }
 
+export interface AdminAttendanceStats {
+  total_attendances: number;
+  unique_athletes: number;
+  unique_classes: number;
+  today_count: number;
+}
+
+export interface AdminAttendanceAthlete {
+  id: number;
+  first_name: string;
+  last_name: string;
+  phone: string;
+}
+
+export interface AdminAttendanceCoach {
+  id: number;
+  first_name: string;
+  last_name: string;
+}
+
+export interface AdminAttendanceClass {
+  id: number;
+  name: string;
+  start_time: string;
+  coach?: AdminAttendanceCoach;
+}
+
+export interface AdminAttendanceRecord {
+  id: number;
+  athlete_id: number;
+  class_id: number;
+  qr_code: string;
+  attendance_date: string;
+  marked_at: string;
+  created_at: string;
+  athlete?: AdminAttendanceAthlete;
+  class_obj?: AdminAttendanceClass;
+}
+
+export interface AdminAttendanceListParams {
+  start_date?: string;
+  end_date?: string;
+  class_id?: number;
+  athlete_id?: number;
+  skip?: number;
+  limit?: number;
+}
+
 class AdminService {
   // Coach approval
   async getPendingCoaches(): Promise<PendingCoach[]> {
@@ -256,6 +304,36 @@ class AdminService {
         throw new Error(error.response.data.detail);
       }
       throw new Error('Не удалось понизить админа');
+    }
+  }
+
+  // Attendance management
+  async getAttendanceList(params: AdminAttendanceListParams = {}): Promise<{ attendances: AdminAttendanceRecord[]; total: number }> {
+    try {
+      const response = await api.get('/admin/attendance/list', { params });
+      return {
+        attendances: response.data.attendances || [],
+        total: response.data.total || 0,
+      };
+    } catch (error: any) {
+      console.error('Error fetching attendance list:', error);
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Не удалось загрузить список посещений');
+    }
+  }
+
+  async getAttendanceStats(params: { start_date?: string; end_date?: string } = {}): Promise<AdminAttendanceStats> {
+    try {
+      const response = await api.get('/admin/attendance/stats', { params });
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching attendance stats:', error);
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Не удалось загрузить статистику посещений');
     }
   }
 }

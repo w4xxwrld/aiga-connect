@@ -102,6 +102,7 @@ class UserCreate(UserBase):
 class UserOut(UserBase):
     id: int
     created_at: datetime
+    role_status: Optional[RoleStatus] = None
 
     model_config = ConfigDict(from_attributes=True)
 

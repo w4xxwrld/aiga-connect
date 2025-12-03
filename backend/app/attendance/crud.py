@@ -172,3 +172,98 @@ async def get_attendance_stats_by_class(
         "total_attendances": total_attendances,
         "unique_athletes": unique_athletes
     }
+
+
+# ============================================================================
+# ADMIN FUNCTIONS
+# ============================================================================
+
+async def get_all_attendance(
+    db: AsyncSession,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    class_id: Optional[int] = None,
+    athlete_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 50
+) -> List[Attendance]:
+    """Get all attendance records with optional filters (admin only)"""
+    from sqlalchemy.orm import selectinload
+    from app.classes.models import Class
+
+    query = select(Attendance).options(
+        selectinload(Attendance.athlete),
+        selectinload(Attendance.class_obj).selectinload(Class.coach)
+    )
+
+    if start_date:
+        query = query.where(Attendance.attendance_date >= start_date)
+    if end_date:
+        query = query.where(Attendance.attendance_date <= end_date)
+    if class_id:
+        query = query.where(Attendance.class_id == class_id)
+    if athlete_id:
+        query = query.where(Attendance.athlete_id == athlete_id)
+
+    query = query.order_by(Attendance.marked_at.desc()).offset(skip).limit(limit)
+
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+async def count_all_attendance(
+    db: AsyncSession,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    class_id: Optional[int] = None,
+    athlete_id: Optional[int] = None
+) -> int:
+    """Count all attendance records with optional filters (admin only)"""
+    query = select(func.count(Attendance.id))
+
+    if start_date:
+        query = query.where(Attendance.attendance_date >= start_date)
+    if end_date:
+        query = query.where(Attendance.attendance_date <= end_date)
+    if class_id:
+        query = query.where(Attendance.class_id == class_id)
+    if athlete_id:
+        query = query.where(Attendance.athlete_id == athlete_id)
+
+    result = await db.execute(query)
+    return result.scalar()
+
+
+async def get_overall_attendance_stats(
+    db: AsyncSession,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None
+) -> dict:
+    """Get overall attendance statistics (admin only)"""
+    query = select(Attendance)
+
+    if start_date:
+        query = query.where(Attendance.attendance_date >= start_date)
+    if end_date:
+        query = query.where(Attendance.attendance_date <= end_date)
+
+    result = await db.execute(query)
+    attendances = result.scalars().all()
+
+    total_attendances = len(attendances)
+    unique_athletes = len(set(a.athlete_id for a in attendances))
+    unique_classes = len(set(a.class_id for a in attendances))
+
+    # Calculate today's attendance
+    today = date.today()
+    today_result = await db.execute(
+        select(func.count(Attendance.id)).where(Attendance.attendance_date == today)
+    )
+    today_count = today_result.scalar()
+
+    return {
+        "total_attendances": total_attendances,
+        "unique_athletes": unique_athletes,
+        "unique_classes": unique_classes,
+        "today_count": today_count
+    }

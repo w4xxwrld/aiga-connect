@@ -65,3 +65,65 @@ class AvailableClassForAttendance(BaseModel):
     booking_id: int  # User's booking ID for this class
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# ADMIN SCHEMAS
+# ============================================================================
+
+class AthleteSimple(BaseModel):
+    """Simple athlete info for attendance list."""
+    id: int
+    first_name: str
+    last_name: str
+    phone: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CoachSimple(BaseModel):
+    """Simple coach info for class in attendance."""
+    id: int
+    first_name: str
+    last_name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ClassSimple(BaseModel):
+    """Simple class info for attendance list."""
+    id: int
+    name: str
+    start_time: str
+    coach: Optional[CoachSimple] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminAttendanceOut(BaseModel):
+    """Attendance record with full athlete and class info for admin."""
+    id: int
+    athlete_id: int
+    class_id: int
+    qr_code: str
+    attendance_date: date
+    marked_at: datetime
+    created_at: datetime
+    athlete: Optional[AthleteSimple] = None
+    class_obj: Optional[ClassSimple] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminAttendanceListResponse(BaseModel):
+    """Paginated attendance list response for admin."""
+    attendances: list[AdminAttendanceOut]
+    total: int
+
+
+class AdminAttendanceStats(BaseModel):
+    """Overall attendance statistics for admin dashboard."""
+    total_attendances: int
+    unique_athletes: int
+    unique_classes: int
+    today_count: int

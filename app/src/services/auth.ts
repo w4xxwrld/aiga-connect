@@ -11,6 +11,7 @@ export interface User {
   emergency_contact?: string;
   primary_role: 'parent' | 'athlete' | 'coach' | 'admin';
   roles: ('parent' | 'athlete' | 'coach' | 'admin')[];
+  role_status?: 'pending' | 'approved' | 'declined' | null;
   is_head_coach: boolean;
   created_at: string;
   photo_url?: string;
@@ -319,6 +320,7 @@ class AuthService {
         emergency_contact: backendUser.emergency_contact || '',
         primary_role: backendUser.primary_role,
         roles: [backendUser.primary_role],
+        role_status: backendUser.role_status || null,
         is_head_coach: backendUser.is_head_coach || false,
         created_at: backendUser.created_at,
         photo_url: backendUser.photo_url,

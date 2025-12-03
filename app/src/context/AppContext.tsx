@@ -11,6 +11,7 @@ interface AppContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isAdmin: boolean;
+  isCoachPending: boolean;
   setHasSeenGreeting: (value: boolean) => void;
   setUserRole: (role: UserRole) => void;
   setUser: (user: User | null) => void;
@@ -169,6 +170,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   console.log('🔍 [DEBUG] AppContext value creation - userRole:', userRole, 'user?.primary_role:', user?.primary_role);
 
+  const isCoachPending = user?.primary_role === 'coach' && user?.role_status === 'pending';
+
   const value: AppContextType = {
     hasSeenGreeting,
     userRole,
@@ -176,6 +179,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     isAuthenticated,
     isLoading,
     isAdmin: user?.primary_role === 'admin',
+    isCoachPending,
     setHasSeenGreeting: handleSetHasSeenGreeting,
     setUserRole: handleSetUserRole,
     setUser: handleSetUser,

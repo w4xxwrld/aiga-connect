@@ -113,6 +113,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       showFor: ['admin'],
     },
     {
+      title: 'Посещаемость',
+      icon: 'clipboard-check',
+      route: 'AdminAttendance',
+      showFor: ['admin'],
+    },
+    {
       title: 'Занятия',
       icon: 'calendar',
       route: 'Classes',

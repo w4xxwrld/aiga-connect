@@ -24,6 +24,7 @@ type RootStackParamList = {
   Auth: undefined;
   OTPVerification: { phoneNumber: string; isRegistration: boolean };
   MainTabs: undefined;
+  CoachPending: undefined;
   RoleSettings: undefined;
   ClassDetail: { classId: number };
   BookingDetail: { bookingId: number };
@@ -48,6 +49,7 @@ type RootStackParamList = {
   UserDetail: { userId: number };
   CoachesList: undefined;
   CoachDetail: { coachId: number };
+  AdminAttendance: undefined;
 };
 
 type MainTabParamList = {
@@ -89,6 +91,8 @@ import UsersListPage from '../pages/admin/UsersListPage';
 import UserDetailPage from '../pages/admin/UserDetailPage';
 import CoachesListPage from '../pages/admin/CoachesListPage';
 import CoachDetailPage from '../pages/admin/CoachDetailPage';
+import AdminAttendancePage from '../pages/admin/AdminAttendancePage';
+import CoachPendingPage from '../pages/CoachPendingPage';
 
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -108,6 +112,7 @@ const MainLayout: React.FC = () => {
 // Custom Tab Bar Component
 const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
   const insets = useSafeAreaInsets();
+  const { isAdmin } = useAppContext();
 
   const getTabIcon = (routeName: string, focused: boolean) => {
     const iconColor = focused ? '#E74C3C' : '#B0BEC5';
@@ -150,6 +155,11 @@ const CustomTabBar: React.FC<any> = ({ state, descriptors, navigation }) => {
   return (
     <View style={[styles.customTabBar, { paddingBottom: bottomPadding }]}>
       {state.routes.map((route: any, index: number) => {
+        // Hide Attendance tab for admins
+        if (isAdmin && route.name === 'Attendance') {
+          return null;
+        }
+
         const { options } = descriptors[route.key];
         const label = getTabLabel(route.name);
         const isFocused = state.index === index;
@@ -205,7 +215,7 @@ const MainTabs: React.FC = () => {
 };
 
 const AppNavigator: React.FC = () => {
-  const { hasSeenGreeting, isAuthenticated, isLoading } = useAppContext();
+  const { hasSeenGreeting, isAuthenticated, isLoading, isCoachPending } = useAppContext();
   const navigationRef = useRef<any>(null);
   const lastAuthState = useRef<boolean | null>(null);
 
@@ -238,6 +248,7 @@ const AppNavigator: React.FC = () => {
   const getInitialRouteName = () => {
     if (!hasSeenGreeting) return "Greeting";
     if (!isAuthenticated) return "Auth";
+    if (isCoachPending) return "CoachPending";
     return "MainTabs";
   };
 
@@ -252,6 +263,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Greeting" component={GreetingPage} />
         <Stack.Screen name="Auth" component={AuthScreen} />
         <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+        <Stack.Screen name="CoachPending" component={CoachPendingPage} />
         <Stack.Screen name="MainTabs" component={MainLayout} />
         <Stack.Screen name="ClassDetail" component={ClassDetailPage} />
         <Stack.Screen name="Profile" component={ProfilePage} />
@@ -279,6 +291,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="UserDetail" component={UserDetailPage} />
         <Stack.Screen name="CoachesList" component={CoachesListPage} />
         <Stack.Screen name="CoachDetail" component={CoachDetailPage} />
+        <Stack.Screen name="AdminAttendance" component={AdminAttendancePage} />
 
       </Stack.Navigator>
     </NavigationContainer>
