@@ -24,10 +24,21 @@ class AttendanceCreate(AttendanceBase):
     pass
 
 
+class AthleteBasic(BaseModel):
+    """Basic athlete info for attendance response"""
+    id: int
+    first_name: str
+    last_name: str
+    phone: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class AttendanceOut(AttendanceBase):
     id: int
     marked_at: datetime
     created_at: datetime
+    athlete: Optional[AthleteBasic] = None
 
     model_config = ConfigDict(from_attributes=True)
 

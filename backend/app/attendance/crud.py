@@ -128,7 +128,11 @@ async def get_attendance_by_class(
     attendance_date: Optional[date] = None
 ) -> List[Attendance]:
     """Get attendance records for a class"""
-    query = select(Attendance).where(Attendance.class_id == class_id)
+    from sqlalchemy.orm import selectinload
+
+    query = select(Attendance).options(
+        selectinload(Attendance.athlete)
+    ).where(Attendance.class_id == class_id)
 
     if attendance_date:
         query = query.where(Attendance.attendance_date == attendance_date)

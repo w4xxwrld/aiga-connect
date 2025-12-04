@@ -12,7 +12,10 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "ANDROID_HOME": "/Users/shakhnazar/Library/Android/sdk"
+      }
     },
     "production": {
       "autoIncrement": true

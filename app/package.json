@@ -23,7 +23,6 @@
     "expo": "^54.0.24",
     "expo-camera": "^17.0.9",
     "expo-constants": "^16.0.2",
-    "expo-dev-client": "^4.0.29",
     "expo-image-picker": "^17.0.8",
     "expo-modules-autolinking": "^3.0.20",
     "expo-navigation-bar": "~5.0.9",
