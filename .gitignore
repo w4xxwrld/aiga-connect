@@ -103,6 +103,10 @@ yarn-error.log*
 .expo/
 .metro-health-check*
 
+# Native build folders
+app/ios/
+app/android/
+
 # Build cache
 *.tsbuildinfo
 .cache/
