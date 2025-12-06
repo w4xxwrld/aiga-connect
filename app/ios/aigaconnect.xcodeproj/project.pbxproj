@@ -9,24 +9,24 @@
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		4FEC3EB4799F4DD210773FF8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5200A7EB1AD954A2D7A59EE5 /* PrivacyInfo.xcprivacy */; };
+		B9D116916A1FEF148BAE6B09 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54E75618F4292CA435D5CAAC /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		BFC89BC69A40A245A00833B6 /* libPods-aigaconnect.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C7913F6476A2D5C5674B24AA /* libPods-aigaconnect.a */; };
-		E60414B3D59EC71FDBBE231F /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8882A989384B3C33D9A219B7 /* ExpoModulesProvider.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		F941BA02998437F7C7042758 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 21AAAD58D5E38A3473DBC8FE /* PrivacyInfo.xcprivacy */; };
+		F1C4453C144FA4EA3FB7DC5E /* libPods-aigaconnect.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 792E42F51263EC9CF726EC65 /* libPods-aigaconnect.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		04B4FEA20BAB3FD87E147645 /* Pods-aigaconnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-aigaconnect.debug.xcconfig"; path = "Target Support Files/Pods-aigaconnect/Pods-aigaconnect.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* aigaconnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = aigaconnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = aigaconnect/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = aigaconnect/Info.plist; sourceTree = "<group>"; };
-		21AAAD58D5E38A3473DBC8FE /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = aigaconnect/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		8882A989384B3C33D9A219B7 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-aigaconnect/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		5200A7EB1AD954A2D7A59EE5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = aigaconnect/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		54E75618F4292CA435D5CAAC /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-aigaconnect/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		792E42F51263EC9CF726EC65 /* libPods-aigaconnect.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-aigaconnect.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7EE3268FD058CB5AF82CA712 /* Pods-aigaconnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-aigaconnect.debug.xcconfig"; path = "Target Support Files/Pods-aigaconnect/Pods-aigaconnect.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = aigaconnect/SplashScreen.storyboard; sourceTree = "<group>"; };
-		B482B17C50BAF63BB27CE93A /* Pods-aigaconnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-aigaconnect.release.xcconfig"; path = "Target Support Files/Pods-aigaconnect/Pods-aigaconnect.release.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C7913F6476A2D5C5674B24AA /* libPods-aigaconnect.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-aigaconnect.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6E9C1DEC66F6FDF975F01F5 /* Pods-aigaconnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-aigaconnect.release.xcconfig"; path = "Target Support Files/Pods-aigaconnect/Pods-aigaconnect.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = aigaconnect/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* aigaconnect-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "aigaconnect-Bridging-Header.h"; path = "aigaconnect/aigaconnect-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BFC89BC69A40A245A00833B6 /* libPods-aigaconnect.a in Frameworks */,
+				F1C4453C144FA4EA3FB7DC5E /* libPods-aigaconnect.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,7 +53,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				21AAAD58D5E38A3473DBC8FE /* PrivacyInfo.xcprivacy */,
+				5200A7EB1AD954A2D7A59EE5 /* PrivacyInfo.xcprivacy */,
 			);
 			name = aigaconnect;
 			sourceTree = "<group>";
@@ -62,17 +62,9 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				C7913F6476A2D5C5674B24AA /* libPods-aigaconnect.a */,
+				792E42F51263EC9CF726EC65 /* libPods-aigaconnect.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		812A9384E628FB2206DF9E64 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				9E61F413FD9C9245B2C1D0D4 /* aigaconnect */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -89,8 +81,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				9D63948D9523ABD73DBF8949 /* Pods */,
-				812A9384E628FB2206DF9E64 /* ExpoModulesProviders */,
+				97A15A5E56BC84F9A7DE0DF3 /* Pods */,
+				CC7BE645BC806F4361A8A774 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -105,22 +97,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		9D63948D9523ABD73DBF8949 /* Pods */ = {
+		97A15A5E56BC84F9A7DE0DF3 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				04B4FEA20BAB3FD87E147645 /* Pods-aigaconnect.debug.xcconfig */,
-				B482B17C50BAF63BB27CE93A /* Pods-aigaconnect.release.xcconfig */,
+				7EE3268FD058CB5AF82CA712 /* Pods-aigaconnect.debug.xcconfig */,
+				C6E9C1DEC66F6FDF975F01F5 /* Pods-aigaconnect.release.xcconfig */,
 			);
 			name = Pods;
 			path = Pods;
-			sourceTree = "<group>";
-		};
-		9E61F413FD9C9245B2C1D0D4 /* aigaconnect */ = {
-			isa = PBXGroup;
-			children = (
-				8882A989384B3C33D9A219B7 /* ExpoModulesProvider.swift */,
-			);
-			name = aigaconnect;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -132,6 +116,22 @@
 			path = aigaconnect/Supporting;
 			sourceTree = "<group>";
 		};
+		CC7BE645BC806F4361A8A774 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				E54EA6D2092143EAB3E9E471 /* aigaconnect */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+		E54EA6D2092143EAB3E9E471 /* aigaconnect */ = {
+			isa = PBXGroup;
+			children = (
+				54E75618F4292CA435D5CAAC /* ExpoModulesProvider.swift */,
+			);
+			name = aigaconnect;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "aigaconnect" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				689AEEDA2FDE594094707DFA /* [Expo] Configure project */,
+				23198EE1D78D9E0E59219236 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				3094E47B4B213C2CAA0CAF3E /* [CP] Embed Pods Frameworks */,
+				2B07D5DFB7921A19E247DE66 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -198,7 +198,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				F941BA02998437F7C7042758 /* PrivacyInfo.xcprivacy in Resources */,
+				4FEC3EB4799F4DD210773FF8 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -244,25 +244,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		3094E47B4B213C2CAA0CAF3E /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-aigaconnect/Pods-aigaconnect-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-aigaconnect/Pods-aigaconnect-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		689AEEDA2FDE594094707DFA /* [Expo] Configure project */ = {
+		23198EE1D78D9E0E59219236 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -285,6 +267,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-aigaconnect/expo-configure-project.sh\"\n";
+		};
+		2B07D5DFB7921A19E247DE66 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-aigaconnect/Pods-aigaconnect-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-aigaconnect/Pods-aigaconnect-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -368,7 +368,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				E60414B3D59EC71FDBBE231F /* ExpoModulesProvider.swift in Sources */,
+				B9D116916A1FEF148BAE6B09 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -377,7 +377,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 04B4FEA20BAB3FD87E147645 /* Pods-aigaconnect.debug.xcconfig */;
+			baseConfigurationReference = 7EE3268FD058CB5AF82CA712 /* Pods-aigaconnect.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -416,7 +416,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B482B17C50BAF63BB27CE93A /* Pods-aigaconnect.release.xcconfig */;
+			baseConfigurationReference = C6E9C1DEC66F6FDF975F01F5 /* Pods-aigaconnect.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
