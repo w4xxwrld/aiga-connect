@@ -83,6 +83,10 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
       newErrors.name = 'Название занятия обязательно';
     }
 
+    if (selectedDays.length === 0) {
+      newErrors.days = 'Выберите хотя бы один день недели';
+    }
+
     if (!startTime.trim()) {
       newErrors.startTime = 'Время начала обязательно';
     }
@@ -232,7 +236,8 @@ const CreateClassPage: React.FC<CreateClassPageProps> = ({ navigation }) => {
       <Card.Content>
         <Title style={styles.sectionTitle}>Расписание</Title>
         
-        <Title style={styles.subsectionTitle}>Дни недели (выберите несколько)</Title>
+        <Title style={styles.subsectionTitle}>Дни недели (выберите несколько) *</Title>
+        {errors.days && <HelperText type="error" visible={!!errors.days}>{errors.days}</HelperText>}
         <View style={styles.weekdayContainer}>
           <View style={styles.weekdayRow}>
             {['понедельник', 'вторник', 'среда', 'четверг'].map((day) => (

@@ -77,6 +77,31 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     return phoneRegex.test(number);
   }
 
+  // Validate name - allows Russian (Cyrillic) and English letters, spaces, hyphens
+  const validateName = (name: string) => {
+    const nameRegex = /^[a-zA-Zа-яА-ЯёЁ\s\-]+$/;
+    return name.trim().length >= 2 && nameRegex.test(name.trim());
+  }
+
+  // Password validation - matches backend requirements
+  const getPasswordErrors = (pwd: string): string[] => {
+    const errors: string[] = [];
+    if (pwd.length < 8) errors.push('Минимум 8 символов');
+    if (!/[A-Z]/.test(pwd)) errors.push('Заглавная буква (A-Z)');
+    if (!/[a-z]/.test(pwd)) errors.push('Строчная буква (a-z)');
+    if (!/\d/.test(pwd)) errors.push('Цифра (0-9)');
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) errors.push('Спецсимвол (!@#$%^&*)');
+    return errors;
+  }
+
+  const isPasswordValid = (pwd: string) => {
+    return pwd.length >= 8 &&
+           /[A-Z]/.test(pwd) &&
+           /[a-z]/.test(pwd) &&
+           /\d/.test(pwd) &&
+           /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+  }
+
   const animateModeChange = (newMode: AuthMode) => {
     // Fade out current content
     Animated.parallel([
@@ -197,8 +222,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       return;
     }
 
+    if (!validateName(data.first_name)) {
+      Alert.alert('Ошибка', 'Имя должно содержать минимум 2 символа и только буквы (русские или английские)');
+      return;
+    }
+
     if (!data.last_name || data.last_name.trim().length === 0) {
       Alert.alert('Ошибка', 'Пожалуйста, введите фамилию');
+      return;
+    }
+
+    if (!validateName(data.last_name)) {
+      Alert.alert('Ошибка', 'Фамилия должна содержать минимум 2 символа и только буквы (русские или английские)');
       return;
     }
 
@@ -230,9 +265,15 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       return;
     }
 
-    // Validate password if provided
-    if (data.password && data.password.length < 6) {
-      Alert.alert('Ошибка', 'Пароль должен содержать минимум 6 символов');
+    // Validate password
+    if (!data.password) {
+      Alert.alert('Ошибка', 'Пожалуйста, введите пароль');
+      return;
+    }
+
+    if (!isPasswordValid(data.password)) {
+      const errors = getPasswordErrors(data.password);
+      Alert.alert('Ошибка пароля', `Пароль должен содержать:\n• ${errors.join('\n• ')}`);
       return;
     }
 
@@ -425,36 +466,60 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                   value={firstName}
                   onChangeText={setFirstName}
                   mode="outlined"
+                  placeholder="Введите имя (например, Алексей)"
                   style={styles.input}
-                  outlineColor="#fff"
+                  outlineColor={firstName.length > 0 ? (validateName(firstName) ? '#27AE60' : '#E74C3C') : '#fff'}
                   activeOutlineColor="#E74C3C"
                   textColor="#fff"
-                  placeholderTextColor="#fff"
+                  placeholderTextColor="#666"
                   theme={{
                     colors: {
                       onSurfaceVariant: '#fff',
                     }
                   }}
                   left={<TextInput.Icon icon="account" />}
+                  right={firstName.length > 0 && (
+                    <TextInput.Icon
+                      icon={validateName(firstName) ? "check-circle" : "alert-circle"}
+                      color={validateName(firstName) ? '#27AE60' : '#E74C3C'}
+                    />
+                  )}
                 />
+                {firstName.length > 0 && !validateName(firstName) && (
+                  <HelperText type="error" visible={true}>
+                    Только буквы (русские или английские), минимум 2 символа
+                  </HelperText>
+                )}
 
                 <TextInput
                   label="Фамилия *"
                   value={lastName}
                   onChangeText={setLastName}
                   mode="outlined"
+                  placeholder="Введите фамилию (например, Иванов)"
                   style={styles.input}
-                  outlineColor="#fff"
+                  outlineColor={lastName.length > 0 ? (validateName(lastName) ? '#27AE60' : '#E74C3C') : '#fff'}
                   activeOutlineColor="#E74C3C"
                   textColor="#fff"
-                  placeholderTextColor="#fff"
+                  placeholderTextColor="#666"
                   theme={{
                     colors: {
                       onSurfaceVariant: '#fff',
                     }
                   }}
                   left={<TextInput.Icon icon="account" />}
+                  right={lastName.length > 0 && (
+                    <TextInput.Icon
+                      icon={validateName(lastName) ? "check-circle" : "alert-circle"}
+                      color={validateName(lastName) ? '#27AE60' : '#E74C3C'}
+                    />
+                  )}
                 />
+                {lastName.length > 0 && !validateName(lastName) && (
+                  <HelperText type="error" visible={true}>
+                    Только буквы (русские или английские), минимум 2 символа
+                  </HelperText>
+                )}
 
                 <TextInput
                   label="Email *"
@@ -504,13 +569,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                     buttons={[
                       {
                         value: 'athlete',
-                        label: 'Спортсмен',
-                        icon: 'run',
+                        label: 'Ученик',
+                        icon: 'school',
                       },
                       {
                         value: 'coach',
-                        label: 'Тренер',
-                        icon: 'whistle',
+                        label: 'Професор',
+                        icon: 'human-male-board',
                       },
                     ]}
                     style={styles.segmentedButtons}
@@ -533,7 +598,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               mode="outlined"
               secureTextEntry={!showPassword}
               style={styles.input}
-              outlineColor="#fff"
+              outlineColor={mode === 'register' && password.length > 0 ? (isPasswordValid(password) ? '#27AE60' : '#E74C3C') : '#fff'}
               activeOutlineColor="#E74C3C"
               textColor="#fff"
               placeholderTextColor="#fff"
@@ -545,9 +610,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               left={<TextInput.Icon icon="lock" />}
               right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
             />
-            {mode === 'register' && password.length > 0 && password.length < 6 && (
+            {mode === 'register' && password.length > 0 && !isPasswordValid(password) && (
               <HelperText type="error" visible={true}>
-                Пароль должен содержать минимум 6 символов
+                Нужно: {getPasswordErrors(password).join(', ')}
+              </HelperText>
+            )}
+            {mode === 'register' && password.length === 0 && (
+              <HelperText type="info" visible={true} style={{ color: '#B0BEC5' }}>
+                8+ символов, A-Z, a-z, 0-9, спецсимвол
               </HelperText>
             )}
 
@@ -559,7 +629,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                 loading ||
                 !phone ||
                 !password ||
-                (mode === 'register' && (!firstName || !lastName || !email || !birthDate || !primaryRole))
+                (mode === 'register' && (!firstName || !lastName || !email || !birthDate || !primaryRole || !validateName(firstName) || !validateName(lastName) || !isPasswordValid(password)))
               }
               style={styles.button}
               buttonColor="#E74C3C"

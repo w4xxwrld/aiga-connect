@@ -72,7 +72,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
   const handleAcceptRequest = async (request: IndividualTrainingRequest) => {
     Alert.alert(
       'Принять запрос',
-      `Принять запрос от ${request.athlete?.full_name || 'спортсмена'} на ${bookingsService.formatDate(request.requested_date)}?`,
+      `Принять запрос от ${request.athlete?.full_name || 'ученика'} на ${bookingsService.formatDate(request.requested_date)}?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -103,7 +103,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
   const handleDeclineRequest = async (request: IndividualTrainingRequest) => {
     Alert.alert(
       'Отклонить запрос',
-      `Отклонить запрос от ${request.athlete?.full_name || 'спортсмена'}?`,
+      `Отклонить запрос от ${request.athlete?.full_name || 'ученика'}?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -111,7 +111,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
           style: 'destructive',
           onPress: async () => {
             try {
-              await bookingsService.declineIndividualTrainingRequest(request.id, 'Отклонено тренером');
+              await bookingsService.declineIndividualTrainingRequest(request.id, 'Отклонено професором');
               Alert.alert('Успех', 'Запрос отклонен');
               loadRequests();
             } catch (error: any) {
@@ -126,7 +126,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
   const handleCompleteRequest = async (request: IndividualTrainingRequest) => {
     Alert.alert(
       'Завершить тренировку',
-      `Завершить индивидуальную тренировку с ${request.athlete?.full_name || 'спортсменом'}?`,
+      `Завершить индивидуальную тренировку с ${request.athlete?.full_name || 'учеником'}?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -148,7 +148,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
 
   const handleRequestPress = (request: IndividualTrainingRequest) => {
     // TODO: Navigate to detailed view
-    Alert.alert('Детали запроса', `Запрос от ${request.athlete?.full_name || 'спортсмена'}`);
+    Alert.alert('Детали запроса', `Запрос от ${request.athlete?.full_name || 'ученика'}`);
   };
 
   const getStatusCount = (status: string) => {
@@ -161,7 +161,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
         <View style={styles.requestHeader}>
           <View style={styles.requestInfo}>
             <Title style={styles.requestTitle}>
-              {request.athlete?.full_name || 'Спортсмен'}
+              {request.athlete?.full_name || 'Ученик'}
             </Title>
             <Text style={styles.requestDate}>
               {bookingsService.formatDate(request.requested_date)}
@@ -210,9 +210,9 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
 
           {request.coach_notes && (
             <View style={styles.detailRow}>
-              <MaterialCommunityIcons name="account-tie" size={16} color="#E74C3C" />
+              <MaterialCommunityIcons name="human-male-board" size={16} color="#E74C3C" />
               <Text style={styles.detailText} numberOfLines={2}>
-                Заметки тренера: {request.coach_notes}
+                Заметки професора: {request.coach_notes}
               </Text>
             </View>
           )}

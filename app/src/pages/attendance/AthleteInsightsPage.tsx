@@ -265,11 +265,12 @@ const AthleteInsightsPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
         value={sortBy}
         onValueChange={(value) => setSortBy(value as any)}
         buttons={[
-          { value: 'most', label: 'Активные' },
-          { value: 'least', label: 'Менее активные' },
-          { value: 'name', label: 'По имени' },
+          { value: 'most', label: 'Актив.' },
+          { value: 'least', label: 'Неактив.' },
+          { value: 'name', label: 'Имя' },
         ]}
         style={styles.segmentedButtons}
+        density="medium"
         theme={{
           colors: {
             secondaryContainer: '#E74C3C',
@@ -444,6 +445,8 @@ const styles = StyleSheet.create({
   },
   segmentedButtons: {
     backgroundColor: '#1B263B',
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   card: {
     backgroundColor: '#1B263B',

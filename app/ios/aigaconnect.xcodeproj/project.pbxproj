@@ -24,7 +24,7 @@
 		27B20FCE7D2156C48B46658E /* Pods-aigaconnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-aigaconnect.debug.xcconfig"; path = "Target Support Files/Pods-aigaconnect/Pods-aigaconnect.debug.xcconfig"; sourceTree = "<group>"; };
 		487E6BD1B836D7D75A11F81B /* Pods-aigaconnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-aigaconnect.release.xcconfig"; path = "Target Support Files/Pods-aigaconnect/Pods-aigaconnect.release.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = aigaconnect/SplashScreen.storyboard; sourceTree = "<group>"; };
-		ACBDC1D6362208CE017F8FB1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = aigaconnect/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		ACBDC1D6362208CE017F8FB1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = aigaconnect/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B39662543DA368ADB9A19E20 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-aigaconnect/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -81,7 +81,6 @@
 				27B20FCE7D2156C48B46658E /* Pods-aigaconnect.debug.xcconfig */,
 				487E6BD1B836D7D75A11F81B /* Pods-aigaconnect.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -383,6 +382,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = aigaconnect/aigaconnect.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BVCD3GKWDZ;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -419,6 +419,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = aigaconnect/aigaconnect.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BVCD3GKWDZ;
 				INFOPLIST_FILE = aigaconnect/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

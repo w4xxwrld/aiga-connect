@@ -76,10 +76,14 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
           setUser(userData);
           console.log('✅ [OTP] User authenticated and logged in successfully');
 
-          // Navigate to MainTabs
+          // Check if coach is pending approval
+          const targetScreen = (userData.primary_role === 'coach' && userData.role_status === 'pending')
+            ? 'CoachPending'
+            : 'MainTabs';
+
           navigation.reset({
             index: 0,
-            routes: [{ name: 'MainTabs' as never }],
+            routes: [{ name: targetScreen as never }],
           });
         } else {
           throw new Error('Failed to get user data after authentication');
@@ -106,10 +110,14 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
             setUser(userData);
             console.log('✅ [OTP] User authenticated and logged in successfully');
 
-            // Navigate to MainTabs
+            // Check if coach is pending approval
+            const targetScreen = (userData.primary_role === 'coach' && userData.role_status === 'pending')
+              ? 'CoachPending'
+              : 'MainTabs';
+
             navigation.reset({
               index: 0,
-              routes: [{ name: 'MainTabs' as never }],
+              routes: [{ name: targetScreen as never }],
             });
           } else {
             throw new Error('Failed to get user data after registration');

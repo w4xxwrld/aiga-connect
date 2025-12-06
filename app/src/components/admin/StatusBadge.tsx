@@ -39,9 +39,9 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ type, value }) => {
     if (type === 'role') {
       switch (value) {
         case 'athlete':
-          return 'Спортсмен';
+          return 'Ученик';
         case 'coach':
-          return 'Тренер';
+          return 'Професор';
         case 'admin':
           return 'Админ';
         default:

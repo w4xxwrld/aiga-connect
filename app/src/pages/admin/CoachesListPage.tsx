@@ -51,7 +51,7 @@ const CoachesListPage: React.FC = () => {
       setCoaches(result.users);
     } catch (error: any) {
       console.error('Error loading coaches:', error);
-      Alert.alert('Ошибка', error.message || 'Не удалось загрузить тренеров');
+      Alert.alert('Ошибка', error.message || 'Не удалось загрузить професорів');
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ const CoachesListPage: React.FC = () => {
 
   if (loading && coaches.length === 0 && !refreshing) {
     return (
-      <Layout title="Тренеры" showBack onBackPress={() => navigation.goBack()}>
+      <Layout title="Професори" showBack onBackPress={() => navigation.goBack()}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#E74C3C" />
           <Text style={styles.loadingText}>Загрузка...</Text>
@@ -79,7 +79,7 @@ const CoachesListPage: React.FC = () => {
   }
 
   return (
-    <Layout title="Тренеры" showBack onBackPress={() => navigation.goBack()}>
+    <Layout title="Професори" showBack onBackPress={() => navigation.goBack()}>
       <AdminFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -101,7 +101,7 @@ const CoachesListPage: React.FC = () => {
         ListEmptyComponent={
           <EmptyState
             icon="whistle"
-            message="Тренеры не найдены"
+            message="Професори не найдены"
             subtitle="Попробуйте изменить фильтры или поиск"
           />
         }

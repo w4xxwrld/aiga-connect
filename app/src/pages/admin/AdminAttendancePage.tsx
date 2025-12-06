@@ -185,7 +185,7 @@ const AdminAttendancePage: React.FC = () => {
             <StatCard
               icon="account-group"
               value={stats.unique_athletes}
-              label="Уник. спортсменов"
+              label="Уник. учеників"
               iconColor="#2196F3"
             />
           </View>
@@ -209,7 +209,7 @@ const AdminAttendancePage: React.FC = () => {
       {/* Filters */}
       <View style={styles.filtersSection}>
         <Searchbar
-          placeholder="Поиск по спортсмену или занятию"
+          placeholder="Поиск по ученику или занятию"
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={styles.searchBar}

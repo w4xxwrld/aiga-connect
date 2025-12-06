@@ -98,11 +98,11 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
   const makeUserCoach = async (userId: number) => {
     try {
       await authService.makeUserCoach(userId);
-      Alert.alert('Успех', 'Пользователь назначен тренером');
+      Alert.alert('Успех', 'Пользователь назначен професором');
       loadUsers(); // Reload users to get updated data
     } catch (error: any) {
       console.error('Error making user coach:', error);
-      Alert.alert('Ошибка', error.message || 'Не удалось назначить тренера');
+      Alert.alert('Ошибка', error.message || 'Не удалось назначить професора');
     }
   };
 
@@ -115,8 +115,8 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
       case 'parent': return 'Родитель';
-      case 'athlete': return 'Спортсмен';
-      case 'coach': return 'Тренер';
+      case 'athlete': return 'Ученик';
+      case 'coach': return 'Професор';
       default: return role;
     }
   };
@@ -153,7 +153,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
           <MaterialCommunityIcons name="shield-alert" size={64} color="#E74C3C" />
           <Title style={styles.accessDeniedTitle}>Доступ запрещен</Title>
           <Paragraph style={styles.accessDeniedText}>
-            Только главные тренеры могут управлять пользователями
+            Только главные професори могут управлять пользователями
           </Paragraph>
         </View>
       </Layout>
@@ -197,7 +197,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
             style={styles.filterChip}
             textStyle={styles.filterChipText}
           >
-            Спортсмены
+            Ученики
           </Chip>
           <Chip
             selected={selectedRole === 'coach'}
@@ -205,7 +205,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
             style={styles.filterChip}
             textStyle={styles.filterChipText}
           >
-            Тренеры
+            Професори
           </Chip>
         </ScrollView>
       </View>
@@ -245,7 +245,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
                         />
                         <Text style={styles.roleText}>
                           {getRoleDisplayName(userItem.primary_role)}
-                          {userItem.is_head_coach && ' (Главный тренер)'}
+                          {userItem.is_head_coach && ' (Главний професор)'}
                         </Text>
                       </View>
                       <Text style={styles.userAge}>{calculateAge(userItem.birth_date)} лет</Text>
@@ -259,8 +259,8 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
                       mode="contained"
                       onPress={() => {
                         Alert.alert(
-                          'Назначить тренером',
-                          `Вы уверены, что хотите назначить ${userItem.full_name} тренером?`,
+                          'Назначить професором',
+                          `Вы уверены, что хотите назначить ${userItem.full_name} професором?`,
                           [
                             { text: 'Отмена', style: 'cancel' },
                             {
@@ -275,7 +275,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
                       icon="account-tie"
                       style={styles.makeCoachButton}
                     >
-                      Назначить тренером
+                      Назначить професором
                     </Button>
                   </View>
                 )}

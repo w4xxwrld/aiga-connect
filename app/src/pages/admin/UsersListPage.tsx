@@ -26,8 +26,8 @@ const UsersListPage: React.FC = () => {
 
   const roleOptions = [
     { value: 'all', label: 'Все' },
-    { value: 'athlete', label: 'Спортсмены' },
-    { value: 'coach', label: 'Тренеры' },
+    { value: 'athlete', label: 'Ученики' },
+    { value: 'coach', label: 'Професори' },
     { value: 'admin', label: 'Админы' },
   ];
 

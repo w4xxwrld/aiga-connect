@@ -47,7 +47,7 @@ const CoachDetailPage: React.FC = () => {
       setStats(coachStats);
     } catch (error: any) {
       console.error('Error loading coach data:', error);
-      Alert.alert('Ошибка', error.message || 'Не удалось загрузить данные тренера');
+      Alert.alert('Ошибка', error.message || 'Не удалось загрузить данные професора');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -59,7 +59,7 @@ const CoachDetailPage: React.FC = () => {
 
     Alert.alert(
       'Подтверждение',
-      `Вы уверены, что хотите приостановить тренера ${coach.first_name} ${coach.last_name}?`,
+      `Вы уверены, что хотите приостановить професора ${coach.first_name} ${coach.last_name}?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -68,10 +68,10 @@ const CoachDetailPage: React.FC = () => {
           onPress: async () => {
             try {
               await adminService.suspendCoach(coach.id);
-              Alert.alert('Успешно', 'Тренер приостановлен');
+              Alert.alert('Успешно', 'Професор приостановлен');
               loadCoachData();
             } catch (error: any) {
-              Alert.alert('Ошибка', error.message || 'Не удалось приостановить тренера');
+              Alert.alert('Ошибка', error.message || 'Не удалось приостановить професора');
             }
           },
         },
@@ -84,10 +84,10 @@ const CoachDetailPage: React.FC = () => {
 
     try {
       await adminService.reactivateCoach(coach.id);
-      Alert.alert('Успешно', 'Тренер активирован');
+      Alert.alert('Успешно', 'Професор активований');
       loadCoachData();
     } catch (error: any) {
-      Alert.alert('Ошибка', error.message || 'Не удалось активировать тренера');
+      Alert.alert('Ошибка', error.message || 'Не удалось активувати професора');
     }
   };
 
@@ -102,7 +102,7 @@ const CoachDetailPage: React.FC = () => {
 
   if (loading || !coach) {
     return (
-      <Layout title="Тренер" showBack onBackPress={() => navigation.goBack()}>
+      <Layout title="Професор" showBack onBackPress={() => navigation.goBack()}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#E74C3C" />
           <Text style={styles.loadingText}>Загрузка...</Text>
@@ -143,7 +143,7 @@ const CoachDetailPage: React.FC = () => {
                   )}
                   {coach.is_head_coach && (
                     <View style={styles.headCoachBadge}>
-                      <Text style={styles.headCoachText}>Главный тренер</Text>
+                      <Text style={styles.headCoachText}>Главний професор</Text>
                     </View>
                   )}
                 </View>
@@ -209,7 +209,7 @@ const CoachDetailPage: React.FC = () => {
                 textColor="#F44336"
                 icon="pause-circle"
               >
-                Приостановить тренера
+                Приостановити професора
               </Button>
             ) : (
               <Button
@@ -219,7 +219,7 @@ const CoachDetailPage: React.FC = () => {
                 buttonColor="#4CAF50"
                 icon="play-circle"
               >
-                Активировать тренера
+                Активувати професора
               </Button>
             )}
           </Card.Content>

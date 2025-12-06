@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "de75b487-5fc0-4273-8b4b-f65eb51fee29"
+      }
+    },
+    "android": {
+      "package": "com.w4xxwrld.aigaconnect"
+    }
+  }
+}

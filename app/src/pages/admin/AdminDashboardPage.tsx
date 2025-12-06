@@ -93,7 +93,7 @@ const AdminDashboardPage: React.FC = () => {
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>Панель администратора</Text>
           <Text style={styles.welcomeSubtitle}>
-            Управление пользователями и тренерами
+            Управление пользователями і професорами
           </Text>
         </View>
 
@@ -116,7 +116,7 @@ const AdminDashboardPage: React.FC = () => {
                       {stats.pendingCoaches} {stats.pendingCoaches === 1 ? 'заявка ожидает' : 'заявок ожидают'}
                     </Text>
                     <Text style={styles.alertSubtitle}>
-                      Нажмите для просмотра заявок тренеров
+                      Нажмите для просмотра заявок професорів
                     </Text>
                   </View>
                   <MaterialCommunityIcons
@@ -136,15 +136,15 @@ const AdminDashboardPage: React.FC = () => {
           <View style={styles.statsGrid}>
             <View style={styles.statsRow}>
               <StatCard
-                icon="run"
+                icon="school"
                 value={stats.totalAthletes}
-                label="Спортсмены"
+                label="Ученики"
                 iconColor="#2196F3"
               />
               <StatCard
-                icon="whistle"
+                icon="human-male-board"
                 value={stats.totalCoaches}
-                label="Тренеры"
+                label="Професори"
                 iconColor="#4CAF50"
               />
             </View>
@@ -204,13 +204,13 @@ const AdminDashboardPage: React.FC = () => {
               >
                 <View style={styles.actionIconContainer}>
                   <MaterialCommunityIcons
-                    name="whistle"
+                    name="human-male-board"
                     size={24}
                     color="#4CAF50"
                   />
                 </View>
                 <View style={styles.actionContent}>
-                  <Text style={styles.actionTitle}>Управление тренерами</Text>
+                  <Text style={styles.actionTitle}>Управление професорами</Text>
                   <Text style={styles.actionSubtitle}>
                     Просмотр статистики и управление
                   </Text>
@@ -237,7 +237,7 @@ const AdminDashboardPage: React.FC = () => {
                       />
                     </View>
                     <View style={styles.actionContent}>
-                      <Text style={styles.actionTitle}>Заявки тренеров</Text>
+                      <Text style={styles.actionTitle}>Заявки професорів</Text>
                       <Text style={styles.actionSubtitle}>
                         {stats.pendingCoaches} {stats.pendingCoaches === 1 ? 'заявка' : 'заявок'} ожидают одобрения
                       </Text>

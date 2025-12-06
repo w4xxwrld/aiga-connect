@@ -134,7 +134,7 @@ const ClassParticipantsPage: React.FC<ClassParticipantsPageProps> = ({ navigatio
           style: 'destructive',
           onPress: async () => {
             try {
-              await bookingsService.declineBooking(participant.id, 'Отклонено тренером');
+              await bookingsService.declineBooking(participant.id, 'Отклонено професором');
               Alert.alert('Успех', 'Запись отклонена');
               loadData(); // Reload data to update status
             } catch (error: any) {

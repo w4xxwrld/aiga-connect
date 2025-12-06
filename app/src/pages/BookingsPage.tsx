@@ -99,7 +99,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const handleQuickApprove = async (booking: Booking) => {
     Alert.alert(
       'Подтвердить запись',
-      `Подтвердить запись ${booking.athlete?.full_name || 'спортсмена'} на занятие "${booking.class_obj?.name}"?`,
+      `Подтвердить запись ${booking.athlete?.full_name || 'ученика'} на занятие "${booking.class_obj?.name}"?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -122,7 +122,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const handleQuickDecline = async (booking: Booking) => {
     Alert.alert(
       'Отклонить запись',
-      `Отклонить запись ${booking.athlete?.full_name || 'спортсмена'} на занятие "${booking.class_obj?.name}"?`,
+      `Отклонить запись ${booking.athlete?.full_name || 'ученика'} на занятие "${booking.class_obj?.name}"?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -130,7 +130,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await bookingsService.declineBooking(booking.id, 'Отклонено тренером');
+              await bookingsService.declineBooking(booking.id, 'Отклонено професором');
               Alert.alert('Успех', 'Запись отклонена');
               loadBookings();
             } catch (error: any) {
@@ -180,7 +180,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-child" size={16} color="#E74C3C" />
               <Text style={[styles.detailText, { color: '#FFFFFF', fontWeight: '600' }]}>
-                Спортсмен: {booking.athlete.full_name || `${booking.athlete.first_name} ${booking.athlete.last_name}`}
+                Ученик: {booking.athlete.full_name || `${booking.athlete.first_name} ${booking.athlete.last_name}`}
               </Text>
             </View>
           )}
@@ -189,7 +189,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-child" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Спортсмен: {booking.athlete.full_name || `${booking.athlete.first_name} ${booking.athlete.last_name}`}
+                Ученик: {booking.athlete.full_name || `${booking.athlete.first_name} ${booking.athlete.last_name}`}
               </Text>
             </View>
           )}
@@ -207,7 +207,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-tie" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Тренер: {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
+                Професор: {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
               </Text>
             </View>
           )}

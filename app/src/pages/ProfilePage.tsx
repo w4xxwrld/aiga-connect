@@ -49,18 +49,20 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
     );
   };
 
-  const getRoleDisplayName = (role: string) => {
+  const getRoleDisplayName = (role: string | null) => {
     switch (role) {
-      case 'athlete': return 'Спортсмен';
-      case 'coach': return user?.is_head_coach ? 'Главный тренер' : 'Тренер';
-      default: return role;
+      case 'athlete': return 'Ученик';
+      case 'coach': return user?.is_head_coach ? 'Главный професор' : 'Професор';
+      case 'admin': return 'Администратор';
+      default: return role || 'Пользователь';
     }
   };
 
-  const getRoleIcon = (role: string) => {
+  const getRoleIcon = (role: string | null): keyof typeof MaterialCommunityIcons.glyphMap => {
     switch (role) {
       case 'athlete': return 'account-group';
       case 'coach': return user?.is_head_coach ? 'crown' : 'account-tie';
+      case 'admin': return 'shield-account';
       default: return 'account';
     }
   };

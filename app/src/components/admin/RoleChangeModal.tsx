@@ -33,7 +33,7 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
           >
             <View style={styles.radioItem}>
               <RadioButton.Item
-                label="Спортсмен"
+                label="Ученик"
                 value="athlete"
                 labelStyle={styles.radioLabel}
                 color="#E74C3C"
@@ -44,7 +44,7 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
 
             <View style={styles.radioItem}>
               <RadioButton.Item
-                label="Тренер"
+                label="Професор"
                 value="coach"
                 labelStyle={styles.radioLabel}
                 color="#E74C3C"

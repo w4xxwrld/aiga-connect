@@ -109,16 +109,16 @@ const GreetingPage: React.FC<GreetingPageProps> = ({ navigation }) => {
         
         <View style={styles.featuresContainer}>
           <View style={styles.featureItem}>
-            <MaterialCommunityIcons name="account-group" size={20} color="#E74C3C" />
-            <Text style={styles.featureText}>Спортсмены</Text>
+            <MaterialCommunityIcons name="school" size={20} color="#E74C3C" />
+            <Text style={styles.featureText}>Ученики</Text>
           </View>
           <View style={styles.featureItem}>
             <MaterialCommunityIcons name="account-child" size={20} color="#E74C3C" />
             <Text style={styles.featureText}>Родители</Text>
           </View>
           <View style={styles.featureItem}>
-            <MaterialCommunityIcons name="account-tie" size={20} color="#E74C3C" />
-            <Text style={styles.featureText}>Тренеры</Text>
+            <MaterialCommunityIcons name="human-male-board" size={20} color="#E74C3C" />
+            <Text style={styles.featureText}>Професори</Text>
           </View>
         </View>
       </Animated.View>

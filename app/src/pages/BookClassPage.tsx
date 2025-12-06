@@ -166,9 +166,9 @@ const BookClassPage: React.FC<BookClassPageProps> = ({ navigation, route }) => {
             </View>
 
             <View style={styles.infoRow}>
-              <MaterialCommunityIcons name="account-tie" size={20} color="#E74C3C" />
+              <MaterialCommunityIcons name="human-male-board" size={20} color="#E74C3C" />
               <Text style={styles.infoText}>
-                Тренер: {classData.coach?.full_name || classData.coach ? `${classData.coach.first_name} ${classData.coach.last_name}` : 'Не указан'}
+                Професор: {classData.coach?.full_name || classData.coach ? `${classData.coach.first_name} ${classData.coach.last_name}` : 'Не указан'}
               </Text>
             </View>
 

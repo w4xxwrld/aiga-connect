@@ -55,7 +55,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-child" size={16} color="#E74C3C" />
               <Text style={[styles.detailText, { color: '#FFFFFF', fontWeight: '600' }]}>
-                Спортсмен: {booking.athlete.first_name} {booking.athlete.last_name}
+                Ученик: {booking.athlete.first_name} {booking.athlete.last_name}
               </Text>
             </View>
           )}
@@ -64,16 +64,16 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-child" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Спортсмен: {booking.athlete.first_name} {booking.athlete.last_name}
+                Ученик: {booking.athlete.first_name} {booking.athlete.last_name}
               </Text>
             </View>
           )}
 
           {booking.class_obj?.coach && (
             <View style={styles.detailRow}>
-              <MaterialCommunityIcons name="account-tie" size={16} color="#E74C3C" />
+              <MaterialCommunityIcons name="human-male-board" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Тренер: {booking.class_obj.coach.first_name} {booking.class_obj.coach.last_name}
+                Професор: {booking.class_obj.coach.first_name} {booking.class_obj.coach.last_name}
               </Text>
             </View>
           )}

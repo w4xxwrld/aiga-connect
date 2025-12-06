@@ -52,9 +52,9 @@ const ClassCard: React.FC<ClassCardProps> = ({
 
         <View style={styles.classDetails}>
           <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="account-tie" size={16} color="#E74C3C" />
+            <MaterialCommunityIcons name="human-male-board" size={16} color="#E74C3C" />
             <Text style={styles.detailText}>
-              Тренер: {classItem.coach ? `${classItem.coach.first_name} ${classItem.coach.last_name}` : `ID: ${classItem.coach_id}`}
+              Професор: {classItem.coach ? `${classItem.coach.first_name} ${classItem.coach.last_name}` : `ID: ${classItem.coach_id}`}
             </Text>
           </View>
 

@@ -95,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       showFor: ['admin'],
     },
     {
-      title: 'Заявки тренеров',
+      title: 'Заявки професорів',
       icon: 'account-clock',
       route: 'PendingCoaches',
       showFor: ['admin'],
@@ -107,8 +107,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       showFor: ['admin'],
     },
     {
-      title: 'Тренеры',
-      icon: 'whistle',
+      title: 'Професори',
+      icon: 'human-male-board',
       route: 'CoachesList',
       showFor: ['admin'],
     },
@@ -130,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       showFor: ['athlete'],
     },
     {
-      title: 'Рейтинг тренеров',
+      title: 'Рейтинг професорів',
       icon: 'star',
       route: 'CoachRating',
       showFor: ['athlete'],
@@ -175,9 +175,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
                   <Text style={styles.profileEmail}>{user?.email || 'email@example.com'}</Text>
                   <Text style={styles.profileRole}>
                     {userRole === 'athlete'
-                      ? 'Спортсмен'
+                      ? 'Ученик'
                       : userRole === 'coach'
-                        ? (user?.is_head_coach ? 'Главный тренер' : 'Тренер')
+                        ? (user?.is_head_coach ? 'Главный професор' : 'Професор')
                         : userRole === 'admin'
                           ? 'Администратор'
                           : 'Пользователь'

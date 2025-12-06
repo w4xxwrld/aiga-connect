@@ -111,7 +111,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
 
     Alert.alert(
       'Отклонить запись',
-      `Отклонить запись ${booking.athlete?.full_name || 'спортсмена'}?`,
+      `Отклонить запись ${booking.athlete?.full_name || 'ученика'}?`,
       [
         { text: 'Отмена', style: 'cancel' },
         {
@@ -119,7 +119,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
           style: 'destructive',
           onPress: async () => {
             try {
-              await bookingsService.declineBooking(booking.id, 'Отклонено тренером');
+              await bookingsService.declineBooking(booking.id, 'Отклонено професором');
               Alert.alert('Успех', 'Запись отклонена');
               navigation.goBack();
             } catch (error: any) {
@@ -210,8 +210,8 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
 
               {userRole === 'parent' && booking.athlete && (
                 <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="account-child" size={20} color="#E74C3C" />
-                  <Text style={styles.infoLabel}>Спортсмен:</Text>
+                  <MaterialCommunityIcons name="school" size={20} color="#E74C3C" />
+                  <Text style={styles.infoLabel}>Ученик:</Text>
                   <Text style={styles.infoValue}>
                     {booking.athlete.full_name || `${booking.athlete.first_name} ${booking.athlete.last_name}`}
                   </Text>
@@ -220,8 +220,8 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
 
               {booking.class_obj?.coach && (
                 <View style={styles.infoRow}>
-                  <MaterialCommunityIcons name="account-tie" size={20} color="#E74C3C" />
-                  <Text style={styles.infoLabel}>Тренер:</Text>
+                  <MaterialCommunityIcons name="human-male-board" size={20} color="#E74C3C" />
+                  <Text style={styles.infoLabel}>Професор:</Text>
                   <Text style={styles.infoValue}>
                     {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
                   </Text>

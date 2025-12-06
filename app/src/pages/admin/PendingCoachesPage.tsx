@@ -152,7 +152,7 @@ const PendingCoachesPage: React.FC = () => {
 
   if (loading && !refreshing) {
     return (
-      <Layout title="Заявки тренеров" showBack onBackPress={() => navigation.goBack()}>
+      <Layout title="Заявки професорів" showBack onBackPress={() => navigation.goBack()}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#E74C3C" />
           <Text style={styles.loadingText}>Загрузка...</Text>
@@ -162,7 +162,7 @@ const PendingCoachesPage: React.FC = () => {
   }
 
   return (
-    <Layout title="Заявки тренеров" showBack onBackPress={() => navigation.goBack()}>
+    <Layout title="Заявки професорів" showBack onBackPress={() => navigation.goBack()}>
       <FlatList
         data={pendingCoaches}
         renderItem={renderCoachCard}
@@ -175,7 +175,7 @@ const PendingCoachesPage: React.FC = () => {
           <EmptyState
             icon="account-clock"
             message="Нет заявок"
-            subtitle="Новые заявки тренеров появятся здесь"
+            subtitle="Новые заявки професорів появятся здесь"
           />
         }
       />
