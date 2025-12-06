@@ -93,7 +93,7 @@ const AdminDashboardPage: React.FC = () => {
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeTitle}>Панель администратора</Text>
           <Text style={styles.welcomeSubtitle}>
-            Управление пользователями і професорами
+            Управление пользователями і профессорами
           </Text>
         </View>
 
@@ -116,7 +116,7 @@ const AdminDashboardPage: React.FC = () => {
                       {stats.pendingCoaches} {stats.pendingCoaches === 1 ? 'заявка ожидает' : 'заявок ожидают'}
                     </Text>
                     <Text style={styles.alertSubtitle}>
-                      Нажмите для просмотра заявок професорів
+                      Нажмите для просмотра заявок профессоров
                     </Text>
                   </View>
                   <MaterialCommunityIcons
@@ -144,7 +144,7 @@ const AdminDashboardPage: React.FC = () => {
               <StatCard
                 icon="human-male-board"
                 value={stats.totalCoaches}
-                label="Професори"
+                label="Профессоры"
                 iconColor="#4CAF50"
               />
             </View>
@@ -210,7 +210,7 @@ const AdminDashboardPage: React.FC = () => {
                   />
                 </View>
                 <View style={styles.actionContent}>
-                  <Text style={styles.actionTitle}>Управление професорами</Text>
+                  <Text style={styles.actionTitle}>Управление профессорами</Text>
                   <Text style={styles.actionSubtitle}>
                     Просмотр статистики и управление
                   </Text>
@@ -237,7 +237,7 @@ const AdminDashboardPage: React.FC = () => {
                       />
                     </View>
                     <View style={styles.actionContent}>
-                      <Text style={styles.actionTitle}>Заявки професорів</Text>
+                      <Text style={styles.actionTitle}>Заявки профессоров</Text>
                       <Text style={styles.actionSubtitle}>
                         {stats.pendingCoaches} {stats.pendingCoaches === 1 ? 'заявка' : 'заявок'} ожидают одобрения
                       </Text>

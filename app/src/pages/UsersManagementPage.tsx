@@ -98,11 +98,11 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
   const makeUserCoach = async (userId: number) => {
     try {
       await authService.makeUserCoach(userId);
-      Alert.alert('Успех', 'Пользователь назначен професором');
+      Alert.alert('Успех', 'Пользователь назначен профессором');
       loadUsers(); // Reload users to get updated data
     } catch (error: any) {
       console.error('Error making user coach:', error);
-      Alert.alert('Ошибка', error.message || 'Не удалось назначить професора');
+      Alert.alert('Ошибка', error.message || 'Не удалось назначить профессора');
     }
   };
 
@@ -116,7 +116,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
     switch (role) {
       case 'parent': return 'Родитель';
       case 'athlete': return 'Ученик';
-      case 'coach': return 'Професор';
+      case 'coach': return 'Профессор';
       default: return role;
     }
   };
@@ -153,7 +153,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
           <MaterialCommunityIcons name="shield-alert" size={64} color="#E74C3C" />
           <Title style={styles.accessDeniedTitle}>Доступ запрещен</Title>
           <Paragraph style={styles.accessDeniedText}>
-            Только главные професори могут управлять пользователями
+            Только главные профессоры могут управлять пользователями
           </Paragraph>
         </View>
       </Layout>
@@ -205,7 +205,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
             style={styles.filterChip}
             textStyle={styles.filterChipText}
           >
-            Професори
+            Профессоры
           </Chip>
         </ScrollView>
       </View>
@@ -245,7 +245,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
                         />
                         <Text style={styles.roleText}>
                           {getRoleDisplayName(userItem.primary_role)}
-                          {userItem.is_head_coach && ' (Главний професор)'}
+                          {userItem.is_head_coach && ' (Главний профессор)'}
                         </Text>
                       </View>
                       <Text style={styles.userAge}>{calculateAge(userItem.birth_date)} лет</Text>
@@ -259,8 +259,8 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
                       mode="contained"
                       onPress={() => {
                         Alert.alert(
-                          'Назначить професором',
-                          `Вы уверены, что хотите назначить ${userItem.full_name} професором?`,
+                          'Назначить профессором',
+                          `Вы уверены, что хотите назначить ${userItem.full_name} профессором?`,
                           [
                             { text: 'Отмена', style: 'cancel' },
                             {
@@ -275,7 +275,7 @@ const UsersManagementPage: React.FC<{ navigation?: any }> = ({ navigation }) => 
                       icon="account-tie"
                       style={styles.makeCoachButton}
                     >
-                      Назначить професором
+                      Назначить профессором
                     </Button>
                   </View>
                 )}

@@ -574,7 +574,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                       },
                       {
                         value: 'coach',
-                        label: 'Професор',
+                        label: 'Профессор',
                         icon: 'human-male-board',
                       },
                     ]}

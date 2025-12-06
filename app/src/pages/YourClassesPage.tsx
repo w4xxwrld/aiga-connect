@@ -326,7 +326,7 @@ const YourClassesPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
                   color="#B0BEC5"
                 />
                 <Text style={styles.infoText}>
-                  Професор: {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
+                  Профессор: {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
                 </Text>
               </View>
             )}

@@ -213,7 +213,7 @@ const AttendanceCalendarPage: React.FC<{ navigation?: any }> = ({ navigation }) 
                 </View>
                 {attendance.class_obj?.coach && (
                   <Text style={styles.coachName}>
-                    Професор: {attendance.class_obj.coach.first_name}{' '}
+                    Профессор: {attendance.class_obj.coach.first_name}{' '}
                     {attendance.class_obj.coach.last_name}
                   </Text>
                 )}

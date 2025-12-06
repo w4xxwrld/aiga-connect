@@ -119,7 +119,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
           style: 'destructive',
           onPress: async () => {
             try {
-              await bookingsService.declineBooking(booking.id, 'Отклонено професором');
+              await bookingsService.declineBooking(booking.id, 'Отклонено профессором');
               Alert.alert('Успех', 'Запись отклонена');
               navigation.goBack();
             } catch (error: any) {
@@ -221,7 +221,7 @@ const BookingDetailPage: React.FC<BookingDetailPageProps> = ({ navigation, route
               {booking.class_obj?.coach && (
                 <View style={styles.infoRow}>
                   <MaterialCommunityIcons name="human-male-board" size={20} color="#E74C3C" />
-                  <Text style={styles.infoLabel}>Професор:</Text>
+                  <Text style={styles.infoLabel}>Профессор:</Text>
                   <Text style={styles.infoValue}>
                     {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
                   </Text>

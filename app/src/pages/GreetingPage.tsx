@@ -118,7 +118,7 @@ const GreetingPage: React.FC<GreetingPageProps> = ({ navigation }) => {
           </View>
           <View style={styles.featureItem}>
             <MaterialCommunityIcons name="human-male-board" size={20} color="#E74C3C" />
-            <Text style={styles.featureText}>Професори</Text>
+            <Text style={styles.featureText}>Профессоры</Text>
           </View>
         </View>
       </Animated.View>

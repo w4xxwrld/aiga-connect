@@ -95,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       showFor: ['admin'],
     },
     {
-      title: 'Заявки професорів',
+      title: 'Заявки профессоров',
       icon: 'account-clock',
       route: 'PendingCoaches',
       showFor: ['admin'],
@@ -107,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       showFor: ['admin'],
     },
     {
-      title: 'Професори',
+      title: 'Профессоры',
       icon: 'human-male-board',
       route: 'CoachesList',
       showFor: ['admin'],
@@ -130,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
       showFor: ['athlete'],
     },
     {
-      title: 'Рейтинг професорів',
+      title: 'Рейтинг профессоров',
       icon: 'star',
       route: 'CoachRating',
       showFor: ['athlete'],
@@ -177,7 +177,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
                     {userRole === 'athlete'
                       ? 'Ученик'
                       : userRole === 'coach'
-                        ? (user?.is_head_coach ? 'Главный професор' : 'Професор')
+                        ? (user?.is_head_coach ? 'Главный профессор' : 'Профессор')
                         : userRole === 'admin'
                           ? 'Администратор'
                           : 'Пользователь'

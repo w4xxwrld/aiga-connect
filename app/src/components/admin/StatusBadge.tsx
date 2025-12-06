@@ -41,7 +41,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ type, value }) => {
         case 'athlete':
           return 'Ученик';
         case 'coach':
-          return 'Професор';
+          return 'Профессор';
         case 'admin':
           return 'Админ';
         default:

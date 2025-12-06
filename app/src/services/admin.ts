@@ -115,7 +115,7 @@ class AdminService {
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
       }
-      throw new Error('Не удалось загрузить заявки професорів');
+      throw new Error('Не удалось загрузить заявки профессоров');
     }
   }
 
@@ -232,7 +232,7 @@ class AdminService {
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
       }
-      throw new Error('Не удалось загрузить список професорів');
+      throw new Error('Не удалось загрузить список профессоров');
     }
   }
 
@@ -245,7 +245,7 @@ class AdminService {
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
       }
-      throw new Error('Не удалось приостановити професора');
+      throw new Error('Не удалось приостановити профессора');
     }
   }
 
@@ -258,7 +258,7 @@ class AdminService {
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
       }
-      throw new Error('Не удалось активувати професора');
+      throw new Error('Не удалось активувати профессора');
     }
   }
 
@@ -271,7 +271,7 @@ class AdminService {
       if (error.response?.data?.detail) {
         throw new Error(error.response.data.detail);
       }
-      throw new Error('Не удалось загрузити статистику професора');
+      throw new Error('Не удалось загрузити статистику профессора');
     }
   }
 

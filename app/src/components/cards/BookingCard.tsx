@@ -73,7 +73,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="human-male-board" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Професор: {booking.class_obj.coach.first_name} {booking.class_obj.coach.last_name}
+                Профессор: {booking.class_obj.coach.first_name} {booking.class_obj.coach.last_name}
               </Text>
             </View>
           )}

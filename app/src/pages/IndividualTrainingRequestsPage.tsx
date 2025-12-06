@@ -111,7 +111,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
           style: 'destructive',
           onPress: async () => {
             try {
-              await bookingsService.declineIndividualTrainingRequest(request.id, 'Отклонено професором');
+              await bookingsService.declineIndividualTrainingRequest(request.id, 'Отклонено профессором');
               Alert.alert('Успех', 'Запрос отклонен');
               loadRequests();
             } catch (error: any) {
@@ -212,7 +212,7 @@ const IndividualTrainingRequestsPage: React.FC<IndividualTrainingRequestsPagePro
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="human-male-board" size={16} color="#E74C3C" />
               <Text style={styles.detailText} numberOfLines={2}>
-                Заметки професора: {request.coach_notes}
+                Заметки профессора: {request.coach_notes}
               </Text>
             </View>
           )}

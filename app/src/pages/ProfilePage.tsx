@@ -52,7 +52,7 @@ const ProfilePage: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const getRoleDisplayName = (role: string | null) => {
     switch (role) {
       case 'athlete': return 'Ученик';
-      case 'coach': return user?.is_head_coach ? 'Главный професор' : 'Професор';
+      case 'coach': return user?.is_head_coach ? 'Главный профессор' : 'Профессор';
       case 'admin': return 'Администратор';
       default: return role || 'Пользователь';
     }

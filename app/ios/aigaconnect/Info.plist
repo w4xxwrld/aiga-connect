@@ -49,7 +49,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs access to your camera to scan QR codes for attendance tracking.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Allow AIGA Connect to access your microphone</string>
+	<string>Allow $(PRODUCT_NAME) to access your microphone</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow $(PRODUCT_NAME) to access your photos</string>
 	<key>RCTNewArchEnabled</key>

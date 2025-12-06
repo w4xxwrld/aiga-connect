@@ -130,7 +130,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await bookingsService.declineBooking(booking.id, 'Отклонено професором');
+              await bookingsService.declineBooking(booking.id, 'Отклонено профессором');
               Alert.alert('Успех', 'Запись отклонена');
               loadBookings();
             } catch (error: any) {
@@ -207,7 +207,7 @@ const BookingsPage: React.FC<{ navigation?: any }> = ({ navigation }) => {
             <View style={styles.detailRow}>
               <MaterialCommunityIcons name="account-tie" size={16} color="#E74C3C" />
               <Text style={styles.detailText}>
-                Професор: {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
+                Профессор: {booking.class_obj.coach.full_name || `${booking.class_obj.coach.first_name} ${booking.class_obj.coach.last_name}`}
               </Text>
             </View>
           )}

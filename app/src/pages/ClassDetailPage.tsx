@@ -199,7 +199,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({ navigation, route }) 
 
               <View style={styles.infoRow}>
                 <MaterialCommunityIcons name="human-male-board" size={20} color="#E74C3C" />
-                <Text style={styles.infoLabel}>Професор:</Text>
+                <Text style={styles.infoLabel}>Профессор:</Text>
                 <Text style={styles.infoValue}>
                   {classData.coach ? `${classData.coach.first_name} ${classData.coach.last_name}` : `ID: ${classData.coach_id}`}
                 </Text>

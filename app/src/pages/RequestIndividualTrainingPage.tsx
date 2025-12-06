@@ -62,13 +62,13 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
       setCoaches(mockCoaches);
     } catch (error: any) {
       console.error('Error loading coaches:', error);
-      Alert.alert('Ошибка', 'Не удалось загрузить список професорів');
+      Alert.alert('Ошибка', 'Не удалось загрузить список профессоров');
     }
   };
 
   const validateForm = (): boolean => {
     if (!selectedCoach) {
-      Alert.alert('Ошибка', 'Пожалуйста, выберите професора');
+      Alert.alert('Ошибка', 'Пожалуйста, выберите профессора');
       return false;
     }
 
@@ -155,7 +155,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
 
             {/* Coach Selection */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Выберите професора *</Text>
+              <Text style={styles.sectionTitle}>Выберите профессора *</Text>
               <View style={styles.coachesContainer}>
                 {coaches.map((coach) => (
                   <Chip
@@ -233,7 +233,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
               <Text style={styles.sectionTitle}>Дополнительная информация</Text>
               <TextInput
                 mode="outlined"
-                label="Заметки для професора"
+                label="Заметки для профессора"
                 value={athleteNotes}
                 onChangeText={setAthleteNotes}
                 multiline
@@ -264,7 +264,7 @@ const RequestIndividualTrainingPage: React.FC<RequestIndividualTrainingPageProps
             textColor="#fff"
             icon="send"
           >
-            {selectedCoach ? "Отправить запрос" : "Выберите професора"}
+            {selectedCoach ? "Отправить запрос" : "Выберите профессора"}
           </Button>
           
           <Button
